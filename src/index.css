@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 39 30% 95%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 37 52% 56%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 99 11% 68%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 37 52% 56%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 240 10% 13%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 240 10% 13%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 37 60% 56%;
+    --primary-foreground: 240 10% 10%;
+
+    --secondary: 240 13% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 240 13% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 240 13% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 13% 17.5%;
+    --input: 240 13% 17.5%;
+    --ring: 37 60% 56%;
+    --sidebar-background: 240 10% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 37 60% 56%;
+    --sidebar-primary-foreground: 240 10% 10%;
+    --sidebar-accent: 240 13% 17.5%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 37 60% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+  }
+}
+
+.task-container {
+  @apply transition-all duration-300;
+}
+
+.task-card {
+  @apply bg-white rounded-xl shadow-task transition-all duration-200 hover:shadow-md;
+}
+
+.completed-task {
+  @apply opacity-70 bg-gray-50;
+}
+
+.tag-badge {
+  @apply text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium;
+}
+
+.due-date {
+  @apply text-xs text-gray-500 flex items-center gap-1;
+}
+
+.task-action-btn {
+  @apply text-gray-400 hover:text-gray-600 transition-colors duration-200;
+}
+
+.section-heading {
+  @apply text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2;
+}
+
+/* Animation classes */
+.task-enter {
+  @apply opacity-0 translate-y-4;
+}
+
+.task-enter-active {
+  @apply opacity-100 translate-y-0 transition-all duration-300;
+}
+
+.task-exit {
+  @apply opacity-100;
+}
+
+.task-exit-active {
+  @apply opacity-0 translate-y-2 transition-all duration-200;
+}
+
+/* Landing page animations */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+/* Custom logo animation */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeSlideIn 0.8s ease-out forwards;
+}
+
+/* Add a premium-feeling hover glow for buttons */
+.hover-gold-glow:hover {
+  box-shadow: 0 0 15px rgba(205, 163, 81, 0.3);
+}
