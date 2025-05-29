@@ -25,7 +25,11 @@ const NavBar = () => {
           <span>A</span>
           <span>S</span>
           <span>K</span>
-          <span className="text-[#CDA351]">Y</span>
+          <span>Y</span>
+          <span className="text-[#CDA351]">.</span>
+          <span className="text-[#CDA351]">A</span>
+          <span className="text-[#CDA351]">P</span>
+          <span className="text-[#CDA351]">P</span>
         </h1>
       </div>
 

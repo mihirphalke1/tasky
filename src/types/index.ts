@@ -1,6 +1,7 @@
 export type TimeOfDay = "morning" | "afternoon" | "evening" | "night";
 
 export type TaskPriority = "low" | "medium" | "high";
+
 export type TaskSection = "today" | "tomorrow" | "upcoming" | "someday";
 
 export interface Task {
