@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/AuthContext";
 
 const Header = () => {
   const [greeting, setGreeting] = useState("");
+  const { user } = useAuth();
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -27,6 +29,9 @@ const Header = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Get user's first name from display name
+  const firstName = user?.displayName?.split(" ")[0] || "there";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -35,7 +40,8 @@ const Header = () => {
       className="space-y-2"
     >
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {greeting}, Mihir <span className="inline-block animate-wave">!</span>
+        {greeting}, {firstName}{" "}
+        <span className="inline-block animate-wave">!</span>
       </h1>
       <p className="text-gray-600 dark:text-gray-400">
         Let's organize your day

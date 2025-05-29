@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./lib/AuthContext";
 import { useEffect } from "react";
 import { testFirebaseConnection } from "./lib/firebaseTest";
+import FocusMode from "./pages/FocusMode";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/dashboard" element={<Index />} />
+      <Route path="/focus" element={<FocusMode />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, Moon, Sun, User } from "lucide-react";
+import { LogOut, Moon, Sun, User, Timer } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -10,10 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="w-full py-4 px-6 mb-4 flex items-center justify-between bg-white/80 backdrop-blur-sm border-b border-[#CDA351]/10 dark:bg-gray-900/80 dark:border-[#CDA351]/5">
@@ -28,6 +30,16 @@ const NavBar = () => {
       </div>
 
       <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/focus")}
+          className="text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10"
+        >
+          <Timer className="mr-2 h-4 w-4" />
+          Focus Mode
+        </Button>
+
         <Button
           variant="ghost"
           size="icon"

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 
 const sections: { id: TaskSectionType; title: string }[] = [
   { id: "today", title: "Today" },
@@ -39,6 +40,11 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Add keyboard shortcut for Focus Mode
+  useKeyboardShortcut({ key: "f", ctrlKey: true, shiftKey: true }, () =>
+    navigate("/focus")
+  );
 
   // Set up real-time task subscription
   useEffect(() => {
