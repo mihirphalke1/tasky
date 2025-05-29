@@ -185,48 +185,52 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-[#CDA351]/10 mb-8"
+      className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-8 shadow-md border-2 border-[#CDA351]/20 mb-8"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#CDA351]/10 p-3 rounded-xl">
-            <Plus size={24} className="text-[#CDA351]" />
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1">
+            <div className="bg-[#CDA351]/10 p-3 sm:p-4 rounded-xl">
+              <Plus size={28} className="text-[#CDA351]" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Add a new task..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="flex-1 border-2 border-[#CDA351]/20 shadow-none focus-visible:ring-2 focus-visible:ring-[#CDA351]/30 text-lg sm:text-xl font-medium h-14 sm:h-16 px-4 bg-white dark:bg-gray-900 rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            />
           </div>
-          <Input
-            type="text"
-            placeholder="Add a new task..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 border-none shadow-none focus-visible:ring-0 text-lg text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 dark:bg-transparent"
-          />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-0">
             <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`flex items-center gap-2 ${
-                    dueDate ? "text-[#CDA351] border-[#CDA351]/20" : ""
+                  className={`flex items-center gap-2 text-base sm:text-lg font-medium h-12 sm:h-14 px-4 rounded-xl ${
+                    dueDate
+                      ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
+                      : "border-[#CDA351]/20"
                   }`}
                 >
-                  <Calendar size={18} />
+                  <Calendar size={22} className="sm:w-[22px] sm:h-[22px]" />
                   {dueDate ? format(dueDate, "MMM d") : "Due date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-auto p-4"
+                className="w-auto p-3 sm:p-4"
                 align="start"
-                side="right"
+                side="bottom"
                 sideOffset={5}
               >
-                <div className="space-y-4">
-                  <div className="flex gap-2">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex flex-wrap gap-2">
                     {quickDateOptions.map((option) => (
                       <Button
                         key={option.label}
                         variant="outline"
                         size="sm"
-                        className={`${
+                        className={`text-xs sm:text-sm ${
                           (dueDate &&
                             option.value &&
                             format(dueDate, "yyyy-MM-dd") ===
@@ -249,7 +253,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                       </Button>
                     ))}
                   </div>
-                  <div className="border-t pt-4">
+                  <div className="border-t pt-3 sm:pt-4">
                     <CalendarComponent
                       mode="single"
                       selected={dueDate || undefined}
@@ -260,7 +264,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full mt-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="w-full mt-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                         onClick={() => {
                           setDueDate(null);
                           setSection("someday");
@@ -280,27 +284,29 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`flex items-center gap-2 ${
-                    dueDate ? "text-[#CDA351] border-[#CDA351]/20" : ""
+                  className={`flex items-center gap-2 text-base sm:text-lg font-medium h-12 sm:h-14 px-4 rounded-xl ${
+                    dueDate
+                      ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
+                      : "border-[#CDA351]/20"
                   }`}
                 >
-                  <Clock size={18} />
+                  <Clock size={22} className="sm:w-[22px] sm:h-[22px]" />
                   {dueDate ? format(dueDate, "h:mm a") : "Time"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
                 className="w-auto p-2"
                 align="start"
-                side="right"
+                side="bottom"
                 sideOffset={5}
               >
-                <div className="grid grid-cols-4 gap-1 max-h-[200px] overflow-y-auto">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 max-h-[200px] overflow-y-auto">
                   {timeOptions.map((option) => (
                     <Button
                       key={option.label}
                       variant="ghost"
                       size="sm"
-                      className={`${
+                      className={`text-xs sm:text-sm ${
                         dueDate &&
                         dueDate.getHours() === option.hours &&
                         dueDate.getMinutes() === option.minutes
@@ -317,14 +323,15 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                 </div>
               </PopoverContent>
             </Popover>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="bg-[#CDA351] hover:bg-[#CDA351]/90 transition-all duration-200 text-white shadow-lg hover:shadow-xl text-lg sm:text-xl font-bold h-12 sm:h-14 px-8 rounded-xl"
+            >
+              Add
+            </Button>
           </div>
-          <Button
-            type="submit"
-            size="lg"
-            className="bg-[#CDA351] hover:bg-[#CDA351]/90 transition-all duration-200 text-white shadow-sm hover:shadow-md"
-          >
-            Add
-          </Button>
         </div>
 
         <AnimatePresence>
@@ -338,7 +345,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10"
+                className="text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 text-xs sm:text-sm"
                 onClick={() => setShowDetails(true)}
               >
                 + Add details
@@ -353,18 +360,18 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
               <Textarea
                 placeholder="Add description (optional)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[100px] resize-none border-none shadow-none focus-visible:ring-0 dark:bg-transparent"
+                className="min-h-[80px] sm:min-h-[100px] resize-none border-none shadow-none focus-visible:ring-0 dark:bg-transparent text-sm sm:text-base"
               />
 
-              <div className="flex flex-wrap gap-3 items-center">
-                <div className="flex items-center gap-2 bg-[#CDA351]/5 dark:bg-[#CDA351]/10 px-4 py-2 rounded-xl flex-grow">
-                  <Tag size={18} className="text-[#CDA351]" />
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div className="flex items-center gap-2 bg-[#CDA351]/5 dark:bg-[#CDA351]/10 px-3 py-2 rounded-xl flex-grow w-full sm:w-auto">
+                  <Tag size={16} className="text-[#CDA351]" />
                   <Input
                     type="text"
                     placeholder="Add tags..."
@@ -376,50 +383,54 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                         handleAddTag();
                       }
                     }}
-                    className="border-none shadow-none bg-transparent focus-visible:ring-0 p-0 h-auto text-sm dark:text-white"
+                    className="border-none shadow-none bg-transparent focus-visible:ring-0 p-0 h-auto text-xs sm:text-sm dark:text-white"
                   />
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-auto p-0 text-[#CDA351] hover:text-[#CDA351]/80"
+                    className="h-auto p-0 text-[#CDA351] hover:text-[#CDA351]/80 text-xs sm:text-sm"
                     onClick={handleAddTag}
                   >
                     Add
                   </Button>
                 </div>
 
-                <Select
-                  value={priority}
-                  onValueChange={(value: TaskPriority) => setPriority(value)}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <div className="flex items-center gap-2">
-                      <Flag className={`w-4 h-4 ${priorityColors[priority]}`} />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Select
+                    value={priority}
+                    onValueChange={(value: TaskPriority) => setPriority(value)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[120px] text-xs sm:text-sm">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Flag
+                          className={`w-3 h-3 sm:w-4 sm:h-4 ${priorityColors[priority]}`}
+                        />
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select
-                  value={section}
-                  onValueChange={(value: TaskSection) => setSection(value)}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="someday">Someday</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={section}
+                    onValueChange={(value: TaskSection) => setSection(value)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[120px] text-xs sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="someday">Someday</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {tags.length > 0 && (
@@ -430,7 +441,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-sm font-medium px-3 py-1 rounded-full"
+                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full"
                     >
                       {tag}
                       <button
@@ -438,7 +449,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                         onClick={() => handleRemoveTag(tag)}
                         className="text-[#CDA351] hover:text-[#CDA351]/80"
                       >
-                        <X size={14} />
+                        <X size={12} className="sm:w-[14px] sm:h-[14px]" />
                       </button>
                     </motion.span>
                   ))}
@@ -449,7 +460,7 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10"
+                className="text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 text-xs sm:text-sm"
                 onClick={() => setShowDetails(false)}
               >
                 - Hide details

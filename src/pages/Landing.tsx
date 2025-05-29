@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import TypewriterText from "@/components/TypewriterText";
+import { useEffect, useState } from "react";
 
 const Landing = () => {
   const { signInWithGoogle } = useAuth();
@@ -14,6 +15,31 @@ const Landing = () => {
     "Your day, your pace.",
     "No distractions. Just flow.",
   ];
+
+  // PWA install prompt state
+  const [deferredPrompt, setDeferredPrompt] = useState<null | any>(null);
+  const [showInstall, setShowInstall] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setShowInstall(false);
+      }
+      setDeferredPrompt(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800">
@@ -63,7 +89,7 @@ const Landing = () => {
           </div>
 
           {/* CTA Button */}
-          <div className="pt-6">
+          <div className="pt-6 space-y-3">
             <Button
               onClick={signInWithGoogle}
               variant="outline"
@@ -73,6 +99,18 @@ const Landing = () => {
               <Chrome className="h-5 w-5 mr-2" />
               Continue with Google
             </Button>
+
+            {/* Install App Button */}
+            {showInstall && (
+              <Button
+                onClick={handleInstallClick}
+                variant="default"
+                size="lg"
+                className="w-full py-3 px-6 bg-[#CDA351] text-white font-semibold hover:bg-[#b8933e] transition-all duration-300 shadow-md"
+              >
+                Install App
+              </Button>
+            )}
 
             {/* Monospace tagline */}
             <p className="mt-4 text-sm text-[#7E7E7E] dark:text-gray-400 font-mono">

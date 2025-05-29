@@ -68,7 +68,7 @@ const TaskOverview = ({ tasks }: TaskOverviewProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
       >
         {stats.map((stat, index) => (
           <motion.div
@@ -76,34 +76,36 @@ const TaskOverview = ({ tasks }: TaskOverviewProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
           >
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div
-                    className={`p-2 rounded-lg bg-opacity-10 ${stat.color} bg-current`}
+                    className={`p-1.5 sm:p-2 rounded-lg bg-opacity-10 ${stat.color} bg-current`}
                   >
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    <stat.icon
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`}
+                    />
                   </div>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
                     {stat.label}
                   </span>
                 </div>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {stat.value}
                 </span>
               </div>
 
               {stat.progress !== undefined && (
-                <div className="flex items-center gap-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2 sm:gap-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <CircularProgress
                     progress={stat.progress}
-                    size={32}
+                    size={28}
                     className="opacity-95"
                     showPercentage={false}
                   />
-                  <span className="text-sm font-semibold bg-gradient-to-r from-[#CDA351] to-[#E6C17A] bg-clip-text text-transparent">
+                  <span className="text-xs sm:text-sm font-semibold bg-gradient-to-r from-[#CDA351] to-[#E6C17A] bg-clip-text text-transparent">
                     {Math.round(stat.progress)}% Complete
                   </span>
                 </div>
@@ -117,36 +119,38 @@ const TaskOverview = ({ tasks }: TaskOverviewProps) => {
         <Button
           variant="outline"
           size="sm"
-          className="text-[#CDA351] border-[#CDA351]/20 hover:bg-[#CDA351]/10"
+          className="text-[#CDA351] border-[#CDA351]/20 hover:bg-[#CDA351]/10 text-xs sm:text-sm"
           onClick={() => setShowArchived(true)}
         >
-          <Archive className="w-4 h-4 mr-2" />
+          <Archive className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
           View Old Tasks
         </Button>
       </div>
 
       <Dialog open={showArchived} onOpenChange={setShowArchived}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Archived Tasks</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">
+              Archived Tasks
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4 max-h-[60vh] overflow-y-auto">
             {tasks
               .filter((task) => task.completed)
               .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
               .map((task) => (
                 <div
                   key={task.id}
-                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
                 >
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                     <div>
-                      <h4 className="text-gray-900 dark:text-white font-medium">
+                      <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white">
                         {task.title}
                       </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         Completed on {format(task.createdAt, "MMM d, yyyy")}
                       </p>
                     </div>
