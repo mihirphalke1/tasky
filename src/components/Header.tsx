@@ -35,7 +35,7 @@ const Header = () => {
       className="space-y-2"
     >
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {greeting}, Mihir <span className="inline-block animate-wave">🌙</span>
+        {greeting}, Mihir <span className="inline-block animate-wave">!</span>
       </h1>
       <p className="text-gray-600 dark:text-gray-400">
         Let's organize your day
