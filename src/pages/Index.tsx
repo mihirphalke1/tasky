@@ -58,26 +58,46 @@ const Index = () => {
     setError(null);
 
     let unsubscribe: (() => void) | undefined;
+    let timeoutId: NodeJS.Timeout;
 
     const setupSubscription = async () => {
       try {
+        // Add a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          console.log("Subscription timeout, falling back to direct fetch");
+          setLoading(false);
+          setError("Failed to load tasks. Please refresh the page.");
+        }, 10000);
+
         // Subscribe to real-time task updates
         unsubscribe = subscribeToTasks(
           user.uid,
           (updatedTasks) => {
             console.log("Received task update:", updatedTasks);
+            clearTimeout(timeoutId);
             setTasks(updatedTasks);
             setLoading(false);
           },
           (error: any) => {
             console.error("Error in task subscription:", error);
+            clearTimeout(timeoutId);
 
             // Handle specific error cases
             if (error.message?.includes("requires an index")) {
               setError(
                 "Setting up task synchronization. This may take a moment..."
               );
-              // The fallback query will handle this case
+              // Try direct fetch as fallback
+              getTasks(user.uid)
+                .then((tasks) => {
+                  setTasks(tasks);
+                  setLoading(false);
+                  setError(null);
+                })
+                .catch(() => {
+                  setError("Failed to load tasks. Please refresh the page.");
+                  setLoading(false);
+                });
               return;
             }
 
@@ -88,9 +108,19 @@ const Index = () => {
         );
       } catch (error) {
         console.error("Error setting up task subscription:", error);
-        setError("Failed to load tasks. Please try refreshing the page.");
-        setLoading(false);
-        toast.error("Failed to load tasks");
+        clearTimeout(timeoutId);
+
+        // Fallback to direct fetch
+        try {
+          const tasks = await getTasks(user.uid);
+          setTasks(tasks);
+          setLoading(false);
+          setError(null);
+        } catch (fetchError) {
+          setError("Failed to load tasks. Please try refreshing the page.");
+          setLoading(false);
+          toast.error("Failed to load tasks");
+        }
       }
     };
 
@@ -99,6 +129,7 @@ const Index = () => {
     // Cleanup subscription on unmount
     return () => {
       console.log("Cleaning up task subscription");
+      if (timeoutId) clearTimeout(timeoutId);
       if (unsubscribe) {
         unsubscribe();
       }
