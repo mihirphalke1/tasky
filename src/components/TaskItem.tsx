@@ -18,7 +18,12 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { formatDate, getTagColor, isOverdue } from "@/utils/taskUtils";
+import {
+  formatDate,
+  getTagColor,
+  isOverdue,
+  getSectionFromDate,
+} from "@/utils/taskUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { addDays } from "date-fns";
 
 interface TaskItemProps {
   task: Task;
@@ -63,8 +69,6 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
       completed: !task.completed,
       lastModified: new Date(),
     };
-
-    // Call the update handler immediately
     onUpdate(updatedTask);
   };
 
@@ -255,28 +259,6 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">
-                  Section
-                </label>
-                <Select
-                  value={editedTask.section}
-                  onValueChange={(value: TaskSection) =>
-                    setEditedTask({ ...editedTask, section: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="someday">Someday</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -352,13 +334,39 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                   <CalendarComponent
                     mode="single"
                     selected={editedTask.dueDate || undefined}
-                    onSelect={(date) =>
-                      setEditedTask({ ...editedTask, dueDate: date || null })
-                    }
+                    onSelect={(date) => {
+                      const newSection = getSectionFromDate(date || null);
+                      console.log(
+                        "Due date changed:",
+                        date,
+                        "New section:",
+                        newSection
+                      );
+                      setEditedTask((prev) => ({
+                        ...prev,
+                        dueDate: date || null,
+                        section: newSection,
+                      }));
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {editedTask.dueDate && (
+                <p className="text-xs text-[#CDA351] font-medium">
+                  Will be moved to:{" "}
+                  {getSectionFromDate(editedTask.dueDate)
+                    .charAt(0)
+                    .toUpperCase() +
+                    getSectionFromDate(editedTask.dueDate).slice(1)}{" "}
+                  section
+                </p>
+              )}
+              {!editedTask.dueDate && (
+                <p className="text-xs text-gray-500">
+                  Will be moved to: Someday section
+                </p>
+              )}
             </div>
           </div>
 

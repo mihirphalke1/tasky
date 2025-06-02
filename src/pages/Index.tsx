@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
+import { getSectionFromDate } from "@/utils/taskUtils";
 
 const sections: { id: TaskSectionType; title: string }[] = [
   { id: "today", title: "Today" },
@@ -132,18 +133,15 @@ const Index = () => {
       const taskWithTimestamp = {
         ...updatedTask,
         lastModified: now,
+        // Ensure section is always derived from due date
+        section: getSectionFromDate(updatedTask.dueDate),
       };
 
-      // Optimistically update the task in the UI
-      setTasks((prevTasks) => {
-        const updatedTasks = prevTasks.map((task) =>
-          task.id === updatedTask.id ? taskWithTimestamp : task
-        );
-        return updatedTasks;
-      });
-
       // Show completion toast immediately if task is being completed
-      if (updatedTask.completed) {
+      if (
+        updatedTask.completed &&
+        !tasks.find((t) => t.id === updatedTask.id)?.completed
+      ) {
         toast.success("Task completed! 🎉");
         // Trigger confetti for completed tasks
         confetti({
@@ -154,19 +152,11 @@ const Index = () => {
         });
       }
 
-      // Update in the backend
+      // Update in the backend - let real-time subscription handle UI updates
       await updateTask(updatedTask.id, taskWithTimestamp);
     } catch (error) {
       console.error("Error updating task:", error);
       toast.error("Failed to update task");
-
-      // Revert the optimistic update on error
-      setTasks((prevTasks) => {
-        const revertedTasks = prevTasks.map((task) =>
-          task.id === updatedTask.id ? updatedTask : task
-        );
-        return revertedTasks;
-      });
     }
   };
 
@@ -201,26 +191,47 @@ const Index = () => {
 
     if (!task) return;
 
-    // If moving to a different section
+    // If moving to a different section, update the due date to match the section
     if (source.droppableId !== destination.droppableId) {
+      const targetSection = destination.droppableId as TaskSectionType;
+      let newDueDate: Date | null = task.dueDate;
+
+      // Set appropriate due date for the target section
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const nextDay = new Date(today);
+      nextDay.setDate(nextDay.getDate() + 2);
+
+      switch (targetSection) {
+        case "today":
+          newDueDate = today;
+          break;
+        case "tomorrow":
+          newDueDate = tomorrow;
+          break;
+        case "upcoming":
+          newDueDate = nextDay;
+          break;
+        case "someday":
+          newDueDate = null;
+          break;
+      }
+
       const updatedTask = {
         ...task,
-        section: destination.droppableId as TaskSectionType,
+        dueDate: newDueDate,
+        section: getSectionFromDate(newDueDate),
         lastModified: new Date(),
       };
 
       try {
-        // Optimistically update the UI
-        setTasks((prevTasks) =>
-          prevTasks.map((t) => (t.id === task.id ? updatedTask : t))
-        );
-
-        // Update in the backend
+        // Update in the backend - let real-time subscription handle UI updates
         await updateTask(task.id, updatedTask);
       } catch (error) {
         console.error("Error moving task:", error);
         toast.error("Failed to move task");
-        await getTasks(user.uid); // Reload tasks to ensure UI is in sync
       }
     }
   };

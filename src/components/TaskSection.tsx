@@ -2,6 +2,7 @@ import { Task, TaskSection as TaskSectionType } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import TaskItem from "./TaskItem";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { getSectionFromDate } from "@/utils/taskUtils";
 
 interface TaskSectionProps {
   title: string;
@@ -20,9 +21,13 @@ const TaskSection = ({
   onDeleteTask,
   onDragEnd,
 }: TaskSectionProps) => {
-  const filteredTasks = tasks.filter((task) => task.section === section);
-  const incompleteTasks = filteredTasks.filter((task) => !task.completed);
-  const completedTasks = filteredTasks.filter((task) => task.completed);
+  // Only use getSectionFromDate for incomplete tasks
+  const incompleteTasks = tasks.filter(
+    (task) => !task.completed && getSectionFromDate(task.dueDate) === section
+  );
+  const completedTasks = tasks.filter(
+    (task) => task.completed && getSectionFromDate(task.dueDate) === section
+  );
 
   return (
     <div className="mb-8">

@@ -97,14 +97,30 @@ export function getPriorityLabel(priority: TaskPriority): string {
   return priority.charAt(0).toUpperCase() + priority.slice(1);
 }
 
-export function getDefaultSection(dueDate?: Date | null): TaskSection {
-  if (!dueDate) return "someday";
+export function getSectionFromDate(date: Date | null | undefined): TaskSection {
+  if (!date) return "someday";
 
-  if (isToday(dueDate)) return "today";
-  if (isTomorrow(dueDate)) return "tomorrow";
-  if (isAfter(dueDate, addDays(new Date(), 1))) return "upcoming";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  return "today";
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const nextDay = new Date(today);
+  nextDay.setDate(nextDay.getDate() + 2);
+
+  const dateToCompare = new Date(date);
+  dateToCompare.setHours(0, 0, 0, 0);
+
+  if (dateToCompare.getTime() === today.getTime()) {
+    return "today";
+  } else if (dateToCompare.getTime() === tomorrow.getTime()) {
+    return "tomorrow";
+  } else if (dateToCompare.getTime() === nextDay.getTime()) {
+    return "upcoming";
+  } else {
+    return "someday";
+  }
 }
 
 export function getSectionTasks(tasks: Task[], section: TaskSection): Task[] {

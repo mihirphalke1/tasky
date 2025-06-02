@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+import { getSectionFromDate } from "@/utils/taskUtils";
 
 interface TaskInputProps {
   onAddTask: (task: Omit<Task, "id" | "userId">) => void;
@@ -62,7 +63,6 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
   const [tagInput, setTagInput] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [section, setSection] = useState<TaskSection>("today");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -95,8 +95,8 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
       dueDate: dueDate || null,
       tags: tags || [],
       priority,
-      section,
       snoozedUntil: null,
+      section: getSectionFromDate(dueDate || null),
     };
 
     onAddTask(newTask);
@@ -107,36 +107,9 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
     setDueDate(setEndOfDay(new Date()));
     setTags([]);
     setPriority("medium");
-    setSection("today");
     setShowDetails(false);
     setShowDatePicker(false);
     setShowTimePicker(false);
-  };
-
-  const getSectionFromDate = (date: Date | null): TaskSection => {
-    if (!date) return "someday";
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const nextDay = new Date(today);
-    nextDay.setDate(nextDay.getDate() + 2);
-
-    const dateToCompare = new Date(date);
-    dateToCompare.setHours(0, 0, 0, 0);
-
-    if (dateToCompare.getTime() === today.getTime()) {
-      return "today";
-    } else if (dateToCompare.getTime() === tomorrow.getTime()) {
-      return "tomorrow";
-    } else if (dateToCompare.getTime() === nextDay.getTime()) {
-      return "upcoming";
-    } else {
-      return "someday";
-    }
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -146,12 +119,10 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
       const currentMinutes = dueDate.getMinutes();
       const newDate = setCustomTime(date, currentHours, currentMinutes);
       setDueDate(newDate);
-      setSection(getSectionFromDate(newDate));
       setShowDatePicker(false);
     } else {
       // Handle "No due date" selection
       setDueDate(null);
-      setSection("someday");
       setShowDatePicker(false);
     }
   };
@@ -241,11 +212,6 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                         }`}
                         onClick={() => {
                           setDueDate(option.value);
-                          if (option.value) {
-                            setSection(getSectionFromDate(option.value));
-                          } else {
-                            setSection("someday");
-                          }
                           setShowDatePicker(false);
                         }}
                       >
@@ -267,7 +233,6 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                         className="w-full mt-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                         onClick={() => {
                           setDueDate(null);
-                          setSection("someday");
                           setShowDatePicker(false);
                         }}
                       >
@@ -413,21 +378,6 @@ const TaskInput = ({ onAddTask }: TaskInputProps) => {
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={section}
-                    onValueChange={(value: TaskSection) => setSection(value)}
-                  >
-                    <SelectTrigger className="w-full sm:w-[120px] text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                      <SelectItem value="someday">Someday</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
