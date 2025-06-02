@@ -21,13 +21,32 @@ const TaskSection = ({
   onDeleteTask,
   onDragEnd,
 }: TaskSectionProps) => {
-  // Only use getSectionFromDate for incomplete tasks
-  const incompleteTasks = tasks.filter(
-    (task) => !task.completed && getSectionFromDate(task.dueDate) === section
-  );
-  const completedTasks = tasks.filter(
-    (task) => task.completed && getSectionFromDate(task.dueDate) === section
-  );
+  // Priority order for sorting (high first, then medium, then low)
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+
+  // Only use getSectionFromDate for incomplete tasks and sort by priority
+  const incompleteTasks = tasks
+    .filter(
+      (task) => !task.completed && getSectionFromDate(task.dueDate) === section
+    )
+    .sort((a, b) => {
+      // First sort by priority
+      const priorityDiff =
+        priorityOrder[a.priority] - priorityOrder[b.priority];
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // Then sort by lastModified (most recent first)
+      return b.lastModified.getTime() - a.lastModified.getTime();
+    });
+
+  const completedTasks = tasks
+    .filter(
+      (task) => task.completed && getSectionFromDate(task.dueDate) === section
+    )
+    .sort((a, b) => {
+      // For completed tasks, sort by completion time (most recent first)
+      return b.lastModified.getTime() - a.lastModified.getTime();
+    });
 
   return (
     <div className="mb-8">
