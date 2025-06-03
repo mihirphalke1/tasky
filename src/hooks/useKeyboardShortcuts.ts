@@ -19,7 +19,8 @@ export type ShortcutAction =
   | "toggle-pomodoro"
   | "snooze-task"
   | "postpone-task"
-  | "exit-focus";
+  | "exit-focus"
+  | "toggle-input-mode";
 
 export interface KeyboardShortcut {
   id: ShortcutAction;
@@ -219,6 +220,7 @@ const getDefaultPriority = (id: ShortcutAction): number => {
     "show-shortcuts": 85,
     search: 80,
     "add-task": 75,
+    "toggle-input-mode": 75,
     "quick-note": 75,
     "focus-mode": 70,
     notes: 65,
@@ -243,6 +245,7 @@ const isGlobalShortcut = (id: ShortcutAction): boolean => {
     "show-shortcuts",
     "search",
     "add-task",
+    "toggle-input-mode",
     "quick-note",
   ];
   return globalShortcuts.includes(id);

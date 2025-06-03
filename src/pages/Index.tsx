@@ -11,6 +11,7 @@ import {
 } from "@/lib/taskService";
 import Header from "@/components/Header";
 import TaskInput, { type TaskInputRef } from "@/components/TaskInput";
+import NLPTaskInput, { type NLPTaskInputRef } from "@/components/NLPTaskInput";
 import TaskSection from "@/components/TaskSection";
 import TaskOverview from "@/components/TaskOverview";
 import PendingTasksSection from "@/components/PendingTasksSection";
@@ -19,7 +20,13 @@ import Search from "@/components/Search";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { QuickNoteButton } from "@/components/QuickNoteButton";
 import { Task, TaskSection as TaskSectionType } from "@/types";
-import { Settings2 } from "lucide-react";
+import {
+  Settings2,
+  Sparkles,
+  ToggleLeft,
+  ToggleRight,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -52,7 +59,9 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showQuickNote, setShowQuickNote] = useState(false);
+  const [smartInputMode, setSmartInputMode] = useState(true); // Default to smart mode
   const taskInputRef = useRef<TaskInputRef>(null);
+  const nlpTaskInputRef = useRef<NLPTaskInputRef>(null);
 
   // Function to trigger quick note
   const openQuickNote = () => {
@@ -61,6 +70,15 @@ const Index = () => {
       description: "Opening quick note dialog",
       duration: 1500,
     });
+  };
+
+  // Function to focus appropriate input
+  const focusTaskInput = () => {
+    if (smartInputMode) {
+      nlpTaskInputRef.current?.focusInput();
+    } else {
+      taskInputRef.current?.focusInput();
+    }
   };
 
   // Filter tasks for dashboard (exclude hidden tasks)
@@ -80,14 +98,36 @@ const Index = () => {
         windows: ["ctrl", "j"],
       },
       action: () => {
-        taskInputRef.current?.focusInput();
+        focusTaskInput();
         toast.success("Add New Task", {
-          description: "Focus moved to task input",
+          description: `Focus moved to ${
+            smartInputMode ? "smart" : "traditional"
+          } task input`,
           duration: 1500,
         });
       },
       priority: 80,
       allowInModal: true, // Allow even when modals are open
+    },
+    {
+      id: "toggle-input-mode",
+      description: "Toggle Smart/Traditional Input",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "shift", "i"],
+        windows: ["ctrl", "shift", "i"],
+      },
+      action: () => {
+        setSmartInputMode(!smartInputMode);
+        toast.success("Input Mode Toggled", {
+          description: `Switched to ${
+            !smartInputMode ? "smart" : "traditional"
+          } input`,
+          duration: 1500,
+        });
+      },
+      priority: 75,
+      allowInModal: true,
     },
     {
       id: "quick-note",
@@ -516,7 +556,47 @@ const Index = () => {
         </div>
 
         <TaskOverview tasks={dashboardTasks} />
-        <TaskInput onAddTask={handleAddTask} ref={taskInputRef} />
+
+        {/* Task Input Toggle */}
+        <div className="flex items-center justify-center mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-full p-1 shadow-lg border-2 border-[#CDA351]/20 dark:border-[#CDA351]/30">
+            <div className="flex items-center">
+              <Button
+                variant={!smartInputMode ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setSmartInputMode(false)}
+                className={`rounded-full px-4 py-2 transition-all duration-200 ${
+                  !smartInputMode
+                    ? "bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-md"
+                    : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
+                }`}
+              >
+                <Plus size={16} className="mr-2" />
+                Traditional
+              </Button>
+              <Button
+                variant={smartInputMode ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setSmartInputMode(true)}
+                className={`rounded-full px-4 py-2 transition-all duration-200 ${
+                  smartInputMode
+                    ? "bg-gradient-to-r from-[#CDA351] to-[#E6C17A] hover:from-[#CDA351]/90 hover:to-[#E6C17A]/90 text-white shadow-md"
+                    : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
+                }`}
+              >
+                <Sparkles size={16} className="mr-2" />
+                Smart Input
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Conditional Task Input Rendering */}
+        {smartInputMode ? (
+          <NLPTaskInput onAddTask={handleAddTask} ref={nlpTaskInputRef} />
+        ) : (
+          <TaskInput onAddTask={handleAddTask} ref={taskInputRef} />
+        )}
 
         <PendingTasksSection
           tasks={dashboardTasks}
