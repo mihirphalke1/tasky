@@ -9,6 +9,8 @@ import {
   Filter,
   ArrowUpDown,
   Loader2,
+  StickyNote,
+  FileText,
 } from "lucide-react";
 import { Task } from "@/types";
 import { format, isToday, isTomorrow, isThisWeek, isThisMonth } from "date-fns";
@@ -16,6 +18,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useKeyboardShortcuts,
@@ -36,6 +39,9 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { toast } from "sonner";
+import { getNotesByTaskId } from "@/lib/focusService";
+import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface SearchProps {
   tasks: Task[];
@@ -54,9 +60,12 @@ const Search = ({ tasks, onClose }: SearchProps) => {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [taskNotes, setTaskNotes] = useState<Record<string, any[]>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const isMountedRef = useRef(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Debug logging
   useEffect(() => {
@@ -67,6 +76,33 @@ const Search = ({ tasks, onClose }: SearchProps) => {
       tasks: tasks?.slice(0, 3), // Log first 3 tasks for debugging
     });
   }, [tasks]);
+
+  // Load notes for tasks that have them
+  useEffect(() => {
+    if (!user || !Array.isArray(tasks)) return;
+
+    const loadTaskNotes = async () => {
+      const notesMap: Record<string, any[]> = {};
+
+      // Check each task for notes
+      await Promise.all(
+        tasks.map(async (task) => {
+          try {
+            const notes = await getNotesByTaskId(task.id);
+            if (notes.length > 0) {
+              notesMap[task.id] = notes;
+            }
+          } catch (error) {
+            console.warn(`Failed to load notes for task ${task.id}:`, error);
+          }
+        })
+      );
+
+      setTaskNotes(notesMap);
+    };
+
+    loadTaskNotes();
+  }, [tasks, user]);
 
   // Normalize tasks by ID for stable references
   const normalizedTasks = useMemo(() => {
@@ -137,7 +173,16 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                 .join(" ")
                 .toLowerCase();
 
-              return searchTerms.every((term) => searchableText.includes(term));
+              // Also search in task notes if they exist
+              const taskNotesText =
+                taskNotes[task.id]
+                  ?.map((note) => note.content)
+                  .join(" ")
+                  .toLowerCase() || "";
+
+              const fullSearchText = `${searchableText} ${taskNotesText}`;
+
+              return searchTerms.every((term) => fullSearchText.includes(term));
             } catch (error) {
               console.error("Error filtering task:", task, error);
               return false;
@@ -228,7 +273,7 @@ const Search = ({ tasks, onClose }: SearchProps) => {
         return [];
       }
     },
-    [filterBy, sortBy]
+    [filterBy, sortBy, taskNotes]
   );
 
   // Memoized search results with error handling
@@ -358,13 +403,24 @@ const Search = ({ tasks, onClose }: SearchProps) => {
     }
   };
 
+  const handleTaskClick = (task: Task) => {
+    onClose();
+    navigate(`/task/${task.id}`);
+  };
+
+  const handleNotesClick = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+    navigate(`/notes?taskId=${task.id}`);
+  };
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+        className="fixed inset-0 bg-[#FAF8F6]/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -383,7 +439,7 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                   <Input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search tasks by title, description, section, or tags..."
+                    placeholder="Search tasks, descriptions, tags, and notes..."
                     value={searchQuery}
                     onChange={handleSearchChange}
                     className="pl-10 h-12 text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-muted/50"
@@ -480,7 +536,7 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                     Retry
                   </Button>
                 </motion.div>
-              ) : searchResults && searchResults.length > 0 ? (
+              ) : searchResults.length > 0 ? (
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                     <span>
@@ -512,7 +568,8 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
-                        className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => handleTaskClick(task)}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-2 flex-1">
@@ -541,6 +598,31 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
+                              {taskNotes[task.id] &&
+                                taskNotes[task.id].length > 0 && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge
+                                          variant="secondary"
+                                          className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                                          onClick={(e) =>
+                                            handleNotesClick(task, e)
+                                          }
+                                        >
+                                          <StickyNote className="h-3 w-3 mr-1" />
+                                          {taskNotes[task.id].length} note
+                                          {taskNotes[task.id].length !== 1
+                                            ? "s"
+                                            : ""}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Click to view notes for this task</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                             </div>
                             {task.description && (
                               <p
@@ -553,6 +635,38 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                                 {task.description}
                               </p>
                             )}
+
+                            {/* Show note preview if searched in notes */}
+                            {searchQuery &&
+                              taskNotes[task.id] &&
+                              taskNotes[task.id].length > 0 && (
+                                <div className="mt-2">
+                                  {taskNotes[task.id]
+                                    .filter((note) =>
+                                      note.content
+                                        .toLowerCase()
+                                        .includes(searchQuery.toLowerCase())
+                                    )
+                                    .slice(0, 1)
+                                    .map((note) => (
+                                      <div
+                                        key={note.id}
+                                        className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800"
+                                      >
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <FileText className="h-3 w-3 text-blue-600" />
+                                          <span className="text-xs font-medium text-blue-600">
+                                            Note match
+                                          </span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                                          {note.content}
+                                        </p>
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 className={getPriorityColor(task.priority)}
@@ -562,14 +676,6 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                               <Badge className={getSectionColor(task.section)}>
                                 {task.section}
                               </Badge>
-                              {task.completed && (
-                                <Badge
-                                  variant="default"
-                                  className="bg-green-500/10 text-green-600 border-green-200"
-                                >
-                                  ✓ Completed
-                                </Badge>
-                              )}
                               {task.tags?.map((tag) => (
                                 <Badge key={tag} variant="secondary">
                                   <Tag className="h-3 w-3 mr-1" />
@@ -578,46 +684,42 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                               ))}
                             </div>
                           </div>
-                          <div className="text-right space-y-2 min-w-[200px]">
-                            {task.completed && task.completedAt && (
-                              <Badge
-                                variant="outline"
-                                className="mb-2 bg-green-50 text-green-700 border-green-200"
-                              >
-                                Completed:{" "}
-                                {safeFormatDate(
-                                  task.completedAt,
-                                  "MMM d, h:mm a"
-                                )}
-                              </Badge>
-                            )}
-                            {task.dueDate && (
-                              <Badge variant="outline" className="mb-2">
-                                Due: {getDueDateStatus(task.dueDate)}
-                              </Badge>
-                            )}
-                            <div className="text-xs text-muted-foreground space-y-1">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>
-                                  Created: {safeFormatDate(task.createdAt)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  Modified: {safeFormatDate(task.lastModified)}
-                                </span>
-                              </div>
-                              {task.completedAt && (
+                          <div className="text-right space-y-1 min-w-[180px]">
+                            <div className="flex flex-col gap-1">
+                              <div className="text-xs text-muted-foreground flex flex-col items-end gap-0.5">
                                 <div className="flex items-center gap-1">
-                                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                  <span className="text-green-600 font-medium">
-                                    Completed:{" "}
-                                    {safeFormatDate(task.completedAt)}
+                                  <Clock className="h-3 w-3" />
+                                  <span>
+                                    Created{" "}
+                                    {safeFormatDate(
+                                      task.createdAt,
+                                      "MMM d, h:mm a"
+                                    )}
                                   </span>
                                 </div>
-                              )}
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>
+                                    Modified{" "}
+                                    {safeFormatDate(
+                                      task.lastModified,
+                                      "MMM d, h:mm a"
+                                    )}
+                                  </span>
+                                </div>
+                                {task.completed && task.completedAt && (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                    <span className="text-green-600 font-medium">
+                                      Completed{" "}
+                                      {safeFormatDate(
+                                        task.completedAt,
+                                        "MMM d, h:mm a"
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

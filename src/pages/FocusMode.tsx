@@ -158,7 +158,7 @@ const FocusMode = () => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#FAF8F6] dark:bg-gray-900 z-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">
@@ -171,7 +171,7 @@ const FocusMode = () => {
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#FAF8F6] dark:bg-gray-900 z-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">{error}</p>
           <button

@@ -106,8 +106,8 @@ const shortcuts: ShortcutDisplay[] = [
     description: "Postpone Task to Tomorrow",
     category: "focus",
     keys: {
-      mac: ["meta", "→"],
-      windows: ["ctrl", "→"],
+      mac: ["meta", "shift", "→"],
+      windows: ["ctrl", "shift", "→"],
     },
   },
   {
@@ -137,6 +137,15 @@ const shortcuts: ShortcutDisplay[] = [
     keys: {
       mac: ["meta", "j"],
       windows: ["ctrl", "j"],
+    },
+  },
+  {
+    id: "quick-note",
+    description: "Take a Quick Note",
+    category: "tasks",
+    keys: {
+      mac: ["meta", "ctrl", "n"],
+      windows: ["ctrl", "alt", "n"],
     },
   },
   {

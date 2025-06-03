@@ -3,12 +3,23 @@ import { toast } from "sonner";
 
 export type ShortcutAction =
   | "add-task"
+  | "quick-note"
   | "focus-mode"
   | "toggle-theme"
   | "search"
   | "clear-completed"
   | "show-shortcuts"
-  | "escape";
+  | "notes"
+  | "escape"
+  | "next-task"
+  | "previous-task"
+  | "toggle-focus-lock"
+  | "complete-task"
+  | "complete-task-alt"
+  | "toggle-pomodoro"
+  | "snooze-task"
+  | "postpone-task"
+  | "exit-focus";
 
 export interface KeyboardShortcut {
   id: ShortcutAction;
@@ -203,13 +214,24 @@ export const useModalShortcuts = (isOpen: boolean) => {
 // Helper functions
 const getDefaultPriority = (id: ShortcutAction): number => {
   const priorities: Record<ShortcutAction, number> = {
-    escape: 100, // Highest priority
-    "toggle-theme": 90, // High priority global actions
-    "show-shortcuts": 90,
-    search: 80, // High priority task actions
-    "add-task": 80,
-    "focus-mode": 70, // Medium priority navigation
-    "clear-completed": 60, // Lower priority task actions
+    escape: 100,
+    "toggle-theme": 90,
+    "show-shortcuts": 85,
+    search: 80,
+    "add-task": 75,
+    "quick-note": 75,
+    "focus-mode": 70,
+    notes: 65,
+    "clear-completed": 60,
+    "next-task": 80,
+    "previous-task": 80,
+    "toggle-focus-lock": 90,
+    "complete-task": 85,
+    "complete-task-alt": 85,
+    "toggle-pomodoro": 75,
+    "snooze-task": 80,
+    "postpone-task": 80,
+    "exit-focus": 70,
   };
   return priorities[id] || 50;
 };
@@ -221,6 +243,7 @@ const isGlobalShortcut = (id: ShortcutAction): boolean => {
     "show-shortcuts",
     "search",
     "add-task",
+    "quick-note",
   ];
   return globalShortcuts.includes(id);
 };

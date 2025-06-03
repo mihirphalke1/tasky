@@ -9,7 +9,14 @@ import {
   Flag,
 } from "lucide-react";
 import { Badge } from "./ui/badge";
-import { isToday, isTomorrow, isPast, format, isThisWeek } from "date-fns";
+import {
+  isToday,
+  isTomorrow,
+  isPast,
+  format,
+  isThisWeek,
+  isAfter,
+} from "date-fns";
 import { isOverdue } from "@/utils/taskUtils";
 
 interface PendingTasksSectionProps {
@@ -23,9 +30,19 @@ const PendingTasksSection = ({
   onUpdateTask,
   onDeleteTask,
 }: PendingTasksSectionProps) => {
-  // Filter to get only incomplete tasks with due dates
+  // Filter to get only incomplete tasks with due dates, excluding snoozed tasks
   const pendingTasks = tasks
-    .filter((task) => !task.completed && task.dueDate)
+    .filter((task) => {
+      // Must be incomplete and have a due date
+      if (task.completed || !task.dueDate) return false;
+
+      // Exclude tasks that are still snoozed
+      if (task.snoozedUntil && isAfter(task.snoozedUntil, new Date())) {
+        return false;
+      }
+
+      return true;
+    })
     .sort((a, b) => {
       // Sort by priority first, then by due date
       const priorityOrder = { high: 0, medium: 1, low: 2 };

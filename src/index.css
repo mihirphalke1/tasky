@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -94,7 +94,13 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: "Space Grotesk", "Inter", sans-serif;
+    --tw-bg-opacity: 1;
+    background: linear-gradient(to bottom, #faf8f6 0%, #efe7dd 100%);
+  }
+
+  .dark body {
+    background: linear-gradient(to bottom, #18181b 0%, #23272e 100%);
   }
 }
 
@@ -175,4 +181,19 @@
 /* Add a premium-feeling hover glow for buttons */
 .hover-gold-glow:hover {
   box-shadow: 0 0 15px rgba(205, 163, 81, 0.3);
+}
+
+/* Line clamp utility for text truncation */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import TaskItem from "./TaskItem";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { getSectionFromDate } from "@/utils/taskUtils";
+import { isAfter } from "date-fns";
 
 interface TaskSectionProps {
   title: string;
@@ -24,29 +25,39 @@ const TaskSection = ({
   // Priority order for sorting (high first, then medium, then low)
   const priorityOrder = { high: 0, medium: 1, low: 2 };
 
+  // Filter out snoozed tasks that haven't reached their snooze time yet
+  const filterActiveTasks = (taskList: Task[]) => {
+    return taskList.filter((task) => {
+      // Exclude tasks that are still snoozed
+      if (task.snoozedUntil && isAfter(task.snoozedUntil, new Date())) {
+        return false;
+      }
+      return true;
+    });
+  };
+
   // Only use getSectionFromDate for incomplete tasks and sort by priority
-  const incompleteTasks = tasks
-    .filter(
+  const incompleteTasks = filterActiveTasks(
+    tasks.filter(
       (task) => !task.completed && getSectionFromDate(task.dueDate) === section
     )
-    .sort((a, b) => {
-      // First sort by priority
-      const priorityDiff =
-        priorityOrder[a.priority] - priorityOrder[b.priority];
-      if (priorityDiff !== 0) return priorityDiff;
+  ).sort((a, b) => {
+    // First sort by priority
+    const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+    if (priorityDiff !== 0) return priorityDiff;
 
-      // Then sort by lastModified (most recent first)
-      return b.lastModified.getTime() - a.lastModified.getTime();
-    });
+    // Then sort by lastModified (most recent first)
+    return b.lastModified.getTime() - a.lastModified.getTime();
+  });
 
-  const completedTasks = tasks
-    .filter(
+  const completedTasks = filterActiveTasks(
+    tasks.filter(
       (task) => task.completed && getSectionFromDate(task.dueDate) === section
     )
-    .sort((a, b) => {
-      // For completed tasks, sort by completion time (most recent first)
-      return b.lastModified.getTime() - a.lastModified.getTime();
-    });
+  ).sort((a, b) => {
+    // For completed tasks, sort by completion time (most recent first)
+    return b.lastModified.getTime() - a.lastModified.getTime();
+  });
 
   return (
     <div className="mb-8">

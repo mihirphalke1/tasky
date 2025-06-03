@@ -218,52 +218,29 @@ export const updateTask = async (
       const taskRef = doc(db, "tasks", taskId);
       const now = new Date();
 
-      // Get current task data to ensure we don't lose any fields
-      const currentSnapshot = await getDoc(taskRef);
-      if (!currentSnapshot.exists()) {
-        throw new Error("Task not found");
-      }
-      const currentData = currentSnapshot.data();
-
-      // Convert all date fields to Firestore Timestamps
-      const updateData = {
+      // Ensure all fields are properly formatted for Firestore
+      const taskData = {
         ...task,
         lastModified: Timestamp.fromDate(now),
         dueDate: task.dueDate
           ? Timestamp.fromDate(new Date(task.dueDate))
-          : currentData.dueDate,
+          : null,
         snoozedUntil: task.snoozedUntil
           ? Timestamp.fromDate(new Date(task.snoozedUntil))
-          : currentData.snoozedUntil,
-        completedAt: task.completedAt
-          ? Timestamp.fromDate(new Date(task.completedAt))
-          : task.completedAt === null
-          ? null
-          : currentData.completedAt,
-        // Ensure arrays and other fields are properly formatted
-        tags: Array.isArray(task.tags) ? task.tags : currentData.tags,
-        completed:
-          typeof task.completed === "boolean"
-            ? task.completed
-            : currentData.completed,
-        priority: task.priority || currentData.priority,
-        section: task.section || currentData.section,
+          : null,
+        completedAt: task.completed ? Timestamp.fromDate(now) : null,
       };
-
-      // Remove undefined fields to prevent overwriting
-      Object.keys(updateData).forEach(
-        (key) => updateData[key] === undefined && delete updateData[key]
-      );
 
       // Log the exact data being written to Firestore
       console.log(
-        "Updating task data in Firestore:",
-        JSON.stringify(updateData, null, 2)
+        "Updating task in Firestore:",
+        JSON.stringify(taskData, null, 2)
       );
 
-      await updateDoc(taskRef, updateData);
+      await updateDoc(taskRef, taskData);
+      console.log("Task updated successfully");
 
-      // Verify the update
+      // Verify the task was updated
       const verifySnapshot = await getDoc(taskRef);
       if (!verifySnapshot.exists()) {
         if (retryCount === maxRetries - 1) {
@@ -274,22 +251,18 @@ export const updateTask = async (
         continue;
       }
 
-      console.log("Task updated successfully");
       return;
-    } catch (error: any) {
-      console.error(
-        "Error updating task (attempt",
-        retryCount + 1,
-        "):",
-        error
-      );
+    } catch (error) {
       if (retryCount === maxRetries - 1) {
-        throw new Error("Failed to update task after multiple attempts");
+        console.error("Error updating task after maximum retries:", error);
+        throw new Error("Failed to update task in Firestore");
       }
       retryCount++;
       await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount));
     }
   }
+
+  throw new Error("Failed to update task after maximum retries");
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {
@@ -329,6 +302,43 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   }
 
   throw new Error("Failed to delete task after maximum retries");
+};
+
+export const getTaskById = async (taskId: string): Promise<Task | null> => {
+  if (!taskId) {
+    throw new Error("Task ID is required to get task");
+  }
+
+  try {
+    const taskRef = doc(db, "tasks", taskId);
+    const snapshot = await getDoc(taskRef);
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    const data = snapshot.data();
+    return {
+      ...data,
+      id: snapshot.id,
+      userId: data.userId,
+      title: data.title || "",
+      description: data.description || null,
+      completed: Boolean(data.completed),
+      createdAt: data.createdAt?.toDate() || new Date(),
+      lastModified: data.lastModified?.toDate() || new Date(),
+      dueDate: data.dueDate?.toDate() || null,
+      snoozedUntil: data.snoozedUntil?.toDate() || null,
+      completedAt: data.completedAt?.toDate() || null,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      priority: data.priority || "medium",
+      section: data.section || "today",
+      hidden: Boolean(data.hidden),
+    } as Task;
+  } catch (error) {
+    console.error("Error getting task by ID:", error);
+    throw new Error("Failed to get task from Firestore");
+  }
 };
 
 export const clearCompletedTasks = async (userId: string): Promise<void> => {
@@ -387,106 +397,186 @@ export const subscribeToTasks = (
 
   try {
     const tasksRef = collection(db, "tasks");
-
-    // First try the optimized query with index
     const q = query(
       tasksRef,
       where("userId", "==", userId),
       orderBy("lastModified", "desc")
     );
 
-    // Set up real-time listener with error handling
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        console.log("Tasks updated in Firestore:", querySnapshot.docs.length);
+        try {
+          const tasks = querySnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              ...data,
+              id: doc.id,
+              userId: data.userId || userId,
+              title: data.title || "",
+              description: data.description || null,
+              completed: Boolean(data.completed),
+              createdAt: data.createdAt?.toDate() || new Date(),
+              lastModified: data.lastModified?.toDate() || new Date(),
+              dueDate: data.dueDate?.toDate() || null,
+              snoozedUntil: data.snoozedUntil?.toDate() || null,
+              completedAt: data.completedAt?.toDate() || null,
+              tags: Array.isArray(data.tags) ? data.tags : [],
+              priority: data.priority || "medium",
+              section: data.section || "today",
+              hidden: Boolean(data.hidden),
+            } as Task;
+          });
 
-        const tasks = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            ...data,
-            id: doc.id,
-            userId: data.userId || userId,
-            title: data.title || "",
-            description: data.description || null,
-            completed: Boolean(data.completed),
-            createdAt: data.createdAt?.toDate() || new Date(),
-            lastModified: data.lastModified?.toDate() || new Date(),
-            dueDate: data.dueDate?.toDate() || null,
-            snoozedUntil: data.snoozedUntil?.toDate() || null,
-            completedAt: data.completedAt?.toDate() || null,
-            tags: Array.isArray(data.tags) ? data.tags : [],
-            priority: data.priority || "medium",
-            section: data.section || "today",
-            hidden: Boolean(data.hidden),
-          } as Task;
-        });
-
-        // Sort tasks by lastModified
-        const sortedTasks = tasks.sort(
-          (a, b) => b.lastModified.getTime() - a.lastModified.getTime()
-        );
-
-        console.log("Emitting updated tasks:", sortedTasks);
-        onTasksUpdate(sortedTasks);
-      },
-      (error: any) => {
-        console.error("Error in tasks subscription:", error);
-
-        // If the error is due to missing index, fall back to a simpler query
-        if (error.message?.includes("requires an index")) {
-          console.warn("Falling back to simple query without ordering");
-          const fallbackQuery = query(tasksRef, where("userId", "==", userId));
-
-          // Set up fallback listener
-          const fallbackUnsubscribe = onSnapshot(
-            fallbackQuery,
-            (querySnapshot) => {
-              const tasks = querySnapshot.docs.map((doc) => {
-                const data = doc.data();
-                return {
-                  ...data,
-                  id: doc.id,
-                  userId: data.userId || userId,
-                  title: data.title || "",
-                  description: data.description || null,
-                  completed: Boolean(data.completed),
-                  createdAt: data.createdAt?.toDate() || new Date(),
-                  lastModified: data.lastModified?.toDate() || new Date(),
-                  dueDate: data.dueDate?.toDate() || null,
-                  snoozedUntil: data.snoozedUntil?.toDate() || null,
-                  completedAt: data.completedAt?.toDate() || null,
-                  tags: Array.isArray(data.tags) ? data.tags : [],
-                  priority: data.priority || "medium",
-                  section: data.section || "today",
-                  hidden: Boolean(data.hidden),
-                } as Task;
-              });
-
-              // Sort tasks in memory
-              const sortedTasks = tasks.sort(
-                (a, b) => b.lastModified.getTime() - a.lastModified.getTime()
-              );
-
-              onTasksUpdate(sortedTasks);
-            },
-            (fallbackError) => {
-              console.error("Error in fallback subscription:", fallbackError);
-              onError(fallbackError);
-            }
+          // Sort tasks by lastModified to ensure consistent order
+          const sortedTasks = tasks.sort(
+            (a, b) => b.lastModified.getTime() - a.lastModified.getTime()
           );
 
-          return fallbackUnsubscribe;
+          console.log("Tasks updated:", sortedTasks.length);
+          onTasksUpdate(sortedTasks);
+        } catch (error) {
+          console.error("Error processing task snapshot:", error);
+          onError(new Error("Failed to process task updates"));
         }
-
-        onError(error);
+      },
+      (error) => {
+        console.error("Error in task subscription:", error);
+        onError(new Error("Failed to subscribe to tasks"));
       }
     );
 
     return unsubscribe;
-  } catch (error: any) {
-    console.error("Error setting up tasks subscription:", error);
-    onError(error);
+  } catch (error) {
+    console.error("Error setting up task subscription:", error);
+    onError(new Error("Failed to set up task subscription"));
     return () => {};
+  }
+};
+
+export interface FocusSession {
+  id: string;
+  taskId: string;
+  userId: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+  intention?: string;
+  notes?: string[];
+  completedPomodoros: number;
+  backgroundImage?: string;
+}
+
+export const saveTaskIntention = async (
+  taskId: string,
+  intention: string,
+  timestamp: Date
+): Promise<void> => {
+  if (!taskId || !intention) {
+    throw new Error("Task ID and intention are required");
+  }
+
+  try {
+    const taskRef = doc(db, "tasks", taskId);
+    await updateDoc(taskRef, {
+      intention,
+      intentionSetAt: Timestamp.fromDate(timestamp),
+      lastModified: Timestamp.fromDate(timestamp),
+    });
+  } catch (error) {
+    console.error("Error saving task intention:", error);
+    throw new Error("Failed to save task intention");
+  }
+};
+
+export const createFocusSession = async (
+  userId: string,
+  taskId: string,
+  intention?: string,
+  backgroundImage?: string
+): Promise<string> => {
+  if (!userId || !taskId) {
+    throw new Error("User ID and task ID are required");
+  }
+
+  try {
+    const sessionsRef = collection(db, "focusSessions");
+    const now = new Date();
+
+    const sessionData = {
+      userId,
+      taskId,
+      startTime: Timestamp.fromDate(now),
+      intention: intention || null,
+      completedPomodoros: 0,
+      backgroundImage: backgroundImage || null,
+    };
+
+    const docRef = await addDoc(sessionsRef, sessionData);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error creating focus session:", error);
+    throw new Error("Failed to create focus session");
+  }
+};
+
+export const endFocusSession = async (
+  sessionId: string,
+  duration: number,
+  notes: string[],
+  completedPomodoros: number
+): Promise<void> => {
+  if (!sessionId) {
+    throw new Error("Session ID is required");
+  }
+
+  try {
+    const sessionRef = doc(db, "focusSessions", sessionId);
+    const now = new Date();
+
+    await updateDoc(sessionRef, {
+      endTime: Timestamp.fromDate(now),
+      duration,
+      notes,
+      completedPomodoros,
+      lastModified: Timestamp.fromDate(now),
+    });
+  } catch (error) {
+    console.error("Error ending focus session:", error);
+    throw new Error("Failed to end focus session");
+  }
+};
+
+export const getFocusSession = async (
+  sessionId: string
+): Promise<FocusSession> => {
+  if (!sessionId) {
+    throw new Error("Session ID is required");
+  }
+
+  try {
+    const sessionRef = doc(db, "focusSessions", sessionId);
+    const snapshot = await getDoc(sessionRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Focus session not found");
+    }
+
+    const data = snapshot.data();
+    return {
+      id: snapshot.id,
+      taskId: data.taskId,
+      userId: data.userId,
+      startTime: data.startTime.toDate(),
+      endTime: data.endTime?.toDate(),
+      duration: data.duration,
+      intention: data.intention,
+      notes: data.notes,
+      completedPomodoros: data.completedPomodoros,
+      backgroundImage: data.backgroundImage,
+    };
+  } catch (error) {
+    console.error("Error getting focus session:", error);
+    throw new Error("Failed to get focus session");
   }
 };

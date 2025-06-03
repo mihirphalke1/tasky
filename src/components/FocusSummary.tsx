@@ -53,7 +53,7 @@ export function FocusSummary({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-[#FAF8F6]/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center"
     >
       <Card className="w-full max-w-lg p-6">
         <h2 className="text-2xl font-bold mb-2 text-center">

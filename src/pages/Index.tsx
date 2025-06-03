@@ -17,6 +17,7 @@ import PendingTasksSection from "@/components/PendingTasksSection";
 import NavBar from "@/components/NavBar";
 import Search from "@/components/Search";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { QuickNoteButton } from "@/components/QuickNoteButton";
 import { Task, TaskSection as TaskSectionType } from "@/types";
 import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
@@ -50,7 +51,17 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showQuickNote, setShowQuickNote] = useState(false);
   const taskInputRef = useRef<TaskInputRef>(null);
+
+  // Function to trigger quick note
+  const openQuickNote = () => {
+    setShowQuickNote(true);
+    toast.success("Quick Note", {
+      description: "Opening quick note dialog",
+      duration: 1500,
+    });
+  };
 
   // Filter tasks for dashboard (exclude hidden tasks)
   const dashboardTasks = tasks.filter((task) => !task.hidden);
@@ -77,6 +88,20 @@ const Index = () => {
       },
       priority: 80,
       allowInModal: true, // Allow even when modals are open
+    },
+    {
+      id: "quick-note",
+      description: "Take a Quick Note",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "ctrl", "n"],
+        windows: ["ctrl", "alt", "n"],
+      },
+      action: () => {
+        openQuickNote();
+      },
+      priority: 80,
+      allowInModal: true,
     },
     {
       id: "focus-mode",
@@ -134,6 +159,28 @@ const Index = () => {
         });
       },
       priority: 80,
+      allowInModal: true,
+    },
+    {
+      id: "notes",
+      description: "View Notes",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "shift", "n"],
+        windows: ["ctrl", "shift", "n"],
+      },
+      action: () => {
+        // Close search modal if open
+        if (showSearch) {
+          setShowSearch(false);
+        }
+        navigate("/notes");
+        toast.success("Notes", {
+          description: "View your notes",
+          duration: 1500,
+        });
+      },
+      priority: 70,
       allowInModal: true,
     },
     {
@@ -419,7 +466,7 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-[#CDA351]">Loading tasks...</div>
       </div>
     );
@@ -427,7 +474,7 @@ const Index = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
           <Button
@@ -445,7 +492,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900">
       <NavBar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-8">
@@ -495,6 +542,16 @@ const Index = () => {
       {showSearch && (
         <Search tasks={allTasks} onClose={() => setShowSearch(false)} />
       )}
+
+      {/* Global Quick Note Button */}
+      <QuickNoteButton
+        open={showQuickNote}
+        onOpenChange={setShowQuickNote}
+        currentTaskId={undefined}
+        currentTaskTitle={undefined}
+        size="icon"
+        className="fixed bottom-6 right-6 z-40"
+      />
 
       <PWAInstallPrompt />
     </div>
