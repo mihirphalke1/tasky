@@ -4,32 +4,19 @@ Tasky is a sleek, modern task management application built with React, TypeScrip
 
 ## ✨ Features
 
-- **Real-time Task Management**
-
-  - Instant task creation and updates
-  - Real-time synchronization across devices
-  - Optimistic UI updates for smooth interactions
-
-- **Smart Task Organization**
-
-  - Dynamic task sections (Today, Tomorrow, Upcoming, Someday)
-  - Priority levels with visual indicators
-  - Custom tags for better categorization
-  - Due date management with calendar integration
-
-- **Beautiful UI/UX**
-
-  - Responsive design that works on all devices
-  - Smooth animations and transitions
-  - Dark mode with gold accents
-  - Dynamic time-based greetings
-  - Interactive task cards with hover effects
-
-- **Task Statistics**
-  - Real-time task overview
-  - Daily completion tracking
-  - Visual progress indicators
-  - Archived tasks view
+- **Task Management**: Create, edit, delete, and organize your tasks
+- **Smart Sections**: Tasks automatically organized into Today, Tomorrow, Upcoming, and Someday
+- **Pending Tasks Dashboard**: Comprehensive overview of tasks with due dates, highlighting overdue and urgent items
+- **Priority System**: Set task priorities (High, Medium, Low)
+- **Due Dates**: Set and track due dates with visual indicators
+- **Tags**: Organize tasks with custom tags
+- **Real-time Sync**: All changes sync in real-time across devices
+- **Drag & Drop**: Easily move tasks between sections
+- **Search & Filter**: Powerful search functionality with filters
+- **Keyboard Shortcuts**: Efficient keyboard navigation
+- **Dark/Light Mode**: Theme support with system preference detection
+- **Responsive Design**: Works perfectly on desktop and mobile
+- **Offline Support**: Works offline with automatic sync when online
 
 ## 🛠️ Tech Stack
 

@@ -5,17 +5,81 @@ import { subscribeToTasks, updateTask } from "@/lib/taskService";
 import { Task } from "@/types";
 import { FocusMode as FocusModeComponent } from "@/components/FocusMode";
 import { toast } from "sonner";
-import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
+import {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+} from "@/hooks/useKeyboardShortcuts";
 
 const FocusMode = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exitIntentDetected, setExitIntentDetected] = useState(false);
+  const [focusLockEnabled, setFocusLockEnabled] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Add keyboard shortcut to exit Focus Mode
-  useKeyboardShortcut({ key: "Escape" }, () => navigate("/dashboard"));
+  // Filter out hidden tasks for focus mode
+  const visibleTasks = tasks.filter((task) => !task.hidden);
+
+  // Keyboard shortcuts for Focus Mode
+  const shortcuts: KeyboardShortcut[] = [
+    {
+      id: "escape",
+      description: "Exit Focus Mode",
+      category: "navigation",
+      keys: {
+        mac: ["escape"],
+        windows: ["escape"],
+      },
+      action: () => {
+        // Check focus lock first
+        if (focusLockEnabled) {
+          toast.error("Focus Lock is active", {
+            description: "Please disable Focus Lock before exiting.",
+            duration: 3000,
+          });
+          return;
+        }
+
+        if (exitIntentDetected) {
+          // Second exit intent - actually exit
+          navigate("/dashboard");
+          toast.success("Focus Mode", {
+            description: "Returning to dashboard",
+            duration: 1500,
+          });
+        } else {
+          // First exit intent
+          setExitIntentDetected(true);
+          toast.info("Press Escape again to exit Focus Mode", {
+            duration: 3000,
+          });
+          // Reset exit intent after 5 seconds
+          setTimeout(() => setExitIntentDetected(false), 5000);
+        }
+      },
+      priority: 100,
+      allowInModal: true,
+    },
+    {
+      id: "show-shortcuts",
+      description: "Show Keyboard Shortcuts",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "/"],
+        windows: ["ctrl", "/"],
+      },
+      action: () => {
+        navigate("/shortcuts");
+      },
+      priority: 90,
+      allowInModal: true,
+    },
+  ];
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts(shortcuts);
 
   useEffect(() => {
     if (!user) {
@@ -85,6 +149,13 @@ const FocusMode = () => {
     }
   };
 
+  const handleFocusLockChange = (locked: boolean) => {
+    setFocusLockEnabled(locked);
+    if (locked) {
+      setExitIntentDetected(false); // Reset exit intent when locked
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
@@ -114,7 +185,13 @@ const FocusMode = () => {
     );
   }
 
-  return <FocusModeComponent tasks={tasks} onTaskUpdate={handleTaskUpdate} />;
+  return (
+    <FocusModeComponent
+      tasks={visibleTasks}
+      onTaskUpdate={handleTaskUpdate}
+      onFocusLockChange={handleFocusLockChange}
+    />
+  );
 };
 
 export default FocusMode;

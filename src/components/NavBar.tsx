@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, Moon, Sun, User, Timer } from "lucide-react";
+import { LogOut, Moon, Sun, User, Timer, Keyboard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,14 +11,21 @@ import {
 import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { isDesktop } from "@/hooks/useKeyboardShortcuts";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  useEffect(() => {
+    setShowShortcuts(isDesktop());
+  }, []);
 
   return (
-    <nav className="w-full py-4 px-6 mb-4 flex items-center justify-between bg-white/80 backdrop-blur-sm border-b border-[#CDA351]/10 dark:bg-gray-900/80 dark:border-[#CDA351]/5">
+    <nav className="sticky top-0 z-50 w-full py-4 px-6 mb-4 flex items-center justify-between bg-white/95 backdrop-blur-md border-b border-[#CDA351]/10 dark:bg-gray-900/95 dark:border-[#CDA351]/5 shadow-sm">
       <div className="flex items-center">
         <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
           <span>T</span>
@@ -43,6 +50,18 @@ const NavBar = () => {
           <Timer className="mr-2 h-4 w-4" />
           Focus Mode
         </Button>
+
+        {showShortcuts && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/shortcuts")}
+            className="text-[#7E7E7E] hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-400 dark:hover:text-[#CDA351]"
+          >
+            <Keyboard className="mr-2 h-4 w-4" />
+            Shortcuts
+          </Button>
+        )}
 
         <Button
           variant="ghost"

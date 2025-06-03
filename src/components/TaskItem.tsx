@@ -64,10 +64,12 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
   const [tagInput, setTagInput] = useState("");
 
   const handleToggleComplete = () => {
+    const now = new Date();
     const updatedTask = {
       ...task,
       completed: !task.completed,
-      lastModified: new Date(),
+      lastModified: now,
+      completedAt: !task.completed ? now : null,
     };
     onUpdate(updatedTask);
   };

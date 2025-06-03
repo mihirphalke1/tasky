@@ -61,9 +61,11 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
         lastModified: data.lastModified?.toDate() || new Date(),
         dueDate: data.dueDate?.toDate() || null,
         snoozedUntil: data.snoozedUntil?.toDate() || null,
+        completedAt: data.completedAt?.toDate() || null,
         tags: Array.isArray(data.tags) ? data.tags : [],
         priority: data.priority || "medium",
         section: data.section || "today",
+        hidden: Boolean(data.hidden),
       } as Task;
       console.log("Processed task:", task);
       return task;
@@ -160,6 +162,7 @@ export const addTask = async (
         tags: Array.isArray(task.tags) ? task.tags : [],
         priority: task.priority || "medium",
         section: task.section || "today",
+        hidden: false, // New tasks are always visible
       };
 
       // Log the exact data being written to Firestore
@@ -232,6 +235,11 @@ export const updateTask = async (
         snoozedUntil: task.snoozedUntil
           ? Timestamp.fromDate(new Date(task.snoozedUntil))
           : currentData.snoozedUntil,
+        completedAt: task.completedAt
+          ? Timestamp.fromDate(new Date(task.completedAt))
+          : task.completedAt === null
+          ? null
+          : currentData.completedAt,
         // Ensure arrays and other fields are properly formatted
         tags: Array.isArray(task.tags) ? task.tags : currentData.tags,
         completed:
@@ -266,18 +274,22 @@ export const updateTask = async (
         continue;
       }
 
+      console.log("Task updated successfully");
       return;
-    } catch (error) {
+    } catch (error: any) {
+      console.error(
+        "Error updating task (attempt",
+        retryCount + 1,
+        "):",
+        error
+      );
       if (retryCount === maxRetries - 1) {
-        console.error("Error updating task after maximum retries:", error);
-        throw new Error("Failed to update task in Firestore");
+        throw new Error("Failed to update task after multiple attempts");
       }
       retryCount++;
       await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount));
     }
   }
-
-  throw new Error("Failed to update task after maximum retries");
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {
@@ -326,6 +338,7 @@ export const clearCompletedTasks = async (userId: string): Promise<void> => {
 
   try {
     const tasksRef = collection(db, "tasks");
+    // Simplified query to avoid composite index requirement
     const q = query(
       tasksRef,
       where("userId", "==", userId),
@@ -333,11 +346,31 @@ export const clearCompletedTasks = async (userId: string): Promise<void> => {
     );
 
     const querySnapshot = await getDocs(q);
-    const deletePromises = querySnapshot.docs.map((doc) => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
+
+    // Filter out already hidden tasks in memory
+    const tasksToHide = querySnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !Boolean(data.hidden); // Only process tasks that aren't already hidden
+    });
+
+    if (tasksToHide.length === 0) {
+      console.log("No completed tasks to hide");
+      return;
+    }
+
+    const updatePromises = tasksToHide.map((doc) => {
+      const taskRef = doc.ref;
+      return updateDoc(taskRef, {
+        hidden: true,
+        lastModified: serverTimestamp(),
+      });
+    });
+
+    await Promise.all(updatePromises);
+    console.log(`Hidden ${tasksToHide.length} completed tasks`);
   } catch (error) {
-    console.error("Error clearing completed tasks:", error);
-    throw new Error("Failed to clear completed tasks");
+    console.error("Error hiding completed tasks:", error);
+    throw new Error("Failed to hide completed tasks");
   }
 };
 
@@ -381,9 +414,11 @@ export const subscribeToTasks = (
             lastModified: data.lastModified?.toDate() || new Date(),
             dueDate: data.dueDate?.toDate() || null,
             snoozedUntil: data.snoozedUntil?.toDate() || null,
+            completedAt: data.completedAt?.toDate() || null,
             tags: Array.isArray(data.tags) ? data.tags : [],
             priority: data.priority || "medium",
             section: data.section || "today",
+            hidden: Boolean(data.hidden),
           } as Task;
         });
 
@@ -420,9 +455,11 @@ export const subscribeToTasks = (
                   lastModified: data.lastModified?.toDate() || new Date(),
                   dueDate: data.dueDate?.toDate() || null,
                   snoozedUntil: data.snoozedUntil?.toDate() || null,
+                  completedAt: data.completedAt?.toDate() || null,
                   tags: Array.isArray(data.tags) ? data.tags : [],
                   priority: data.priority || "medium",
                   section: data.section || "today",
+                  hidden: Boolean(data.hidden),
                 } as Task;
               });
 

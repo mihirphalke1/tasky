@@ -2,43 +2,190 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#CDA351" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#f59e0b" />
+    <meta name="background-color" content="#ffffff" />
+    <meta name="display" content="standalone" />
+    <meta name="orientation" content="portrait-primary" />
+
+    <!-- App Information -->
+    <title>Tasky - Focus Mode Task Manager</title>
     <meta
       name="description"
-      content="A focused space for your tasks, your pace, your flow."
+      content="A powerful task management app with focus mode, priority sorting, and productivity features. Works offline and installs on any device."
     />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192x192.png" />
-    <title>Tasky</title>
     <meta name="author" content="Mihir Phalke" />
+    <meta
+      name="keywords"
+      content="task management, productivity, focus mode, todo, GTD, offline, PWA"
+    />
 
-    <meta property="og:title" content="Tasky - Minimal Task Management" />
+    <!-- Icons and Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/icons/icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="/icons/icon-144x144.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/icons/icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="114x114"
+      href="/icons/icon-114x114.png"
+    />
+    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png" />
+
+    <!-- Apple-specific PWA meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Tasky" />
+
+    <!-- Microsoft Application Tiles -->
+    <meta name="msapplication-TileColor" content="#f59e0b" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- Additional PWA Features -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Tasky" />
+
+    <!-- Social Media / Open Graph -->
+    <meta property="og:title" content="Tasky - Focus Mode Task Manager" />
     <meta
       property="og:description"
-      content="A clean, minimalist task management app focused on simplicity"
+      content="A powerful task management app with focus mode, priority sorting, and productivity features"
     />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tasky.app" />
+    <meta property="og:image" content="/icons/icon-512x512.png" />
+    <meta property="og:site_name" content="Tasky" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Tasky - Focus Mode Task Manager" />
+    <meta
+      name="twitter:description"
+      content="A powerful task management app with focus mode, priority sorting, and productivity features"
+    />
+    <meta name="twitter:image" content="/icons/icon-512x512.png" />
+
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- No-JS Fallback -->
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: system-ui">
+        <h1>Tasky</h1>
+        <p>
+          This app requires JavaScript to be enabled. Please enable JavaScript
+          in your browser and refresh the page.
+        </p>
+      </div>
+    </noscript>
+
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Enhanced Service Worker Registration -->
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then((registration) => {
-              console.log("ServiceWorker registration successful");
-            })
-            .catch((err) => {
-              console.log("ServiceWorker registration failed: ", err);
+        window.addEventListener("load", async () => {
+          try {
+            const registration = await navigator.serviceWorker.register(
+              "/sw.js",
+              {
+                scope: "/",
+              }
+            );
+
+            console.log(
+              "ServiceWorker registration successful with scope: ",
+              registration.scope
+            );
+
+            // Handle service worker updates
+            registration.addEventListener("updatefound", () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    console.log("New service worker available");
+                    // You could show a notification to the user here
+                  }
+                });
+              }
             });
+
+            // Listen for service worker messages
+            navigator.serviceWorker.addEventListener("message", (event) => {
+              console.log("Message from service worker:", event.data);
+            });
+          } catch (err) {
+            console.log("ServiceWorker registration failed: ", err);
+          }
         });
       }
+
+      // Register for background sync if supported
+      if (
+        "serviceWorker" in navigator &&
+        "sync" in window.ServiceWorkerRegistration.prototype
+      ) {
+        console.log("Background sync supported");
+      }
+
+      // Handle offline/online events
+      window.addEventListener("online", () => {
+        console.log("App is back online");
+        if (
+          "serviceWorker" in navigator &&
+          "sync" in window.ServiceWorkerRegistration.prototype
+        ) {
+          navigator.serviceWorker.ready
+            .then((registration) => {
+              return registration.sync.register("task-sync");
+            })
+            .catch((err) => console.log("Background sync registration failed"));
+        }
+      });
+
+      window.addEventListener("offline", () => {
+        console.log("App is offline");
+      });
     </script>
   </body>
 </html>

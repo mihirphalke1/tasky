@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import Shortcuts from "./pages/Shortcuts";
 import { AuthProvider } from "./lib/AuthContext";
 import { useEffect } from "react";
 import { testFirebaseConnection } from "./lib/firebaseTest";
@@ -24,6 +25,7 @@ const AppContent = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/dashboard" element={<Index />} />
       <Route path="/focus" element={<FocusMode />} />
+      <Route path="/shortcuts" element={<Shortcuts />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

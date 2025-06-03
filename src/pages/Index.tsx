@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -10,10 +10,13 @@ import {
   subscribeToTasks,
 } from "@/lib/taskService";
 import Header from "@/components/Header";
-import TaskInput from "@/components/TaskInput";
+import TaskInput, { type TaskInputRef } from "@/components/TaskInput";
 import TaskSection from "@/components/TaskSection";
 import TaskOverview from "@/components/TaskOverview";
+import PendingTasksSection from "@/components/PendingTasksSection";
 import NavBar from "@/components/NavBar";
+import Search from "@/components/Search";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { Task, TaskSection as TaskSectionType } from "@/types";
 import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +28,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
-import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
+import {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+} from "@/hooks/useKeyboardShortcuts";
+import { useTheme } from "next-themes";
 import { getSectionFromDate } from "@/utils/taskUtils";
 
 const sections: { id: TaskSectionType; title: string }[] = [
@@ -36,16 +43,141 @@ const sections: { id: TaskSectionType; title: string }[] = [
 ];
 
 const Index = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [showSearch, setShowSearch] = useState(false);
+  const taskInputRef = useRef<TaskInputRef>(null);
 
-  // Add keyboard shortcut for Focus Mode
-  useKeyboardShortcut({ key: "f", ctrlKey: true, shiftKey: true }, () =>
-    navigate("/focus")
-  );
+  // Filter tasks for dashboard (exclude hidden tasks)
+  const dashboardTasks = tasks.filter((task) => !task.hidden);
+
+  // All tasks (including hidden) for search functionality
+  const allTasks = tasks;
+
+  // Keyboard shortcuts definitions
+  const shortcuts: KeyboardShortcut[] = [
+    {
+      id: "add-task",
+      description: "Add New Task",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "j"],
+        windows: ["ctrl", "j"],
+      },
+      action: () => {
+        taskInputRef.current?.focusInput();
+        toast.success("Add New Task", {
+          description: "Focus moved to task input",
+          duration: 1500,
+        });
+      },
+      priority: 80,
+      allowInModal: true, // Allow even when modals are open
+    },
+    {
+      id: "focus-mode",
+      description: "Enter Focus Mode",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "shift", "enter"],
+        windows: ["ctrl", "shift", "enter"],
+      },
+      action: () => {
+        // Close search modal if open
+        if (showSearch) {
+          setShowSearch(false);
+        }
+        navigate("/focus");
+        toast.success("Focus Mode", {
+          description: "Entering focus mode",
+          duration: 1500,
+        });
+      },
+      priority: 70,
+      allowInModal: true,
+    },
+    {
+      id: "show-shortcuts",
+      description: "Show Keyboard Shortcuts",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "/"],
+        windows: ["ctrl", "/"],
+      },
+      action: () => {
+        // Close search modal if open
+        if (showSearch) {
+          setShowSearch(false);
+        }
+        navigate("/shortcuts");
+      },
+      priority: 90,
+      allowInModal: true,
+    },
+    {
+      id: "search",
+      description: "Search Tasks",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "k"],
+        windows: ["ctrl", "k"],
+      },
+      action: () => {
+        setShowSearch(true);
+        toast.success("Search", {
+          description: "Search tasks",
+          duration: 1500,
+        });
+      },
+      priority: 80,
+      allowInModal: true,
+    },
+    {
+      id: "clear-completed",
+      description: "Hide Completed Tasks",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "shift", "backspace"],
+        windows: ["ctrl", "shift", "backspace"],
+      },
+      action: () => {
+        handleClearCompleted();
+        toast.success("Hide Completed", {
+          description: "Completed tasks hidden from dashboard",
+          duration: 1500,
+        });
+      },
+      priority: 60,
+      allowInModal: true,
+    },
+    {
+      id: "toggle-theme",
+      description: "Toggle Dark/Light Mode",
+      category: "general",
+      keys: {
+        mac: ["meta", "shift", "l"],
+        windows: ["ctrl", "shift", "l"],
+      },
+      action: () => {
+        const currentTheme = theme || "light"; // Default to light if theme is undefined
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        setTheme(newTheme);
+        toast.success("Theme Toggled", {
+          description: `Switched to ${newTheme} mode`,
+          duration: 1500,
+        });
+      },
+      priority: 90,
+      allowInModal: true, // Always allow theme toggle
+    },
+  ];
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts(shortcuts);
 
   // Set up real-time task subscription
   useEffect(() => {
@@ -133,6 +265,8 @@ const Index = () => {
       const taskWithTimestamp = {
         ...updatedTask,
         lastModified: now,
+        // Set completedAt when task is completed
+        completedAt: updatedTask.completed ? now : null,
         // Ensure section is always derived from due date
         section: getSectionFromDate(updatedTask.dueDate),
       };
@@ -174,12 +308,28 @@ const Index = () => {
     if (!user) return;
 
     try {
+      const completedCount = dashboardTasks.filter(
+        (task) => task.completed && !task.hidden
+      ).length;
+
+      if (completedCount === 0) {
+        toast.info("No completed tasks to hide");
+        return;
+      }
+
       await clearCompletedTasks(user.uid);
-      await getTasks(user.uid); // Reload tasks after clearing
-      toast.success("Completed tasks cleared");
+      toast.success(
+        `${completedCount} completed task${
+          completedCount === 1 ? "" : "s"
+        } hidden from dashboard`,
+        {
+          description: "Tasks are still accessible via search",
+          duration: 3000,
+        }
+      );
     } catch (error) {
-      console.error("Error clearing completed tasks:", error);
-      toast.error("Failed to clear completed tasks");
+      console.error("Error hiding completed tasks:", error);
+      toast.error("Failed to hide completed tasks");
     }
   };
 
@@ -268,7 +418,7 @@ const Index = () => {
       <NavBar />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-8">
-          <Header />
+          <Header onSearchClick={() => setShowSearch(true)} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -281,21 +431,27 @@ const Index = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleClearCompleted}>
-                Clear completed tasks
+                Hide completed tasks
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <TaskOverview tasks={tasks} />
-        <TaskInput onAddTask={handleAddTask} />
+        <TaskOverview tasks={dashboardTasks} />
+        <TaskInput onAddTask={handleAddTask} ref={taskInputRef} />
+
+        <PendingTasksSection
+          tasks={dashboardTasks}
+          onUpdateTask={handleUpdateTask}
+          onDeleteTask={handleDeleteTask}
+        />
 
         <div className="space-y-8">
           {sections.map((section) => (
             <TaskSection
               key={section.id}
               title={section.title}
-              tasks={tasks}
+              tasks={dashboardTasks}
               section={section.id}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
@@ -304,6 +460,12 @@ const Index = () => {
           ))}
         </div>
       </div>
+
+      {showSearch && (
+        <Search tasks={allTasks} onClose={() => setShowSearch(false)} />
+      )}
+
+      <PWAInstallPrompt />
     </div>
   );
 };

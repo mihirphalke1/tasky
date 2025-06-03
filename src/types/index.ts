@@ -10,6 +10,7 @@ export interface Task {
   title: string;
   description?: string;
   completed: boolean;
+  completedAt?: Date | null;
   createdAt: Date;
   dueDate?: Date | null;
   tags: string[];
@@ -17,4 +18,5 @@ export interface Task {
   section: TaskSection;
   snoozedUntil?: Date | null;
   lastModified: Date;
+  hidden?: boolean;
 }
