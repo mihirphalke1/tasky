@@ -743,7 +743,21 @@ const TaskDetailPage = () => {
     return () => clearTimeout(recoveryTimeout);
   }, [user?.uid, taskId, task, error, isLoading]);
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900">
+        <NavBar />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin" />
+              <p className="text-muted-foreground">Authenticating...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (authLoading || isLoading) {
     return (

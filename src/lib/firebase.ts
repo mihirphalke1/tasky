@@ -1,5 +1,10 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import {
   getFirestore,
   enableIndexedDbPersistence,
@@ -19,6 +24,21 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
+
+// Configure Google provider for better UX
+googleProvider.setCustomParameters({
+  prompt: "select_account",
+});
+
+// Enable persistent authentication - sessions will persist across browser restarts
+const initializeAuthPersistence = async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    console.log("Firebase Auth persistence enabled");
+  } catch (error) {
+    console.error("Error enabling Auth persistence:", error);
+  }
+};
 
 // Enable offline persistence for better data reliability
 let persistenceEnabled = false;
@@ -40,6 +60,7 @@ const initializePersistence = async () => {
 };
 
 // Initialize persistence
+initializeAuthPersistence();
 initializePersistence();
 
 export { persistenceEnabled };

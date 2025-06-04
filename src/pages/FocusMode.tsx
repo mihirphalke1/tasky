@@ -16,7 +16,7 @@ const FocusMode = () => {
   const [error, setError] = useState<string | null>(null);
   const [exitIntentDetected, setExitIntentDetected] = useState(false);
   const [focusLockEnabled, setFocusLockEnabled] = useState(false);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Filter out hidden tasks for focus mode
@@ -82,6 +82,11 @@ const FocusMode = () => {
   useKeyboardShortcuts(shortcuts);
 
   useEffect(() => {
+    // Wait for auth to complete before checking user
+    if (authLoading) {
+      return;
+    }
+
     if (!user) {
       navigate("/");
       return;
@@ -123,7 +128,7 @@ const FocusMode = () => {
         unsubscribe();
       }
     };
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
     try {
@@ -155,6 +160,17 @@ const FocusMode = () => {
       setExitIntentDetected(false); // Reset exit intent when locked
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-[#FAF8F6] dark:bg-gray-900 z-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

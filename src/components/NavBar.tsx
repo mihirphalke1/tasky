@@ -8,6 +8,9 @@ import {
   Keyboard,
   StickyNote,
   Home,
+  Shield,
+  Clock,
+  RefreshCw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -27,13 +30,22 @@ import {
   type KeyboardShortcut,
 } from "@/hooks/useKeyboardShortcuts";
 import StreakButton, { StreakButtonRef } from "./StreakButton";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, sessionDaysRemaining, extendUserSession } = useAuth();
   const navigate = useNavigate();
   const [showShortcuts, setShowShortcuts] = useState(isDesktop());
   const streakButtonRef = useRef<StreakButtonRef>(null);
+
+  // Check if session is near expiry (1 day or less)
+  const isSessionNearExpiry = sessionDaysRemaining <= 1;
 
   useEffect(() => {
     const desktopState = isDesktop();
@@ -195,16 +207,78 @@ const NavBar = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 shadow-xl border border-[#CDA351]/10"
+              className="w-64 shadow-xl border border-[#CDA351]/10"
             >
               <div className="flex items-center justify-start gap-2 p-3 bg-gradient-to-r from-[#CDA351]/5 to-transparent">
-                <div className="flex flex-col space-y-1 leading-none">
+                <div className="flex flex-col space-y-1 leading-none w-full">
                   <p className="font-semibold text-sm text-[#1A1A1A] dark:text-white">
                     {user?.displayName}
                   </p>
                   <p className="text-xs text-[#7E7E7E] dark:text-gray-400">
                     {user?.email}
                   </p>
+
+                  {/* Session Status */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Shield
+                        className={`h-3 w-3 ${
+                          isSessionNearExpiry
+                            ? "text-orange-600"
+                            : "text-green-600"
+                        }`}
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          isSessionNearExpiry
+                            ? "text-orange-600"
+                            : "text-green-600"
+                        }`}
+                      >
+                        {isSessionNearExpiry
+                          ? "Session Expiring"
+                          : "Session Active"}
+                      </span>
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs px-2 py-0.5 ${
+                            isSessionNearExpiry
+                              ? "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800"
+                              : "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                          }`}
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          {sessionDaysRemaining}d left
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Your session expires in {sessionDaysRemaining} days
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Activity automatically extends your session
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
+                  {/* Extend Session Button - Show when near expiry */}
+                  {isSessionNearExpiry && (
+                    <div className="mt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={extendUserSession}
+                        className="w-full text-xs h-7 border-[#CDA351] text-[#CDA351] hover:bg-[#CDA351] hover:text-white"
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Extend Session
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-[#CDA351]/10" />

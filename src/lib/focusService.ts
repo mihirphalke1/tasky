@@ -14,15 +14,19 @@ import {
   serverTimestamp,
   Timestamp,
   onSnapshot,
+  startAfter,
+  limit,
+  writeBatch,
 } from "firebase/firestore";
 import {
+  DailyStats,
+  Task,
   Note,
-  UserStreak,
-  TaskIntention,
   FocusSession,
+  TaskIntention,
   MotivationalQuote,
 } from "@/types";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, parseISO } from "date-fns";
 
 // Motivational quotes data
 const motivationalQuotes: MotivationalQuote[] = [
@@ -100,126 +104,133 @@ export const addNote = async (
   content: string,
   taskId?: string
 ): Promise<string> => {
-  if (!userId) {
-    throw new Error("User ID is required to add a note");
+  try {
+    const notesRef = collection(db, "notes");
+    const noteData = {
+      userId,
+      content,
+      taskId: taskId || null,
+      createdAt: Timestamp.fromDate(new Date()),
+    };
+
+    const docRef = await addDoc(notesRef, noteData);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding note:", error);
+    throw new Error("Failed to add note");
   }
-
-  if (!content.trim()) {
-    throw new Error("Note content cannot be empty");
-  }
-
-  const notesRef = collection(db, "notes");
-  const now = new Date();
-
-  const noteData = {
-    userId,
-    content: content.trim(),
-    taskId: taskId || null,
-    isGeneral: !taskId,
-    createdAt: Timestamp.fromDate(now),
-  };
-
-  const docRef = await addDoc(notesRef, noteData);
-  return docRef.id;
 };
 
 export const getNotes = async (userId: string): Promise<Note[]> => {
-  if (!userId) {
-    throw new Error("User ID is required to get notes");
+  try {
+    const notesRef = collection(db, "notes");
+    const q = query(
+      notesRef,
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        userId: data.userId,
+        content: data.content,
+        taskId: data.taskId,
+        isGeneral: !data.taskId,
+        createdAt: data.createdAt.toDate(),
+      } as Note;
+    });
+  } catch (error) {
+    console.error("Error getting notes:", error);
+    return [];
   }
-
-  const notesRef = collection(db, "notes");
-  const q = query(
-    notesRef,
-    where("userId", "==", userId),
-    orderBy("createdAt", "desc")
-  );
-
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      userId: data.userId,
-      content: data.content,
-      taskId: data.taskId,
-      isGeneral: data.isGeneral,
-      createdAt: data.createdAt.toDate(),
-    } as Note;
-  });
 };
 
 export const getNotesByTaskId = async (taskId: string): Promise<Note[]> => {
-  if (!taskId) {
-    throw new Error("Task ID is required to get notes");
+  try {
+    const notesRef = collection(db, "notes");
+    const q = query(
+      notesRef,
+      where("taskId", "==", taskId),
+      orderBy("createdAt", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        userId: data.userId,
+        content: data.content,
+        taskId: data.taskId,
+        isGeneral: false,
+        createdAt: data.createdAt.toDate(),
+      } as Note;
+    });
+  } catch (error) {
+    console.error("Error getting notes for task:", error);
+    return [];
   }
-
-  const notesRef = collection(db, "notes");
-  const q = query(
-    notesRef,
-    where("taskId", "==", taskId),
-    orderBy("createdAt", "desc")
-  );
-
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      userId: data.userId,
-      content: data.content,
-      taskId: data.taskId,
-      isGeneral: data.isGeneral,
-      createdAt: data.createdAt.toDate(),
-    } as Note;
-  });
 };
 
 export const getNotesWithTaskDetails = async (
   userId: string
 ): Promise<Array<Note & { task?: any }>> => {
-  if (!userId) {
-    throw new Error("User ID is required to get notes");
-  }
-
   try {
-    const notes = await getNotes(userId);
-
-    // For notes linked to tasks, fetch task details
-    const notesWithTasks = await Promise.all(
-      notes.map(async (note) => {
-        if (note.taskId) {
-          try {
-            // We'll import this dynamically to avoid circular imports
-            const { getTaskById } = await import("./taskService");
-            const task = await getTaskById(note.taskId);
-            return { ...note, task };
-          } catch (error) {
-            console.warn(
-              `Failed to fetch task details for note ${note.id}:`,
-              error
-            );
-            return { ...note, task: null };
-          }
-        }
-        return note;
-      })
+    const notesRef = collection(db, "notes");
+    const q = query(
+      notesRef,
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
     );
 
-    return notesWithTasks;
+    const querySnapshot = await getDocs(q);
+    const notes: Array<Note & { task?: any }> = [];
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      const note: Note & { task?: any } = {
+        id: doc.id,
+        userId: data.userId,
+        content: data.content,
+        taskId: data.taskId,
+        isGeneral: !data.taskId,
+        createdAt: data.createdAt.toDate(),
+      };
+
+      if (data.taskId) {
+        try {
+          const { getTaskById } = await import("./taskService");
+          note.task = await getTaskById(data.taskId);
+        } catch (error) {
+          console.warn(
+            `Failed to load task ${data.taskId} for note ${note.id}`
+          );
+          note.task = null;
+        }
+      }
+
+      notes.push(note);
+    }
+
+    return notes;
   } catch (error) {
     console.error("Error getting notes with task details:", error);
-    throw new Error("Failed to get notes with task details");
+    return [];
   }
 };
 
 export const deleteNote = async (noteId: string): Promise<void> => {
-  if (!noteId) {
-    throw new Error("Note ID is required to delete a note");
+  try {
+    await deleteDoc(doc(db, "notes", noteId));
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    throw new Error("Failed to delete note");
   }
-
-  const noteRef = doc(db, "notes", noteId);
-  await deleteDoc(noteRef);
 };
 
 // Task Intentions Service
@@ -228,147 +239,55 @@ export const saveTaskIntention = async (
   intention: string,
   sessionStartTime: Date
 ): Promise<string> => {
-  if (!taskId) {
-    throw new Error("Task ID is required to save intention");
+  try {
+    const intentionsRef = collection(db, "taskIntentions");
+    const intentionData = {
+      taskId,
+      intention,
+      sessionStartTime: Timestamp.fromDate(sessionStartTime),
+      createdAt: Timestamp.fromDate(new Date()),
+    };
+
+    const docRef = await addDoc(intentionsRef, intentionData);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error saving task intention:", error);
+    throw new Error("Failed to save task intention");
   }
-
-  if (!intention.trim()) {
-    throw new Error("Intention cannot be empty");
-  }
-
-  const intentionsRef = collection(db, "taskIntentions");
-  const now = new Date();
-
-  const intentionData = {
-    taskId,
-    intention: intention.trim(),
-    createdAt: Timestamp.fromDate(now),
-    sessionStartTime: Timestamp.fromDate(sessionStartTime),
-  };
-
-  const docRef = await addDoc(intentionsRef, intentionData);
-  return docRef.id;
 };
 
 export const getTaskIntention = async (
   taskId: string
 ): Promise<TaskIntention | null> => {
-  if (!taskId) {
-    return null;
-  }
+  try {
+    const intentionsRef = collection(db, "taskIntentions");
+    const q = query(
+      intentionsRef,
+      where("taskId", "==", taskId),
+      orderBy("createdAt", "desc"),
+      limit(1)
+    );
 
-  const intentionsRef = collection(db, "taskIntentions");
-  const q = query(
-    intentionsRef,
-    where("taskId", "==", taskId),
-    orderBy("createdAt", "desc")
-  );
+    const querySnapshot = await getDocs(q);
 
-  const querySnapshot = await getDocs(q);
-  if (querySnapshot.empty) {
-    return null;
-  }
-
-  const doc = querySnapshot.docs[0];
-  const data = doc.data();
-  return {
-    id: doc.id,
-    taskId: data.taskId,
-    intention: data.intention,
-    createdAt: data.createdAt.toDate(),
-    sessionStartTime: data.sessionStartTime.toDate(),
-  } as TaskIntention;
-};
-
-// User Streak Service
-export const getUserStreak = async (userId: string): Promise<UserStreak> => {
-  if (!userId) {
-    throw new Error("User ID is required to get streak");
-  }
-
-  const streakRef = doc(db, "userStreaks", userId);
-  const streakDoc = await getDoc(streakRef);
-
-  if (!streakDoc.exists()) {
-    // Initialize new streak
-    const initialStreak: UserStreak = {
-      userId,
-      currentStreak: 0,
-      longestStreak: 0,
-      lastActiveDay: "",
-      totalFocusSessions: 0,
-      lastUpdated: new Date(),
-    };
-
-    await setDoc(streakRef, {
-      ...initialStreak,
-      lastUpdated: Timestamp.fromDate(initialStreak.lastUpdated),
-    });
-
-    return initialStreak;
-  }
-
-  const data = streakDoc.data();
-  return {
-    userId: data.userId,
-    currentStreak: data.currentStreak || 0,
-    longestStreak: data.longestStreak || 0,
-    lastActiveDay: data.lastActiveDay || "",
-    totalFocusSessions: data.totalFocusSessions || 0,
-    lastUpdated: data.lastUpdated?.toDate() || new Date(),
-  } as UserStreak;
-};
-
-export const updateUserStreak = async (userId: string): Promise<UserStreak> => {
-  if (!userId) {
-    throw new Error("User ID is required to update streak");
-  }
-
-  const currentStreak = await getUserStreak(userId);
-  const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(
-    new Date(Date.now() - 24 * 60 * 60 * 1000),
-    "yyyy-MM-dd"
-  );
-
-  let newCurrentStreak = currentStreak.currentStreak;
-  let newLongestStreak = currentStreak.longestStreak;
-
-  // Check if this is the first session of the day
-  if (currentStreak.lastActiveDay !== today) {
-    if (currentStreak.lastActiveDay === yesterday) {
-      // Consecutive day - increment streak
-      newCurrentStreak += 1;
-    } else if (currentStreak.lastActiveDay === "") {
-      // First time user - start streak
-      newCurrentStreak = 1;
-    } else {
-      // Streak broken - reset to 1
-      newCurrentStreak = 1;
+    if (querySnapshot.empty) {
+      return null;
     }
 
-    // Update longest streak if necessary
-    if (newCurrentStreak > newLongestStreak) {
-      newLongestStreak = newCurrentStreak;
-    }
+    const doc = querySnapshot.docs[0];
+    const data = doc.data();
+
+    return {
+      id: doc.id,
+      taskId: data.taskId,
+      intention: data.intention,
+      sessionStartTime: data.sessionStartTime.toDate(),
+      createdAt: data.createdAt.toDate(),
+    } as TaskIntention;
+  } catch (error) {
+    console.error("Error getting task intention:", error);
+    return null;
   }
-
-  const updatedStreak: UserStreak = {
-    userId,
-    currentStreak: newCurrentStreak,
-    longestStreak: newLongestStreak,
-    lastActiveDay: today,
-    totalFocusSessions: currentStreak.totalFocusSessions + 1,
-    lastUpdated: new Date(),
-  };
-
-  const streakRef = doc(db, "userStreaks", userId);
-  await setDoc(streakRef, {
-    ...updatedStreak,
-    lastUpdated: Timestamp.fromDate(updatedStreak.lastUpdated),
-  });
-
-  return updatedStreak;
 };
 
 // Focus Session Service
@@ -453,6 +372,7 @@ export const endFocusSession = async (
         const { updateDailyStatsForDate } = await import("./streakService");
         const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
         await updateDailyStatsForDate(sessionData.userId, today);
+        console.log("Updated daily stats and streak after focus session");
       } catch (error) {
         console.warn("Failed to update daily stats:", error);
         // Don't throw here as the main focus session update was successful
@@ -515,7 +435,7 @@ export const getFocusSessionsByTaskId = async (
   taskId: string
 ): Promise<FocusSession[]> => {
   if (!userId || !taskId) {
-    throw new Error("User ID and Task ID are required to get focus sessions");
+    throw new Error("User ID and task ID are required");
   }
 
   const sessionsRef = collection(db, "focusSessions");

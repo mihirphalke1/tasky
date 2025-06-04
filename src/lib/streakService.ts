@@ -347,49 +347,41 @@ export const updateStreakData = async (
     const isConsecutive = currentStreak.lastActiveDate === yesterday;
     console.log("Is updating same day?", isUpdatingSameDay);
     console.log("Is consecutive?", isConsecutive);
-    console.log("Date comparison details:", {
-      inputDate: date,
-      lastActiveDate: currentStreak.lastActiveDate,
-      yesterday: yesterday,
-      sameDayCheck: currentStreak.lastActiveDate === date,
-      consecutiveCheck: currentStreak.lastActiveDate === yesterday,
-    });
 
     let newCurrentStreak = currentStreak.currentStreak;
     let newLongestStreak = currentStreak.longestStreak;
     let newTotalDaysActive = currentStreak.totalDaysActive;
     let streakHistory = [...currentStreak.streakHistory];
+    let newLastActiveDate = currentStreak.lastActiveDate;
 
     if (isStreakDay) {
       console.log("Processing streak day...");
 
       if (isUpdatingSameDay) {
-        // We're updating the same day multiple times - don't change streak count
+        // Same day update - don't change streak count, just maintain current state
         console.log("Same day update - maintaining current streak");
-        // Keep current values, don't increment
-      } else if (currentStreak.lastActiveDate === yesterday) {
-        // Continue existing streak
-        console.log("Continuing existing streak");
-        console.log("Previous streak count:", newCurrentStreak);
-        newCurrentStreak += 1;
-        newTotalDaysActive += 1;
-        console.log("New streak count after increment:", newCurrentStreak);
+        newLastActiveDate = date; // Update the last active date
       } else if (currentStreak.lastActiveDate === "") {
         // First streak day ever
         console.log("First streak day ever");
         newCurrentStreak = 1;
+        newTotalDaysActive = 1;
+        newLastActiveDate = date;
+      } else if (isConsecutive) {
+        // Continue existing streak (consecutive day)
+        console.log("Continuing existing streak");
+        console.log("Previous streak count:", newCurrentStreak);
+        newCurrentStreak += 1;
         newTotalDaysActive += 1;
+        newLastActiveDate = date;
+        console.log("New streak count after increment:", newCurrentStreak);
       } else {
-        // Broken streak, start new one
+        // Gap found - broken streak, start new one
         console.log("Broken streak, starting new one");
-        console.log(
-          "Gap between",
-          currentStreak.lastActiveDate,
-          "and",
-          yesterday
-        );
+        console.log("Gap between", currentStreak.lastActiveDate, "and", date);
+
+        // Save the broken streak to history if it was a valid streak
         if (newCurrentStreak > 0) {
-          // Save the broken streak to history
           streakHistory.push({
             startDate: format(
               subDays(
@@ -402,34 +394,45 @@ export const updateStreakData = async (
             length: newCurrentStreak,
           });
         }
+
+        // Start new streak
         newCurrentStreak = 1;
         newTotalDaysActive += 1;
+        newLastActiveDate = date;
       }
 
+      // Update longest streak if current streak is now longer
       newLongestStreak = Math.max(newLongestStreak, newCurrentStreak);
     } else {
+      // Not a streak day
       console.log("Not a streak day, checking if streak should be broken...");
-      // Not a streak day - check if we need to break the streak
-      if (!isUpdatingSameDay && currentStreak.lastActiveDate === yesterday) {
-        // Streak is broken
-        console.log("Breaking streak");
-        if (newCurrentStreak > 0) {
-          streakHistory.push({
-            startDate: format(
-              subDays(
-                parseISO(currentStreak.lastActiveDate),
-                newCurrentStreak - 1
-              ),
-              "yyyy-MM-dd"
-            ),
-            endDate: currentStreak.lastActiveDate,
-            length: newCurrentStreak,
-          });
-        }
-        newCurrentStreak = 0;
-      } else if (isUpdatingSameDay) {
+
+      if (isUpdatingSameDay) {
+        // Same day update but no longer a streak day - keep current state
         console.log("Same day update - no streak day, keeping current state");
-        // If we're updating the same day and it's not a streak day, don't break existing streaks from previous days
+        // Don't update lastActiveDate since this day is no longer a streak day
+      } else if (isConsecutive && newCurrentStreak > 0) {
+        // This was supposed to be a consecutive day but it's not a streak day - break the streak
+        console.log("Breaking streak - consecutive day but not a streak day");
+
+        // Save the broken streak to history
+        streakHistory.push({
+          startDate: format(
+            subDays(
+              parseISO(currentStreak.lastActiveDate),
+              newCurrentStreak - 1
+            ),
+            "yyyy-MM-dd"
+          ),
+          endDate: currentStreak.lastActiveDate,
+          length: newCurrentStreak,
+        });
+
+        newCurrentStreak = 0;
+        // Don't update lastActiveDate or totalDaysActive for non-streak days
+      } else {
+        // Gap day or already broken - no change needed
+        console.log("Gap day or already broken - no change needed");
       }
     }
 
@@ -437,9 +440,7 @@ export const updateStreakData = async (
       newCurrentStreak,
       newLongestStreak,
       newTotalDaysActive,
-      willUpdateLastActiveDate: isStreakDay
-        ? date
-        : currentStreak.lastActiveDate,
+      newLastActiveDate,
     });
 
     const updatedStreak: StreakData = {
@@ -447,7 +448,7 @@ export const updateStreakData = async (
       currentStreak: newCurrentStreak,
       longestStreak: newLongestStreak,
       totalDaysActive: newTotalDaysActive,
-      lastActiveDate: isStreakDay ? date : currentStreak.lastActiveDate,
+      lastActiveDate: newLastActiveDate,
       lastUpdated: new Date(),
       streakHistory,
     };
@@ -458,7 +459,7 @@ export const updateStreakData = async (
       currentStreak: newCurrentStreak,
       longestStreak: newLongestStreak,
       totalDaysActive: newTotalDaysActive,
-      lastActiveDate: isStreakDay ? date : currentStreak.lastActiveDate,
+      lastActiveDate: newLastActiveDate,
       lastUpdated: Timestamp.fromDate(new Date()),
       streakHistory,
     };

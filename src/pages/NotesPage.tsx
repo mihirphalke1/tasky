@@ -89,7 +89,7 @@ const NotesPage = () => {
   const [showTaskDetails, setShowTaskDetails] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [focusedTask, setFocusedTask] = useState<Task | null>(null);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showQuickNote, setShowQuickNote] = useState(false);
@@ -115,8 +115,13 @@ const NotesPage = () => {
   useKeyboardShortcuts(globalShortcuts);
 
   useEffect(() => {
+    // Wait for auth to complete before checking user
+    if (authLoading) {
+      return;
+    }
+
     if (!user) {
-      navigate("/login");
+      navigate("/");
       return;
     }
 
@@ -196,7 +201,7 @@ const NotesPage = () => {
     };
 
     loadData();
-  }, [user, navigate, searchParams]);
+  }, [user, authLoading, navigate, searchParams]);
 
   // Filter notes based on active tab
   useEffect(() => {
@@ -1151,7 +1156,24 @@ const NotesPage = () => {
           {/* Enhanced Right Content - 70% */}
           <div className="w-[70%] flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-xl">
             <ScrollArea className="flex-1 p-8">
-              {isLoading ? (
+              {authLoading ? (
+                <div className="flex items-center justify-center h-96">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full" />
+                      <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground dark:text-gray-400 text-lg font-medium">
+                        Authenticating...
+                      </p>
+                      <p className="text-muted-foreground dark:text-gray-500 text-sm mt-1">
+                        Verifying your access
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : isLoading ? (
                 <div className="flex items-center justify-center h-96">
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative">

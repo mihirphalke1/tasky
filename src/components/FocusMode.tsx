@@ -41,13 +41,12 @@ import { useAuth } from "@/lib/AuthContext";
 import {
   createFocusSession,
   endFocusSession,
-  updateUserStreak,
-  getUserStreak,
   saveTaskIntention,
   getTaskIntention,
-  debugFocusSessionData,
   verifyFocusSessionPersistence,
+  debugFocusSessionData,
 } from "@/lib/focusService";
+import { updateDailyStatsForDate, getStreakData } from "@/lib/streakService";
 import {
   useKeyboardShortcuts,
   type ShortcutAction,
@@ -657,9 +656,9 @@ export function FocusMode({
   const loadUserStreak = async () => {
     if (!user) return;
     try {
-      const streak = await getUserStreak(user.uid);
-      setCurrentStreak(streak.currentStreak);
-      setLongestStreak(streak.longestStreak);
+      const streakData = await getStreakData(user.uid);
+      setCurrentStreak(streakData.currentStreak);
+      setLongestStreak(streakData.longestStreak);
     } catch (error) {
       console.error("Error loading user streak:", error);
     }
@@ -736,14 +735,13 @@ export function FocusMode({
         }
       }
 
-      // Update user streak
+      // Update daily stats and streak when starting focus session
       try {
-        const updatedStreak = await updateUserStreak(user.uid);
-        setCurrentStreak(updatedStreak.currentStreak);
-        setLongestStreak(updatedStreak.longestStreak);
-        console.log("🔥 User streak updated:", updatedStreak);
+        const today = new Date().toISOString().split("T")[0];
+        await updateDailyStatsForDate(user.uid, today);
+        console.log("🔥 Daily stats and streak updated");
       } catch (error) {
-        console.error("⚠️ Error updating user streak:", error);
+        console.error("⚠️ Error updating daily stats and streak:", error);
         // Don't fail the entire session start if streak update fails
       }
 

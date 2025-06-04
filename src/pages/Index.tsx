@@ -54,7 +54,7 @@ const sections: { id: TaskSectionType; title: string }[] = [
 ];
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -149,6 +149,11 @@ const Index = () => {
 
   // Set up real-time task subscription
   useEffect(() => {
+    // Wait for auth to complete before checking user
+    if (authLoading) {
+      return;
+    }
+
     if (!user) {
       navigate("/");
       return;
@@ -234,7 +239,7 @@ const Index = () => {
         unsubscribe();
       }
     };
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleAddTask = async (newTask: Omit<Task, "id" | "userId">) => {
     if (!user) {
@@ -384,6 +389,17 @@ const Index = () => {
       }
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -86,6 +86,47 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
           console.log("=== DEBUG COMPLETE - Check the streak count now ===");
         };
 
+        // Add function to check specific dates
+        (window as any).checkDateStats = async (dateString: string) => {
+          try {
+            const { getDailyStats } = await import("@/lib/streakService");
+            const stats = await getDailyStats(user.uid, dateString);
+            console.log(`Stats for ${dateString}:`, stats);
+            return stats;
+          } catch (error) {
+            console.error("Error checking date stats:", error);
+          }
+        };
+
+        // Add function to check recent days
+        (window as any).checkRecentDays = async () => {
+          try {
+            const { getDailyStatsRange } = await import("@/lib/streakService");
+            const endDate = new Date().toISOString().split("T")[0];
+            const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0];
+            const stats = await getDailyStatsRange(
+              user.uid,
+              startDate,
+              endDate
+            );
+            console.log("Recent 7 days stats:", stats);
+            stats.forEach((stat) => {
+              console.log(
+                `${stat.date}: ${stat.streakDay ? "🔥" : "❌"} - ${
+                  stat.completionPercentage
+                }% (${stat.tasksCompleted}/${stat.tasksAssigned} tasks, ${
+                  stat.focusTimeMinutes
+                }min focus)`
+              );
+            });
+            return stats;
+          } catch (error) {
+            console.error("Error checking recent days:", error);
+          }
+        };
+
         // Add function to manually set streak count for testing
         (window as any).setTestStreak = async (count: number) => {
           console.log(`Setting test streak to ${count}`);
@@ -105,6 +146,18 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
             console.log(`Streak set to ${count} successfully`);
           } catch (error) {
             console.error("Error setting test streak:", error);
+          }
+        };
+
+        // Add recalculation function
+        (window as any).recalculateStreak = async () => {
+          try {
+            console.log("Recalculating streak from history...");
+            await recalculateStreakFromHistory(user.uid);
+            loadStreakData();
+            console.log("Streak recalculated successfully!");
+          } catch (error) {
+            console.error("Error recalculating streak:", error);
           }
         };
       }
