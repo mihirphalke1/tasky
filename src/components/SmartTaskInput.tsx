@@ -103,13 +103,27 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
     const tomorrow = addDays(today, 1);
 
     if (text.toLowerCase().includes("tomorrow")) {
-      task.dueDate = setHours(tomorrow, 23);
+      // Set to 11:59 PM by default
+      task.dueDate = setHours(
+        setMinutes(setSeconds(setMilliseconds(tomorrow, 0), 0), 59),
+        23
+      );
       task.section = "tomorrow";
     } else if (text.toLowerCase().includes("next week")) {
-      task.dueDate = addDays(today, 7);
+      const nextWeek = addDays(today, 7);
+      // Set to 11:59 PM by default
+      task.dueDate = setHours(
+        setMinutes(setSeconds(setMilliseconds(nextWeek, 0), 0), 59),
+        23
+      );
       task.section = "upcoming";
     } else if (text.toLowerCase().includes("this week")) {
-      task.dueDate = addDays(today, 3);
+      const thisWeek = addDays(today, 3);
+      // Set to 11:59 PM by default
+      task.dueDate = setHours(
+        setMinutes(setSeconds(setMilliseconds(thisWeek, 0), 0), 59),
+        23
+      );
       task.section = "upcoming";
     } else if (
       text.toLowerCase().includes("someday") ||
@@ -136,7 +150,7 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
       task.tags = tagMatches;
     }
 
-    // Extract time if present
+    // Extract time if present (this will override the default 11:59 PM)
     const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
     if (timeMatch) {
       const [_, hours, minutes = "00", period] = timeMatch;

@@ -20,23 +20,27 @@ import {
 import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   isDesktop,
   useKeyboardShortcuts,
   type KeyboardShortcut,
 } from "@/hooks/useKeyboardShortcuts";
-import StreakButton from "./StreakButton";
+import StreakButton, { StreakButtonRef } from "./StreakButton";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(isDesktop());
+  const streakButtonRef = useRef<StreakButtonRef>(null);
 
   useEffect(() => {
-    setShowShortcuts(isDesktop());
-  }, []);
+    const desktopState = isDesktop();
+    if (showShortcuts !== desktopState) {
+      setShowShortcuts(desktopState);
+    }
+  }, [showShortcuts]);
 
   // Global keyboard shortcuts available from navbar
   const globalShortcuts: KeyboardShortcut[] = [
@@ -52,6 +56,25 @@ const NavBar = () => {
         navigate("/shortcuts");
       },
       priority: 90,
+      allowInModal: true,
+    },
+    {
+      id: "streak-calendar",
+      description: "Open Productivity Streak Calendar",
+      category: "general",
+      keys: {
+        mac: ["s"],
+        windows: ["s"],
+      },
+      action: () => {
+        if (streakButtonRef.current) {
+          streakButtonRef.current.openCalendar();
+        } else {
+          console.warn("StreakButton ref not available");
+          // Fallback: could navigate to a streak page or show a toast
+        }
+      },
+      priority: 75,
       allowInModal: true,
     },
   ];
@@ -108,7 +131,7 @@ const NavBar = () => {
             <span className="hidden sm:inline font-medium">Notes</span>
           </Button>
 
-          <StreakButton />
+          <StreakButton ref={streakButtonRef} />
 
           {showShortcuts && (
             <Button

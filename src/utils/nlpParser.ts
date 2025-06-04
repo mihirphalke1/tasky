@@ -174,6 +174,32 @@ export function parseNaturalLanguageTask(input: string): ParsedTask {
     dueDate = parsed.start.date();
     dateText = parsed.text;
     confidence += 0.3; // Increase confidence if we found a date
+
+    // Check if the original input contained a specific time
+    // More precise time detection that avoids false positives
+    const hasSpecificTime =
+      // Standard AM/PM formats: "3pm", "3:30pm", "3 pm", "3:30 pm"
+      /\b(\d{1,2}):?(\d{2})?\s*(am|pm)\b/i.test(trimmedInput) ||
+      /\b(\d{1,2})\s*(am|pm)\b/i.test(trimmedInput) ||
+      // Time words: "morning", "afternoon", "evening", "night", "noon", "midnight"
+      /\b(morning|afternoon|evening|night|noon|midnight)\b/i.test(
+        trimmedInput
+      ) ||
+      // 24-hour or numeric time formats with prepositions: "at 7", "by 5:30" (but not just "by 5")
+      /\b(at|by)\s+(\d{1,2}):(\d{2})\b/i.test(trimmedInput) ||
+      /\bat\s+(\d{1,2})(?!\s*(am|pm))\b/i.test(trimmedInput) ||
+      // Standalone time without preposition: "dinner 7:30", "meeting 3:15"
+      /\b(\d{1,2}):(\d{2})\b/i.test(trimmedInput) ||
+      // Check if chrono detected a time component AND it's not just inferring for relative dates
+      (parsed.start.get("hour") !== undefined &&
+        !/\b(today|tomorrow|tonight|yesterday|next|this|week|month|day)\s*$/i.test(
+          dateText.trim()
+        ));
+
+    // If no specific time was mentioned, default to 11:59 PM
+    if (!hasSpecificTime && dueDate) {
+      dueDate.setHours(23, 59, 0, 0); // Set to 11:59 PM
+    }
   }
 
   // Extract priority

@@ -74,7 +74,12 @@ export const getDailyStats = async (
       focusSessions: data.focusSessions || 0,
       pomodoroCount: data.pomodoroCount || 0,
       streakDay: data.streakDay || false,
-      tasksDetails: data.tasksDetails || [],
+      tasksDetails: (data.tasksDetails || []).map((task: any) => ({
+        ...task,
+        completedAt: task.completedAt?.toDate
+          ? task.completedAt.toDate()
+          : task.completedAt,
+      })),
       createdAt: data.createdAt?.toDate() || new Date(),
       lastUpdated: data.lastUpdated?.toDate() || new Date(),
     } as DailyStats;
@@ -214,7 +219,12 @@ export const saveDailyStats = async (
       focusSessions: dailyStats.focusSessions,
       pomodoroCount: dailyStats.pomodoroCount,
       streakDay: dailyStats.streakDay,
-      tasksDetails: dailyStats.tasksDetails,
+      tasksDetails: dailyStats.tasksDetails.map((task) => ({
+        ...task,
+        completedAt: task.completedAt
+          ? Timestamp.fromDate(task.completedAt)
+          : null,
+      })),
       lastUpdated: Timestamp.fromDate(new Date()),
     };
 
@@ -256,10 +266,12 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
   }
 
   try {
+    console.log("Getting streak data for user:", userId);
     const streakRef = doc(db, "streakData", userId);
     const streakDoc = await getDoc(streakRef);
 
     if (!streakDoc.exists()) {
+      console.log("No streak data found, creating initial streak data");
       // Create initial streak data
       const initialStreak: StreakData = {
         id: userId,
@@ -278,11 +290,12 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
         lastUpdated: Timestamp.fromDate(new Date()),
       });
 
+      console.log("Created initial streak data:", initialStreak);
       return initialStreak;
     }
 
     const data = streakDoc.data();
-    return {
+    const streakData = {
       id: streakDoc.id,
       userId: data.userId,
       currentStreak: data.currentStreak || 0,
@@ -293,9 +306,17 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
       lastUpdated: data.lastUpdated?.toDate() || new Date(),
       streakHistory: data.streakHistory || [],
     } as StreakData;
+
+    console.log("Retrieved streak data:", streakData);
+    return streakData;
   } catch (error) {
     console.error("Error getting streak data:", error);
-    throw new Error("Failed to get streak data");
+    console.error("Error details:", {
+      code: error.code,
+      message: error.message,
+      userId: userId,
+    });
+    throw new Error(`Failed to get streak data: ${error.message}`);
   }
 };
 
@@ -306,8 +327,33 @@ export const updateStreakData = async (
   isStreakDay: boolean
 ): Promise<StreakData> => {
   try {
+    console.log("=== STREAK UPDATE DEBUG ===");
+    console.log("Date:", date);
+    console.log("Is Streak Day:", isStreakDay);
+
     const currentStreak = await getStreakData(userId);
+    console.log("Current streak data:", {
+      currentStreak: currentStreak.currentStreak,
+      lastActiveDate: currentStreak.lastActiveDate,
+      totalDaysActive: currentStreak.totalDaysActive,
+    });
+
     const yesterday = format(subDays(parseISO(date), 1), "yyyy-MM-dd");
+    console.log("Yesterday date:", yesterday);
+    console.log("Last active date:", currentStreak.lastActiveDate);
+
+    // Check if we're updating the same day multiple times
+    const isUpdatingSameDay = currentStreak.lastActiveDate === date;
+    const isConsecutive = currentStreak.lastActiveDate === yesterday;
+    console.log("Is updating same day?", isUpdatingSameDay);
+    console.log("Is consecutive?", isConsecutive);
+    console.log("Date comparison details:", {
+      inputDate: date,
+      lastActiveDate: currentStreak.lastActiveDate,
+      yesterday: yesterday,
+      sameDayCheck: currentStreak.lastActiveDate === date,
+      consecutiveCheck: currentStreak.lastActiveDate === yesterday,
+    });
 
     let newCurrentStreak = currentStreak.currentStreak;
     let newLongestStreak = currentStreak.longestStreak;
@@ -315,15 +361,33 @@ export const updateStreakData = async (
     let streakHistory = [...currentStreak.streakHistory];
 
     if (isStreakDay) {
-      // Check if this continues a streak or starts a new one
-      if (currentStreak.lastActiveDate === yesterday) {
+      console.log("Processing streak day...");
+
+      if (isUpdatingSameDay) {
+        // We're updating the same day multiple times - don't change streak count
+        console.log("Same day update - maintaining current streak");
+        // Keep current values, don't increment
+      } else if (currentStreak.lastActiveDate === yesterday) {
         // Continue existing streak
+        console.log("Continuing existing streak");
+        console.log("Previous streak count:", newCurrentStreak);
         newCurrentStreak += 1;
+        newTotalDaysActive += 1;
+        console.log("New streak count after increment:", newCurrentStreak);
       } else if (currentStreak.lastActiveDate === "") {
         // First streak day ever
+        console.log("First streak day ever");
         newCurrentStreak = 1;
+        newTotalDaysActive += 1;
       } else {
         // Broken streak, start new one
+        console.log("Broken streak, starting new one");
+        console.log(
+          "Gap between",
+          currentStreak.lastActiveDate,
+          "and",
+          yesterday
+        );
         if (newCurrentStreak > 0) {
           // Save the broken streak to history
           streakHistory.push({
@@ -339,14 +403,16 @@ export const updateStreakData = async (
           });
         }
         newCurrentStreak = 1;
+        newTotalDaysActive += 1;
       }
 
-      newTotalDaysActive += 1;
       newLongestStreak = Math.max(newLongestStreak, newCurrentStreak);
     } else {
+      console.log("Not a streak day, checking if streak should be broken...");
       // Not a streak day - check if we need to break the streak
-      if (currentStreak.lastActiveDate === yesterday) {
+      if (!isUpdatingSameDay && currentStreak.lastActiveDate === yesterday) {
         // Streak is broken
+        console.log("Breaking streak");
         if (newCurrentStreak > 0) {
           streakHistory.push({
             startDate: format(
@@ -361,8 +427,20 @@ export const updateStreakData = async (
           });
         }
         newCurrentStreak = 0;
+      } else if (isUpdatingSameDay) {
+        console.log("Same day update - no streak day, keeping current state");
+        // If we're updating the same day and it's not a streak day, don't break existing streaks from previous days
       }
     }
+
+    console.log("Final streak calculation results:", {
+      newCurrentStreak,
+      newLongestStreak,
+      newTotalDaysActive,
+      willUpdateLastActiveDate: isStreakDay
+        ? date
+        : currentStreak.lastActiveDate,
+    });
 
     const updatedStreak: StreakData = {
       ...currentStreak,
@@ -376,15 +454,20 @@ export const updateStreakData = async (
 
     // Save to database
     const streakRef = doc(db, "streakData", userId);
-    await updateDoc(streakRef, {
+    const updateData = {
       currentStreak: newCurrentStreak,
       longestStreak: newLongestStreak,
       totalDaysActive: newTotalDaysActive,
       lastActiveDate: isStreakDay ? date : currentStreak.lastActiveDate,
       lastUpdated: Timestamp.fromDate(new Date()),
       streakHistory,
-    });
+    };
 
+    console.log("Saving streak data to database:", updateData);
+    await updateDoc(streakRef, updateData);
+
+    console.log("=== STREAK UPDATE COMPLETE ===");
+    console.log("Final updated streak data:", updatedStreak);
     return updatedStreak;
   } catch (error) {
     console.error("Error updating streak data:", error);
@@ -428,7 +511,12 @@ export const getMonthlyStreakView = async (
         focusSessions: data.focusSessions || 0,
         pomodoroCount: data.pomodoroCount || 0,
         streakDay: data.streakDay || false,
-        tasksDetails: data.tasksDetails || [],
+        tasksDetails: (data.tasksDetails || []).map((task: any) => ({
+          ...task,
+          completedAt: task.completedAt?.toDate
+            ? task.completedAt.toDate()
+            : task.completedAt,
+        })),
         createdAt: data.createdAt?.toDate() || new Date(),
         lastUpdated: data.lastUpdated?.toDate() || new Date(),
       };
@@ -524,7 +612,12 @@ export const getDailyStatsRange = async (
         focusSessions: data.focusSessions || 0,
         pomodoroCount: data.pomodoroCount || 0,
         streakDay: data.streakDay || false,
-        tasksDetails: data.tasksDetails || [],
+        tasksDetails: (data.tasksDetails || []).map((task: any) => ({
+          ...task,
+          completedAt: task.completedAt?.toDate
+            ? task.completedAt.toDate()
+            : task.completedAt,
+        })),
         createdAt: data.createdAt?.toDate() || new Date(),
         lastUpdated: data.lastUpdated?.toDate() || new Date(),
       } as DailyStats;
@@ -535,72 +628,201 @@ export const getDailyStatsRange = async (
   }
 };
 
-// Helper function for testing - creates sample data
-export const createSampleStreakData = async (userId: string): Promise<void> => {
-  if (!userId) {
-    throw new Error("User ID is required");
-  }
-
+// Recalculate streak data from scratch based on all daily stats
+export const recalculateStreakFromHistory = async (
+  userId: string
+): Promise<StreakData> => {
   try {
-    console.log("Creating sample streak data for testing...");
+    console.log("=== RECALCULATING STREAK FROM HISTORY ===");
 
-    // Create some sample daily stats for the past few days
-    const today = new Date();
-    const dates = [];
+    // Get all daily stats for the user, sorted by date
+    const statsRef = collection(db, "dailyStats");
+    const q = query(
+      statsRef,
+      where("userId", "==", userId),
+      orderBy("date", "asc")
+    );
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      dates.push(format(date, "yyyy-MM-dd"));
-    }
-
-    for (const [index, date] of dates.entries()) {
-      const sampleStats: DailyStats = {
-        id: "",
-        userId,
-        date,
-        tasksAssigned: Math.floor(Math.random() * 5) + 2, // 2-6 tasks
-        tasksCompleted: Math.floor(Math.random() * 4) + 1, // 1-4 completed
-        completionPercentage: 0,
-        focusTimeMinutes: Math.floor(Math.random() * 120) + 30, // 30-150 minutes
-        focusSessions: Math.floor(Math.random() * 3) + 1, // 1-3 sessions
-        pomodoroCount: Math.floor(Math.random() * 6) + 2, // 2-7 pomodoros
-        streakDay: false, // Will be calculated
-        tasksDetails: [],
-        createdAt: new Date(),
-        lastUpdated: new Date(),
+    const querySnapshot = await getDocs(q);
+    const allStats = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        date: data.date,
+        streakDay: data.streakDay,
+        completionPercentage: data.completionPercentage,
+        tasksCompleted: data.tasksCompleted,
+        tasksAssigned: data.tasksAssigned,
       };
+    });
 
-      // Calculate completion percentage and streak day
-      sampleStats.completionPercentage = Math.round(
-        (sampleStats.tasksCompleted / sampleStats.tasksAssigned) * 100
-      );
-      sampleStats.streakDay =
-        sampleStats.completionPercentage >= STREAK_THRESHOLD;
+    console.log("Found daily stats for recalculation:", allStats.length);
+    console.log("All stats:", allStats);
 
-      // Create some sample task details
-      for (let j = 0; j < sampleStats.tasksAssigned; j++) {
-        sampleStats.tasksDetails.push({
-          taskId: `sample-task-${date}-${j}`,
-          title: `Sample Task ${j + 1}`,
-          completed: j < sampleStats.tasksCompleted,
-          completedAt: j < sampleStats.tasksCompleted ? new Date() : undefined,
-          focusTimeMinutes: Math.floor(
-            sampleStats.focusTimeMinutes / sampleStats.tasksAssigned
-          ),
-          pomodoroCount: Math.floor(
-            sampleStats.pomodoroCount / sampleStats.tasksAssigned
-          ),
-        });
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let totalDaysActive = 0;
+    let lastActiveDate = "";
+    const streakHistory: Array<{
+      startDate: string;
+      endDate: string;
+      length: number;
+    }> = [];
+
+    // Find all streak days and process them chronologically
+    const streakDays = allStats.filter((stat) => stat.streakDay);
+    console.log("Streak days found:", streakDays);
+
+    if (streakDays.length === 0) {
+      console.log("No streak days found");
+    } else {
+      let currentStreakStart = streakDays[0].date;
+      let tempStreakLength = 1;
+      lastActiveDate = streakDays[0].date;
+      totalDaysActive = 1;
+
+      for (let i = 1; i < streakDays.length; i++) {
+        const currentDay = streakDays[i];
+        const previousDay = streakDays[i - 1];
+
+        // Calculate what the previous day should be if consecutive
+        const expectedPrevDate = format(
+          subDays(parseISO(currentDay.date), 1),
+          "yyyy-MM-dd"
+        );
+
+        console.log(`Checking day ${currentDay.date}:`);
+        console.log(`  Previous day: ${previousDay.date}`);
+        console.log(`  Expected previous: ${expectedPrevDate}`);
+        console.log(
+          `  Is consecutive: ${previousDay.date === expectedPrevDate}`
+        );
+
+        if (previousDay.date === expectedPrevDate) {
+          // Consecutive day - continue streak
+          tempStreakLength += 1;
+          console.log(`  Continuing streak, now ${tempStreakLength} days`);
+        } else {
+          // Gap found - end previous streak and start new one
+          console.log(`  Gap found! Ending streak of ${tempStreakLength} days`);
+
+          // Save the completed streak to history
+          if (tempStreakLength > 0) {
+            streakHistory.push({
+              startDate: currentStreakStart,
+              endDate: previousDay.date,
+              length: tempStreakLength,
+            });
+          }
+
+          // Start new streak
+          currentStreakStart = currentDay.date;
+          tempStreakLength = 1;
+          console.log(`  Starting new streak from ${currentDay.date}`);
+        }
+
+        lastActiveDate = currentDay.date;
+        totalDaysActive += 1;
+        longestStreak = Math.max(longestStreak, tempStreakLength);
       }
 
-      await saveDailyStats(sampleStats);
-      await updateStreakData(userId, date, sampleStats.streakDay);
+      // The last streak is our current streak if it ends with the last day
+      currentStreak = tempStreakLength;
+      console.log(`Final streak length: ${currentStreak}`);
     }
 
-    console.log("Sample streak data created successfully!");
+    console.log("Recalculated streak data:", {
+      currentStreak,
+      longestStreak,
+      totalDaysActive,
+      lastActiveDate,
+      streakHistory,
+    });
+
+    // Update the database with recalculated data
+    const updatedStreak: StreakData = {
+      id: userId,
+      userId,
+      currentStreak,
+      longestStreak,
+      totalDaysActive,
+      lastActiveDate,
+      streakThreshold: STREAK_THRESHOLD,
+      lastUpdated: new Date(),
+      streakHistory,
+    };
+
+    const streakRef = doc(db, "streakData", userId);
+    await setDoc(streakRef, {
+      ...updatedStreak,
+      lastUpdated: Timestamp.fromDate(new Date()),
+    });
+
+    console.log("=== STREAK RECALCULATION COMPLETE ===");
+    return updatedStreak;
   } catch (error) {
-    console.error("Error creating sample streak data:", error);
-    throw error;
+    console.error("Error recalculating streak from history:", error);
+    throw new Error("Failed to recalculate streak from history");
+  }
+};
+
+// Debug function to help troubleshoot streak issues
+export const debugStreakCalculation = async (userId: string): Promise<void> => {
+  try {
+    console.log("=== STREAK DEBUG ANALYSIS ===");
+
+    // Get current streak data
+    const currentStreak = await getStreakData(userId);
+    console.log("Current streak data:", currentStreak);
+
+    // Get recent daily stats
+    const statsRef = collection(db, "dailyStats");
+    const q = query(
+      statsRef,
+      where("userId", "==", userId),
+      orderBy("date", "desc"),
+      limit(7) // Last 7 days
+    );
+
+    const querySnapshot = await getDocs(q);
+    const recentStats = querySnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          date: data.date,
+          streakDay: data.streakDay,
+          completionPercentage: data.completionPercentage,
+          tasksCompleted: data.tasksCompleted,
+          tasksAssigned: data.tasksAssigned,
+        };
+      })
+      .reverse(); // Reverse to get chronological order
+
+    console.log("Recent daily stats:", recentStats);
+
+    // Analyze streak days
+    const streakDays = recentStats.filter((stat) => stat.streakDay);
+    console.log("Streak days found:", streakDays);
+
+    // Check for consecutive days
+    for (let i = 1; i < streakDays.length; i++) {
+      const current = streakDays[i];
+      const previous = streakDays[i - 1];
+      const expectedPrevDate = format(
+        subDays(parseISO(current.date), 1),
+        "yyyy-MM-dd"
+      );
+      const isConsecutive = previous.date === expectedPrevDate;
+
+      console.log(
+        `Day ${current.date} consecutive with ${previous.date}? ${isConsecutive}`
+      );
+      console.log(
+        `Expected previous date: ${expectedPrevDate}, actual: ${previous.date}`
+      );
+    }
+
+    console.log("=== STREAK DEBUG COMPLETE ===");
+  } catch (error) {
+    console.error("Error in streak debug analysis:", error);
   }
 };

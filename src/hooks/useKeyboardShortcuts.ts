@@ -21,7 +21,8 @@ export type ShortcutAction =
   | "snooze-task"
   | "postpone-task"
   | "exit-focus"
-  | "toggle-input-mode";
+  | "toggle-input-mode"
+  | "streak-calendar";
 
 export interface KeyboardShortcut {
   id: ShortcutAction;
@@ -225,18 +226,20 @@ const getDefaultPriority = (id: ShortcutAction): number => {
     "quick-note": 75,
     "focus-mode": 70,
     notes: 65,
+    "streak-calendar": 75,
     "clear-completed": 60,
-    "next-task": 80,
-    "previous-task": 80,
-    "toggle-focus-lock": 90,
-    "complete-task": 85,
-    "complete-task-alt": 85,
-    "toggle-pomodoro": 75,
-    "pomodoro-play-pause": 85,
-    "snooze-task": 80,
-    "postpone-task": 80,
-    "exit-focus": 70,
+    "next-task": 50,
+    "previous-task": 50,
+    "complete-task": 45,
+    "complete-task-alt": 45,
+    "toggle-pomodoro": 40,
+    "pomodoro-play-pause": 40,
+    "snooze-task": 35,
+    "postpone-task": 35,
+    "toggle-focus-lock": 30,
+    "exit-focus": 25,
   };
+
   return priorities[id] || 50;
 };
 
@@ -245,11 +248,14 @@ const isGlobalShortcut = (id: ShortcutAction): boolean => {
     "escape",
     "toggle-theme",
     "show-shortcuts",
+    "quick-note",
     "search",
     "add-task",
-    "toggle-input-mode",
-    "quick-note",
+    "focus-mode",
+    "notes",
+    "streak-calendar",
   ];
+
   return globalShortcuts.includes(id);
 };
 
@@ -311,6 +317,7 @@ export const createGlobalShortcuts = (options: {
   focusTaskInput?: () => void;
   toggleSmartInput?: () => void;
   toggleTheme?: () => void;
+  openStreakCalendar?: () => void;
   customEscapeAction?: () => void;
   enableFocusMode?: boolean;
   enableTaskActions?: boolean;
@@ -375,6 +382,22 @@ export const createGlobalShortcuts = (options: {
       },
       action: options.toggleTheme,
       priority: 90,
+      allowInModal: true,
+    });
+  }
+
+  // Streak Calendar (when available)
+  if (options.openStreakCalendar) {
+    shortcuts.push({
+      id: "streak-calendar",
+      description: "Open Productivity Streak Calendar",
+      category: "general",
+      keys: {
+        mac: ["s"],
+        windows: ["s"],
+      },
+      action: options.openStreakCalendar,
+      priority: 75,
       allowInModal: true,
     });
   }

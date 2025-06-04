@@ -47,10 +47,27 @@ The NLP (Natural Language Processing) Task Input feature in Tasky allows users t
 // Examples that work:
 "tomorrow at 5pm"          → June 4, 2025 at 5:00 PM
 "next Monday at 2pm"       → June 9, 2025 at 2:00 PM
-"this weekend"             → June 7, 2025 at 12:00 PM
-"by Friday"                → June 6, 2025 at 12:00 PM
+"this weekend"             → June 7, 2025 at 11:59 PM (default time)
+"by Friday"                → June 6, 2025 at 11:59 PM (default time)
+"tomorrow"                 → June 4, 2025 at 11:59 PM (default time)
 "tonight"                  → June 3, 2025 at 10:00 PM
+
+// New Default Behavior: 11:59 PM
+// When no specific time is mentioned, tasks default to 11:59 PM of the specified day
+"submit report tomorrow"   → Tomorrow at 11:59 PM
+"meeting next week"        → Next week at 11:59 PM
+"call john friday"         → Friday at 11:59 PM
 ```
+
+#### Default Time Logic
+
+When no specific time is mentioned in the input:
+
+- **Dates with no time** → Default to 11:59 PM
+- **Time-specific inputs** → Use the specified time
+- **Relative time words** → Use contextual defaults (e.g., "tonight" → 10:00 PM)
+
+This ensures that tasks have a clear deadline at the end of the specified day, making time management more effective.
 
 #### Priority Detection
 
@@ -93,12 +110,14 @@ interface ParsedTask {
 
 ### Basic Examples
 
-| Input                                            | Title               | Due Date          | Priority | Tags     | Confidence |
-| ------------------------------------------------ | ------------------- | ----------------- | -------- | -------- | ---------- |
-| "Call John tomorrow at 5pm"                      | "Call John"         | Tomorrow 5:00 PM  | Medium   | call     | 90%        |
-| "Submit report by Friday urgent"                 | "Submit report"     | Friday 12:00 PM   | High     | -        | 90%        |
-| "Buy groceries this weekend"                     | "Buy groceries"     | Saturday 12:00 PM | Medium   | shopping | 90%        |
-| "Meeting with team next Monday at 2pm important" | "Meeting with team" | Monday 2:00 PM    | High     | meeting  | 100%       |
+| Input                                            | Title               | Due Date           | Priority | Tags     | Confidence |
+| ------------------------------------------------ | ------------------- | ------------------ | -------- | -------- | ---------- |
+| "Call John tomorrow at 5pm"                      | "Call John"         | Tomorrow 5:00 PM   | Medium   | call     | 90%        |
+| "Submit report by Friday urgent"                 | "Submit report"     | Friday 11:59 PM    | High     | -        | 90%        |
+| "Buy groceries this weekend"                     | "Buy groceries"     | Saturday 11:59 PM  | Medium   | shopping | 90%        |
+| "Meeting with team next Monday at 2pm important" | "Meeting with team" | Monday 2:00 PM     | High     | meeting  | 100%       |
+| "Call mom tomorrow"                              | "Call mom"          | Tomorrow 11:59 PM  | Medium   | call     | 85%        |
+| "Finish project next week"                       | "Finish project"    | Next week 11:59 PM | Medium   | -        | 80%        |
 
 ### Advanced Examples
 

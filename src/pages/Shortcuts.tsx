@@ -180,15 +180,6 @@ const shortcuts: ShortcutDisplay[] = [
     },
   },
   {
-    id: "quick-note",
-    description: "Take a Quick Note",
-    category: "tasks",
-    keys: {
-      mac: ["meta", "ctrl", "n"],
-      windows: ["ctrl", "alt", "n"],
-    },
-  },
-  {
     id: "search",
     description: "Search Tasks (Dashboard)",
     category: "tasks",
@@ -217,6 +208,24 @@ const shortcuts: ShortcutDisplay[] = [
   },
 
   // General
+  {
+    id: "quick-note",
+    description: "Take a Quick Note",
+    category: "general",
+    keys: {
+      mac: ["meta", "ctrl", "n"],
+      windows: ["ctrl", "alt", "n"],
+    },
+  },
+  {
+    id: "streak-calendar",
+    description: "Open Productivity Streak Calendar",
+    category: "general",
+    keys: {
+      mac: ["s"],
+      windows: ["s"],
+    },
+  },
   {
     id: "toggle-theme",
     description: "Toggle Dark/Light Mode",

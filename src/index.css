@@ -197,3 +197,33 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* Custom scrollbar styles for streak calendar */
+.streak-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cda351 transparent;
+}
+
+.streak-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.streak-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.streak-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cda351;
+  border-radius: 3px;
+  opacity: 0.7;
+}
+
+.streak-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #b8923a;
+  opacity: 1;
+}
+
+/* Smooth scroll behavior */
+.streak-scroll-container {
+  scroll-behavior: smooth;
+}
