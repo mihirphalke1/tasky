@@ -21,7 +21,12 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { isDesktop } from "@/hooks/useKeyboardShortcuts";
+import {
+  isDesktop,
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+} from "@/hooks/useKeyboardShortcuts";
+import StreakButton from "./StreakButton";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
@@ -32,6 +37,27 @@ const NavBar = () => {
   useEffect(() => {
     setShowShortcuts(isDesktop());
   }, []);
+
+  // Global keyboard shortcuts available from navbar
+  const globalShortcuts: KeyboardShortcut[] = [
+    {
+      id: "show-shortcuts",
+      description: "Show Keyboard Shortcuts",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "/"],
+        windows: ["ctrl", "/"],
+      },
+      action: () => {
+        navigate("/shortcuts");
+      },
+      priority: 90,
+      allowInModal: true,
+    },
+  ];
+
+  // Enable global keyboard shortcuts
+  useKeyboardShortcuts(globalShortcuts);
 
   return (
     <nav className="sticky top-0 z-50 w-full py-3 px-6 mb-4 flex items-center justify-between border-b border-[#CDA351]/20 shadow-lg backdrop-blur-md bg-[#FAF8F6] dark:bg-gray-900 dark:border-[#CDA351]/10">
@@ -82,12 +108,15 @@ const NavBar = () => {
             <span className="hidden sm:inline font-medium">Notes</span>
           </Button>
 
+          <StreakButton />
+
           {showShortcuts && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/shortcuts")}
-              className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95 hidden md:flex"
+              className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95 hidden sm:flex"
+              title="Keyboard Shortcuts (Cmd/Ctrl + /)"
             >
               <Keyboard className="mr-1.5 h-4 w-4" />
               <span className="font-medium">Shortcuts</span>

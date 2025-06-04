@@ -26,6 +26,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Plus,
+  PenTool,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,9 +40,11 @@ import confetti from "canvas-confetti";
 import {
   useKeyboardShortcuts,
   type KeyboardShortcut,
+  createGlobalShortcuts,
 } from "@/hooks/useKeyboardShortcuts";
 import { useTheme } from "next-themes";
 import { getSectionFromDate } from "@/utils/taskUtils";
+import { motion } from "framer-motion";
 
 const sections: { id: TaskSectionType; title: string }[] = [
   { id: "today", title: "Today" },
@@ -87,142 +90,8 @@ const Index = () => {
   // All tasks (including hidden) for search functionality
   const allTasks = tasks;
 
-  // Keyboard shortcuts definitions
-  const shortcuts: KeyboardShortcut[] = [
-    {
-      id: "add-task",
-      description: "Add New Task",
-      category: "tasks",
-      keys: {
-        mac: ["meta", "j"],
-        windows: ["ctrl", "j"],
-      },
-      action: () => {
-        focusTaskInput();
-        toast.success("Add New Task", {
-          description: `Focus moved to ${
-            smartInputMode ? "smart" : "traditional"
-          } task input`,
-          duration: 1500,
-        });
-      },
-      priority: 80,
-      allowInModal: true, // Allow even when modals are open
-    },
-    {
-      id: "toggle-input-mode",
-      description: "Toggle Smart/Traditional Input",
-      category: "tasks",
-      keys: {
-        mac: ["meta", "shift", "i"],
-        windows: ["ctrl", "shift", "i"],
-      },
-      action: () => {
-        setSmartInputMode(!smartInputMode);
-        toast.success("Input Mode Toggled", {
-          description: `Switched to ${
-            !smartInputMode ? "smart" : "traditional"
-          } input`,
-          duration: 1500,
-        });
-      },
-      priority: 75,
-      allowInModal: true,
-    },
-    {
-      id: "quick-note",
-      description: "Take a Quick Note",
-      category: "tasks",
-      keys: {
-        mac: ["meta", "ctrl", "n"],
-        windows: ["ctrl", "alt", "n"],
-      },
-      action: () => {
-        openQuickNote();
-      },
-      priority: 80,
-      allowInModal: true,
-    },
-    {
-      id: "focus-mode",
-      description: "Enter Focus Mode",
-      category: "navigation",
-      keys: {
-        mac: ["meta", "shift", "enter"],
-        windows: ["ctrl", "shift", "enter"],
-      },
-      action: () => {
-        // Close search modal if open
-        if (showSearch) {
-          setShowSearch(false);
-        }
-        navigate("/focus");
-        toast.success("Focus Mode", {
-          description: "Entering focus mode",
-          duration: 1500,
-        });
-      },
-      priority: 70,
-      allowInModal: true,
-    },
-    {
-      id: "show-shortcuts",
-      description: "Show Keyboard Shortcuts",
-      category: "navigation",
-      keys: {
-        mac: ["meta", "/"],
-        windows: ["ctrl", "/"],
-      },
-      action: () => {
-        // Close search modal if open
-        if (showSearch) {
-          setShowSearch(false);
-        }
-        navigate("/shortcuts");
-      },
-      priority: 90,
-      allowInModal: true,
-    },
-    {
-      id: "search",
-      description: "Search Tasks",
-      category: "tasks",
-      keys: {
-        mac: ["meta", "k"],
-        windows: ["ctrl", "k"],
-      },
-      action: () => {
-        setShowSearch(true);
-        toast.success("Search", {
-          description: "Search tasks",
-          duration: 1500,
-        });
-      },
-      priority: 80,
-      allowInModal: true,
-    },
-    {
-      id: "notes",
-      description: "View Notes",
-      category: "navigation",
-      keys: {
-        mac: ["meta", "shift", "n"],
-        windows: ["ctrl", "shift", "n"],
-      },
-      action: () => {
-        // Close search modal if open
-        if (showSearch) {
-          setShowSearch(false);
-        }
-        navigate("/notes");
-        toast.success("Notes", {
-          description: "View your notes",
-          duration: 1500,
-        });
-      },
-      priority: 70,
-      allowInModal: true,
-    },
+  // Keyboard shortcuts definitions using standardized global shortcuts
+  const taskActionsShortcuts: KeyboardShortcut[] = [
     {
       id: "clear-completed",
       description: "Hide Completed Tasks",
@@ -241,27 +110,39 @@ const Index = () => {
       priority: 60,
       allowInModal: true,
     },
-    {
-      id: "toggle-theme",
-      description: "Toggle Dark/Light Mode",
-      category: "general",
-      keys: {
-        mac: ["meta", "shift", "l"],
-        windows: ["ctrl", "shift", "l"],
-      },
-      action: () => {
-        const currentTheme = theme || "light"; // Default to light if theme is undefined
-        const newTheme = currentTheme === "light" ? "dark" : "light";
-        setTheme(newTheme);
-        toast.success("Theme Toggled", {
-          description: `Switched to ${newTheme} mode`,
-          duration: 1500,
-        });
-      },
-      priority: 90,
-      allowInModal: true, // Always allow theme toggle
-    },
   ];
+
+  // Create global shortcuts with all functionality
+  const globalShortcuts = createGlobalShortcuts({
+    navigate,
+    openQuickNote,
+    openSearch: () => setShowSearch(true),
+    focusTaskInput,
+    toggleSmartInput: () => {
+      setSmartInputMode(!smartInputMode);
+      toast.success("Input Mode Toggled", {
+        description: `Switched to ${
+          !smartInputMode ? "smart" : "traditional"
+        } input`,
+        duration: 1500,
+      });
+    },
+    toggleTheme: () => {
+      const currentTheme = theme || "light";
+      const newTheme = currentTheme === "light" ? "dark" : "light";
+      setTheme(newTheme);
+      toast.success("Theme Toggled", {
+        description: `Switched to ${newTheme} mode`,
+        duration: 1500,
+      });
+    },
+    enableFocusMode: true,
+    enableTaskActions: true,
+    showSmartInputToggle: true,
+  });
+
+  // Combine global shortcuts with task-specific ones
+  const shortcuts = [...globalShortcuts, ...taskActionsShortcuts];
 
   // Enable keyboard shortcuts
   useKeyboardShortcuts(shortcuts);
@@ -624,14 +505,25 @@ const Index = () => {
       )}
 
       {/* Global Quick Note Button */}
-      <QuickNoteButton
-        open={showQuickNote}
-        onOpenChange={setShowQuickNote}
-        currentTaskId={undefined}
-        currentTaskTitle={undefined}
-        size="icon"
-        className="fixed bottom-6 right-6 z-40"
-      />
+      <div className="fixed bottom-6 right-6 z-40 flex gap-3">
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            size="default"
+            className="rounded-full px-4 py-2 bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-lg flex items-center gap-2"
+            onClick={openQuickNote}
+          >
+            <PenTool className="h-5 w-5" />
+            <span>Quick Note</span>
+          </Button>
+        </motion.div>
+        <QuickNoteButton
+          open={showQuickNote}
+          onOpenChange={setShowQuickNote}
+          currentTaskId={undefined}
+          currentTaskTitle={undefined}
+          size="icon"
+        />
+      </div>
 
       <PWAInstallPrompt />
     </div>

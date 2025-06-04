@@ -17,6 +17,7 @@ export type ShortcutAction =
   | "complete-task"
   | "complete-task-alt"
   | "toggle-pomodoro"
+  | "pomodoro-play-pause"
   | "snooze-task"
   | "postpone-task"
   | "exit-focus"
@@ -231,6 +232,7 @@ const getDefaultPriority = (id: ShortcutAction): number => {
     "complete-task": 85,
     "complete-task-alt": 85,
     "toggle-pomodoro": 75,
+    "pomodoro-play-pause": 85,
     "snooze-task": 80,
     "postpone-task": 80,
     "exit-focus": 70,
@@ -299,4 +301,161 @@ export const showShortcutToast = (action: string, keys: string[]) => {
     description: `Shortcut: ${formatShortcutKeys(keys)}`,
     duration: 2000,
   });
+};
+
+// Standard global shortcuts factory
+export const createGlobalShortcuts = (options: {
+  navigate: (path: string) => void;
+  openQuickNote?: () => void;
+  openSearch?: () => void;
+  focusTaskInput?: () => void;
+  toggleSmartInput?: () => void;
+  toggleTheme?: () => void;
+  customEscapeAction?: () => void;
+  enableFocusMode?: boolean;
+  enableTaskActions?: boolean;
+  showSmartInputToggle?: boolean;
+}): KeyboardShortcut[] => {
+  const shortcuts: KeyboardShortcut[] = [];
+
+  // Always include show shortcuts
+  shortcuts.push({
+    id: "show-shortcuts",
+    description: "Show Keyboard Shortcuts",
+    category: "general",
+    keys: {
+      mac: ["meta", "/"],
+      windows: ["ctrl", "/"],
+    },
+    action: () => options.navigate("/shortcuts"),
+    priority: 85,
+    allowInModal: true,
+  });
+
+  // Always include escape (return to dashboard unless custom action)
+  shortcuts.push({
+    id: "escape",
+    description: "Return to Dashboard",
+    category: "navigation",
+    keys: {
+      mac: ["escape"],
+      windows: ["escape"],
+    },
+    action:
+      options.customEscapeAction || (() => options.navigate("/dashboard")),
+    priority: 100,
+    allowInModal: true,
+  });
+
+  // Quick note (always available)
+  if (options.openQuickNote) {
+    shortcuts.push({
+      id: "quick-note",
+      description: "Take a Quick Note",
+      category: "general",
+      keys: {
+        mac: ["meta", "ctrl", "n"],
+        windows: ["ctrl", "alt", "n"],
+      },
+      action: options.openQuickNote,
+      priority: 75,
+      allowInModal: true,
+    });
+  }
+
+  // Theme toggle (always available)
+  if (options.toggleTheme) {
+    shortcuts.push({
+      id: "toggle-theme",
+      description: "Toggle Dark/Light Mode",
+      category: "general",
+      keys: {
+        mac: ["meta", "shift", "l"],
+        windows: ["ctrl", "shift", "l"],
+      },
+      action: options.toggleTheme,
+      priority: 90,
+      allowInModal: true,
+    });
+  }
+
+  // Search (when available)
+  if (options.openSearch) {
+    shortcuts.push({
+      id: "search",
+      description: "Search Tasks",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "k"],
+        windows: ["ctrl", "k"],
+      },
+      action: options.openSearch,
+      priority: 80,
+      allowInModal: true,
+    });
+  }
+
+  // Add task (when available)
+  if (options.focusTaskInput && options.enableTaskActions) {
+    shortcuts.push({
+      id: "add-task",
+      description: "Add New Task",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "j"],
+        windows: ["ctrl", "j"],
+      },
+      action: options.focusTaskInput,
+      priority: 75,
+      allowInModal: true,
+    });
+  }
+
+  // Smart input toggle (when available)
+  if (options.toggleSmartInput && options.showSmartInputToggle) {
+    shortcuts.push({
+      id: "toggle-input-mode",
+      description: "Toggle Smart/Traditional Input",
+      category: "tasks",
+      keys: {
+        mac: ["meta", "shift", "i"],
+        windows: ["ctrl", "shift", "i"],
+      },
+      action: options.toggleSmartInput,
+      priority: 75,
+      allowInModal: true,
+    });
+  }
+
+  // Focus mode (when available)
+  if (options.enableFocusMode) {
+    shortcuts.push({
+      id: "focus-mode",
+      description: "Enter Focus Mode",
+      category: "navigation",
+      keys: {
+        mac: ["meta", "shift", "enter"],
+        windows: ["ctrl", "shift", "enter"],
+      },
+      action: () => options.navigate("/focus"),
+      priority: 70,
+      allowInModal: true,
+    });
+  }
+
+  // Notes navigation
+  shortcuts.push({
+    id: "notes",
+    description: "View Notes",
+    category: "navigation",
+    keys: {
+      mac: ["meta", "shift", "n"],
+      windows: ["ctrl", "shift", "n"],
+    },
+    action: () => options.navigate("/notes"),
+    priority: 65,
+    allowInModal: true,
+  });
+
+  return shortcuts;
 };

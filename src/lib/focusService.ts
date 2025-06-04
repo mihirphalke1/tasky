@@ -382,24 +382,38 @@ export const createFocusSession = async (
     throw new Error("User ID is required to create focus session");
   }
 
-  const sessionsRef = collection(db, "focusSessions");
-  const now = new Date();
+  try {
+    const sessionsRef = collection(db, "focusSessions");
+    const now = new Date();
 
-  const sessionData = {
-    userId,
-    taskId: taskId || null,
-    startTime: Timestamp.fromDate(now),
-    endTime: null,
-    duration: 0,
-    intention: intention || null,
-    notes: [],
-    pomodoroCount: 0,
-    backgroundImage: backgroundImage || null,
-    createdAt: Timestamp.fromDate(now),
-  };
+    const sessionData = {
+      userId,
+      taskId: taskId || null,
+      startTime: Timestamp.fromDate(now),
+      endTime: null,
+      duration: 0,
+      intention: intention || null,
+      notes: [],
+      pomodoroCount: 0,
+      backgroundImage: backgroundImage || null,
+      createdAt: Timestamp.fromDate(now),
+    };
 
-  const docRef = await addDoc(sessionsRef, sessionData);
-  return docRef.id;
+    console.log("Creating focus session with data:", sessionData);
+    const docRef = await addDoc(sessionsRef, sessionData);
+    console.log("Focus session created successfully with ID:", docRef.id);
+
+    // Verify the document was created
+    const createdDoc = await getDoc(docRef);
+    if (!createdDoc.exists()) {
+      throw new Error("Failed to verify focus session creation");
+    }
+
+    return docRef.id;
+  } catch (error) {
+    console.error("Error in createFocusSession:", error);
+    throw new Error(`Failed to create focus session: ${error.message}`);
+  }
 };
 
 export const endFocusSession = async (
@@ -412,15 +426,55 @@ export const endFocusSession = async (
     throw new Error("Session ID is required to end focus session");
   }
 
-  const sessionRef = doc(db, "focusSessions", sessionId);
-  const now = new Date();
+  try {
+    const sessionRef = doc(db, "focusSessions", sessionId);
+    const now = new Date();
 
-  await updateDoc(sessionRef, {
-    endTime: Timestamp.fromDate(now),
-    duration,
-    notes,
-    pomodoroCount,
-  });
+    // Get the session data to extract userId for daily stats update
+    const sessionSnapshot = await getDoc(sessionRef);
+    const sessionData = sessionSnapshot.exists()
+      ? sessionSnapshot.data()
+      : null;
+
+    const updateData = {
+      endTime: Timestamp.fromDate(now),
+      duration,
+      notes,
+      pomodoroCount,
+    };
+
+    console.log("Ending focus session with data:", updateData);
+    await updateDoc(sessionRef, updateData);
+
+    // Update daily stats if we have the session data
+    if (sessionData?.userId) {
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { updateDailyStatsForDate } = await import("./streakService");
+        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+        await updateDailyStatsForDate(sessionData.userId, today);
+      } catch (error) {
+        console.warn("Failed to update daily stats:", error);
+        // Don't throw here as the main focus session update was successful
+      }
+    }
+
+    // Verify the update was successful
+    const updatedDoc = await getDoc(sessionRef);
+    if (!updatedDoc.exists()) {
+      throw new Error("Focus session document not found after update");
+    }
+
+    const data = updatedDoc.data();
+    if (!data.endTime) {
+      throw new Error("Focus session end time was not updated properly");
+    }
+
+    console.log("Focus session ended successfully");
+  } catch (error) {
+    console.error("Error in endFocusSession:", error);
+    throw new Error(`Failed to end focus session: ${error.message}`);
+  }
 };
 
 export const getFocusSessions = async (
@@ -489,4 +543,86 @@ export const getFocusSessionsByTaskId = async (
       createdAt: data.createdAt.toDate(),
     } as FocusSession;
   });
+};
+
+// Debug function to check focus session data
+export const debugFocusSessionData = async (userId: string): Promise<void> => {
+  if (!userId) {
+    console.error("No user ID provided for debug");
+    return;
+  }
+
+  try {
+    console.log("🔍 Debugging focus session data for user:", userId);
+
+    const sessionsRef = collection(db, "focusSessions");
+    const q = query(
+      sessionsRef,
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+    const sessions = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      data: doc.data(),
+    }));
+
+    console.log("📊 Total focus sessions found:", sessions.length);
+
+    if (sessions.length > 0) {
+      console.log("📝 Recent sessions:");
+      sessions.slice(0, 5).forEach((session, index) => {
+        console.log(`${index + 1}.`, {
+          id: session.id,
+          taskId: session.data.taskId,
+          startTime: session.data.startTime?.toDate(),
+          endTime: session.data.endTime?.toDate(),
+          duration: session.data.duration,
+          intention: session.data.intention,
+        });
+      });
+    } else {
+      console.log("❌ No focus sessions found for this user");
+    }
+
+    // Check if user is properly authenticated
+    console.log("🔐 Auth check - User ID:", userId);
+  } catch (error) {
+    console.error("❌ Error debugging focus session data:", error);
+  }
+};
+
+// Enhanced function to verify focus session persistence
+export const verifyFocusSessionPersistence = async (
+  sessionId: string
+): Promise<boolean> => {
+  if (!sessionId) {
+    console.error("No session ID provided for verification");
+    return false;
+  }
+
+  try {
+    const sessionRef = doc(db, "focusSessions", sessionId);
+    const sessionDoc = await getDoc(sessionRef);
+
+    if (sessionDoc.exists()) {
+      const data = sessionDoc.data();
+      console.log("✅ Focus session verified in Firebase:", {
+        id: sessionId,
+        userId: data.userId,
+        taskId: data.taskId,
+        startTime: data.startTime?.toDate(),
+        endTime: data.endTime?.toDate(),
+        duration: data.duration,
+      });
+      return true;
+    } else {
+      console.error("❌ Focus session not found in Firebase:", sessionId);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error verifying focus session:", error);
+    return false;
+  }
 };

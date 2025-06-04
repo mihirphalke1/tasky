@@ -23,6 +23,8 @@ import { Switch } from "./ui/switch";
 interface PomodoroTimerProps {
   isActive: boolean;
   onComplete: () => void;
+  externalToggle?: boolean; // External control for play/pause
+  onToggleChange?: (isRunning: boolean) => void; // Callback when toggle state changes
 }
 
 interface TimerSettings {
@@ -43,7 +45,12 @@ const DEFAULT_SETTINGS: TimerSettings = {
   autoStartPomodoros: false,
 };
 
-export function PomodoroTimer({ isActive, onComplete }: PomodoroTimerProps) {
+export function PomodoroTimer({
+  isActive,
+  onComplete,
+  externalToggle,
+  onToggleChange,
+}: PomodoroTimerProps) {
   const [settings, setSettings] = useState<TimerSettings>(() => {
     const savedSettings = localStorage.getItem("pomodoroSettings");
     return savedSettings ? JSON.parse(savedSettings) : DEFAULT_SETTINGS;
@@ -59,6 +66,20 @@ export function PomodoroTimer({ isActive, onComplete }: PomodoroTimerProps) {
   useEffect(() => {
     localStorage.setItem("pomodoroSettings", JSON.stringify(settings));
   }, [settings]);
+
+  // Handle external toggle control
+  useEffect(() => {
+    if (externalToggle !== undefined) {
+      const newRunningState = !isRunning;
+      setIsRunning(newRunningState);
+      if (onToggleChange) {
+        onToggleChange(newRunningState);
+      }
+      if (newRunningState && !isRunning) {
+        playSound("start");
+      }
+    }
+  }, [externalToggle]);
 
   // Sound effects
   const playSound = (type: "start" | "complete" | "break") => {

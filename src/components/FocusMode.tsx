@@ -45,6 +45,8 @@ import {
   getUserStreak,
   saveTaskIntention,
   getTaskIntention,
+  debugFocusSessionData,
+  verifyFocusSessionPersistence,
 } from "@/lib/focusService";
 import {
   useKeyboardShortcuts,
@@ -106,6 +108,17 @@ export function FocusMode({
   const [autoExitTimer, setAutoExitTimer] = useState<NodeJS.Timeout | null>(
     null
   );
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  // New states for enhanced layout
+  const [showSidePanel, setShowSidePanel] = useState(false);
+  const [sidePanelContent, setSidePanelContent] = useState<
+    "pomodoro" | "shortcuts" | null
+  >(null);
+
+  // States for controlling pomodoro timer and quick notes
+  const [pomodoroIsRunning, setPomodoroIsRunning] = useState(false);
+  const [showQuickNoteDialog, setShowQuickNoteDialog] = useState(false);
+  const [pomodoroToggleTrigger, setPomodoroToggleTrigger] = useState(false);
 
   // Enhanced task filtering, prioritization, and validation
   const processedTasks = useMemo(() => {
@@ -331,18 +344,133 @@ export function FocusMode({
     }, 3000);
   };
 
+  // Helper functions for side panel management
+  const handleTogglePomodoro = () => {
+    if (showSidePanel && sidePanelContent === "pomodoro") {
+      // Close side panel if pomodoro is already open
+      setShowSidePanel(false);
+      setSidePanelContent(null);
+      setIsPomodoroMode(false);
+    } else {
+      // Open pomodoro side panel
+      setShowSidePanel(true);
+      setSidePanelContent("pomodoro");
+      setIsPomodoroMode(true);
+      setShowShortcuts(false);
+    }
+  };
+
+  const handleToggleShortcuts = () => {
+    if (showSidePanel && sidePanelContent === "shortcuts") {
+      // Close side panel if shortcuts is already open
+      setShowSidePanel(false);
+      setSidePanelContent(null);
+      setShowShortcuts(false);
+    } else {
+      // Open shortcuts side panel
+      setShowSidePanel(true);
+      setSidePanelContent("shortcuts");
+      setShowShortcuts(true);
+      setIsPomodoroMode(false);
+    }
+  };
+
+  // Function to handle pomodoro play/pause
+  const handlePomodoroPlayPause = () => {
+    if (!isPomodoroMode) {
+      toast.error("Pomodoro timer is not active", {
+        description: "Press 'P' to open the Pomodoro timer first",
+      });
+      return;
+    }
+    // Trigger the external toggle by incrementing the trigger value
+    setPomodoroToggleTrigger((prev) => !prev);
+  };
+
+  // Function to handle quick note shortcut
+  const handleQuickNoteShortcut = () => {
+    setShowQuickNoteDialog(true);
+  };
+
   const handleEndFocusSession = async () => {
-    if (!sessionId || !user) return;
+    if (!sessionId || !user) {
+      console.warn("❌ Cannot end session: Missing session ID or user");
+      navigate("/dashboard");
+      return;
+    }
+
+    if (!user.uid) {
+      console.error("❌ Cannot end session: User ID is missing");
+      toast.error("Authentication error", {
+        description: "User ID is missing. Session may not be saved properly.",
+      });
+      navigate("/dashboard");
+      return;
+    }
 
     try {
-      const sessionDuration = differenceInMinutes(new Date(), sessionStartTime);
+      console.log("🏁 Ending focus session:", sessionId, "for user:", user.uid);
 
-      await endFocusSession(sessionId, sessionDuration, [], completedPomodoros);
+      // Verify session exists before ending
+      const sessionExists = await verifyFocusSessionPersistence(sessionId);
+      if (!sessionExists) {
+        throw new Error("Focus session not found in Firebase before ending");
+      }
 
+      const endTime = new Date();
+      const totalDuration = Math.floor(
+        (endTime.getTime() - sessionStartTime.getTime()) / (1000 * 60)
+      ); // in minutes
+
+      console.log("⏱️ Session duration:", totalDuration, "minutes");
+      console.log("🍅 Completed pomodoros:", completedPomodoros);
+
+      // Get session notes if any
+      const sessionNotes: string[] = []; // You can implement note collection if needed
+
+      // End the focus session with proper persistence
+      await endFocusSession(
+        sessionId,
+        totalDuration,
+        sessionNotes,
+        completedPomodoros
+      );
+
+      // Verify the session was ended successfully
+      const verifiedAfterEnd = await verifyFocusSessionPersistence(sessionId);
+      if (!verifiedAfterEnd) {
+        throw new Error("Focus session verification failed after ending");
+      }
+
+      console.log(
+        "✅ Focus session ended successfully. Duration:",
+        totalDuration,
+        "minutes"
+      );
+
+      // Debug user's focus session data after ending
+      await debugFocusSessionData(user.uid);
+
+      // Show session summary with all the data
       setShowSessionSummary(true);
+
+      // Reset session state
+      setSessionId(null);
+      setSessionIntention("");
+      setCompletedPomodoros(0);
+
+      toast.success("Focus session completed!", {
+        description: `Total focus time: ${Math.floor(totalDuration / 60)}h ${
+          totalDuration % 60
+        }m`,
+      });
     } catch (error) {
-      console.error("Error ending focus session:", error);
-      toast.error("Failed to save session data");
+      console.error("❌ Error ending focus session:", error);
+      toast.error("Failed to save focus session", {
+        description: "Your session data might not have been saved properly.",
+      });
+      // Still navigate away even if there's an error
+      navigate("/dashboard");
     }
   };
 
@@ -373,29 +501,29 @@ export function FocusMode({
       priority: 80,
       allowInModal: false,
     },
-    // Space for completing current task
+    // Cmd/Ctrl+Enter for completing task
     {
       id: "complete-task",
       description: "Complete Current Task",
-      category: "tasks",
-      keys: {
-        mac: ["space"],
-        windows: ["space"],
-      },
-      action: () => selectedTask && handleMarkDone(selectedTask.id),
-      priority: 85,
-      allowInModal: false,
-    },
-    // Cmd/Ctrl+Enter as alternative for completing task
-    {
-      id: "complete-task-alt",
-      description: "Complete Current Task (Alt)",
       category: "tasks",
       keys: {
         mac: ["meta", "enter"],
         windows: ["ctrl", "enter"],
       },
       action: () => selectedTask && handleMarkDone(selectedTask.id),
+      priority: 85,
+      allowInModal: false,
+    },
+    // Space for pomodoro play/pause
+    {
+      id: "pomodoro-play-pause",
+      description: "Pomodoro Play/Pause",
+      category: "tasks",
+      keys: {
+        mac: ["space"],
+        windows: ["space"],
+      },
+      action: handlePomodoroPlayPause,
       priority: 85,
       allowInModal: false,
     },
@@ -408,7 +536,7 @@ export function FocusMode({
         mac: ["p"],
         windows: ["p"],
       },
-      action: () => setIsPomodoroMode(!isPomodoroMode),
+      action: handleTogglePomodoro,
       priority: 75,
       allowInModal: false,
     },
@@ -458,6 +586,32 @@ export function FocusMode({
       action: () => handleFocusLockToggle(!focusLockEnabled),
       priority: 90,
       allowInModal: false,
+    },
+    // Show shortcuts panel
+    {
+      id: "show-shortcuts",
+      description: "Show/Hide Shortcuts",
+      category: "general",
+      keys: {
+        mac: ["meta", "/"],
+        windows: ["ctrl", "/"],
+      },
+      action: handleToggleShortcuts,
+      priority: 95,
+      allowInModal: true,
+    },
+    // Quick note shortcut
+    {
+      id: "quick-note",
+      description: "Quick Note",
+      category: "general",
+      keys: {
+        mac: ["meta", "ctrl", "n"],
+        windows: ["ctrl", "alt", "n"],
+      },
+      action: handleQuickNoteShortcut,
+      priority: 85,
+      allowInModal: true,
     },
     // Exit shortcut (blocked when focus lock is enabled)
     {
@@ -512,44 +666,97 @@ export function FocusMode({
   };
 
   const handleStartFocus = async (task: Task, intention?: string) => {
-    if (!user) return;
-
-    // Load previous intention for this task
-    try {
-      const previousIntention = await getTaskIntention(task.id);
-      setPreviousTaskIntention(previousIntention?.intention || null);
-    } catch (error) {
-      console.error("Error loading previous intention:", error);
+    if (!user) {
+      console.error("❌ Cannot start focus session: User not authenticated");
+      toast.error("Authentication required", {
+        description: "Please sign in to start a focus session",
+      });
+      return;
     }
 
-    // Store the initial session tasks (all tasks for today at session start)
-    setSessionTasks(processedTasks);
-    setSelectedTask(task);
-    setShowWelcome(false);
-    setSessionStartTime(new Date());
-    setSessionIntention(intention || "");
+    if (!user.uid) {
+      console.error("❌ Cannot start focus session: User ID is missing");
+      toast.error("Authentication error", {
+        description: "User ID is missing. Please try signing in again.",
+      });
+      return;
+    }
+
     try {
+      console.log("🚀 Starting focus session for user:", user.uid);
+      console.log("📋 Task:", task.id, "Intention:", intention);
+
+      // Debug current user's focus session data
+      await debugFocusSessionData(user.uid);
+
+      // Load previous intention for this task
+      try {
+        const previousIntention = await getTaskIntention(task.id);
+        setPreviousTaskIntention(previousIntention?.intention || null);
+        console.log(
+          "💭 Previous intention loaded:",
+          previousIntention?.intention
+        );
+      } catch (error) {
+        console.error("⚠️ Error loading previous intention:", error);
+      }
+
+      // Store the initial session tasks (all tasks for today at session start)
+      setSessionTasks(processedTasks);
+      setSelectedTask(task);
+      setShowWelcome(false);
+      setSessionStartTime(new Date());
+      setSessionIntention(intention || "");
+
+      // Create focus session with proper error handling
+      console.log("🔥 Creating focus session...");
       const sessionId = await createFocusSession(
         user.uid,
         task.id,
         intention,
         backgroundImage
       );
+      console.log("✅ Focus session created with ID:", sessionId);
       setSessionId(sessionId);
-      if (intention) {
-        await saveTaskIntention(task.id, intention, new Date());
+
+      // Verify the session was created successfully
+      const verified = await verifyFocusSessionPersistence(sessionId);
+      if (!verified) {
+        throw new Error("Focus session was not properly saved to Firebase");
       }
-      const updatedStreak = await updateUserStreak(user.uid);
-      setCurrentStreak(updatedStreak.currentStreak);
-      setLongestStreak(updatedStreak.longestStreak);
+
+      // Save task intention if provided
+      if (intention) {
+        try {
+          await saveTaskIntention(task.id, intention, new Date());
+          console.log("💾 Task intention saved successfully");
+        } catch (error) {
+          console.error("⚠️ Error saving task intention:", error);
+          // Don't fail the entire session start if intention save fails
+        }
+      }
+
+      // Update user streak
+      try {
+        const updatedStreak = await updateUserStreak(user.uid);
+        setCurrentStreak(updatedStreak.currentStreak);
+        setLongestStreak(updatedStreak.longestStreak);
+        console.log("🔥 User streak updated:", updatedStreak);
+      } catch (error) {
+        console.error("⚠️ Error updating user streak:", error);
+        // Don't fail the entire session start if streak update fails
+      }
+
       toast.success("Focus session started!", {
         description: intention
           ? "Good luck with your intention!"
           : "Stay focused and productive!",
       });
     } catch (error) {
-      console.error("Error starting focus session:", error);
-      toast.error("Failed to start focus session");
+      console.error("❌ Error starting focus session:", error);
+      toast.error("Failed to start focus session", {
+        description: "Please try again. Check your internet connection.",
+      });
     }
   };
 
@@ -979,7 +1186,7 @@ export function FocusMode({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsPomodoroMode(!isPomodoroMode)}
+                onClick={handleTogglePomodoro}
                 className={cn(
                   "text-[#1A1A1A] dark:text-white hover:text-[#CDA351] dark:hover:text-[#CDA351]",
                   isPomodoroMode && "text-[#CDA351]"
@@ -1007,7 +1214,7 @@ export function FocusMode({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsPomodoroMode(!isPomodoroMode)}
+                onClick={handleTogglePomodoro}
                 className={cn(
                   "text-[#1A1A1A] dark:text-white hover:text-[#CDA351] dark:hover:text-[#CDA351] text-sm",
                   isPomodoroMode && "text-[#CDA351]"
@@ -1021,6 +1228,14 @@ export function FocusMode({
                   isLocked={focusLockEnabled}
                   onToggle={handleFocusLockToggle}
                 />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleShortcuts}
+                  className="text-[#1A1A1A] dark:text-white hover:text-[#CDA351] dark:hover:text-[#CDA351]"
+                >
+                  <span className="text-lg">⌘</span>
+                </Button>
                 <QuickNoteButton
                   currentTaskId={selectedTask?.id}
                   currentTaskTitle={selectedTask?.title}
@@ -1043,189 +1258,180 @@ export function FocusMode({
                 </div>
               </div>
             )}
-
-            <div className="hidden sm:block w-[100px]"></div>
           </div>
 
-          {/* Main Content with Mobile Optimizations */}
-          <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
-            <AnimatePresence mode="wait">
-              {showTransition ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="text-center space-y-4 sm:space-y-6"
-                >
-                  <div className="relative w-16 h-16 sm:w-24 sm:h-24 mx-auto">
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: 0,
-                        ease: "easeInOut",
-                      }}
-                      className="absolute inset-0 rounded-full bg-primary/10"
-                    />
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        opacity: [0.3, 0.6, 0.3],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: 0,
-                        ease: "easeInOut",
-                      }}
-                      className="absolute inset-2 rounded-full bg-primary/20"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-lg sm:text-xl text-white">
-                      Take a deep breath...
-                    </p>
-                    <p className="text-sm text-white/80">
-                      Ready for the next task?
-                    </p>
-                  </div>
-                </motion.div>
-              ) : selectedTask ? (
-                <motion.div
-                  key={selectedTask.id}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full max-w-2xl"
-                >
-                  <Card
-                    className={cn(
-                      "p-4 sm:p-8 hover:shadow-lg transition-shadow mx-2 sm:mx-0 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95",
-                      focusLockEnabled && "ring-2 ring-red-500/20"
-                    )}
+          {/* Main Content Area - Now with 2x1 layout when side panel is open */}
+          <div className="flex-1 flex relative overflow-hidden">
+            {/* Main task content area */}
+            <motion.div
+              initial={false}
+              animate={{
+                width: showSidePanel ? "60%" : "100%",
+                x: 0,
+              }}
+              transition={{
+                duration: 0.4,
+                ease: "easeInOut",
+              }}
+              className="flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            >
+              <AnimatePresence mode="wait">
+                {selectedTask ? (
+                  <motion.div
+                    key={selectedTask.id}
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full max-w-2xl"
                   >
-                    <div className="space-y-4 sm:space-y-6">
-                      {/* Intention Display - Always visible when intention is set */}
-                      {sessionIntention && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mb-6 p-4 rounded-lg bg-gradient-to-r from-[#CDA351]/10 to-[#CDA351]/5 border border-[#CDA351]/20"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#CDA351]/20 flex items-center justify-center mt-0.5">
-                              <motion.div
-                                animate={{
-                                  scale: [1, 1.1, 1],
-                                  opacity: [0.8, 1, 0.8],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                }}
-                              >
-                                ✨
-                              </motion.div>
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-sm font-medium text-[#CDA351] dark:text-[#CDA351] mb-1">
-                                Your Intention
-                              </h3>
-                              <p className="text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
-                                "{sessionIntention}"
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
+                    <Card
+                      className={cn(
+                        "p-4 sm:p-8 hover:shadow-lg transition-shadow mx-2 sm:mx-0 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95",
+                        focusLockEnabled && "ring-2 ring-red-500/20"
                       )}
-
-                      {/* Previous Intention Display - Show previous intention for context */}
-                      {previousTaskIntention &&
-                        previousTaskIntention !== sessionIntention && (
+                    >
+                      <div className="space-y-4 sm:space-y-6 max-h-[80vh] overflow-y-auto">
+                        {/* Intention Display - Always visible when intention is set */}
+                        {sessionIntention && (
                           <motion.div
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
+                            className="mb-4 p-3 sm:p-4 rounded-lg bg-gradient-to-r from-[#CDA351]/10 to-[#CDA351]/5 border border-[#CDA351]/20"
                           >
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mt-0.5">
-                                <span className="text-xs">🕐</span>
+                            <div className="flex items-start gap-2 sm:gap-3">
+                              <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#CDA351]/20 flex items-center justify-center mt-0.5">
+                                <motion.div
+                                  animate={{
+                                    scale: [1, 1.1, 1],
+                                    opacity: [0.8, 1, 0.8],
+                                  }}
+                                  transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                  }}
+                                  className="text-xs sm:text-sm"
+                                >
+                                  ✨
+                                </motion.div>
                               </div>
-                              <div className="flex-1">
-                                <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                  Previous Intention
-                                </h4>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 italic">
-                                  "{previousTaskIntention}"
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xs sm:text-sm font-medium text-[#CDA351] dark:text-[#CDA351] mb-1">
+                                  Your Intention
+                                </h3>
+                                <p className="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 leading-relaxed break-words">
+                                  "{sessionIntention}"
                                 </p>
                               </div>
                             </div>
                           </motion.div>
                         )}
 
-                      {isPomodoroMode && (
-                        <div className="mb-4 sm:mb-8">
-                          <PomodoroTimer
-                            isActive={isPomodoroMode}
-                            onComplete={handlePomodoroComplete}
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <h2 className="text-xl sm:text-2xl font-bold mb-2 leading-tight">
-                          {selectedTask.title}
-                        </h2>
-                        {selectedTask.description && (
-                          <p className="text-sm sm:text-base text-muted-foreground">
-                            {selectedTask.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {selectedTask.priority && (
-                            <span
-                              className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${
-                                selectedTask.priority === "high"
-                                  ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-                                  : selectedTask.priority === "medium"
-                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
-                                  : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                              }`}
+                        {/* Previous Intention Display - Compact version for better UX */}
+                        {previousTaskIntention &&
+                          previousTaskIntention !== sessionIntention && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2 }}
+                              className="mb-3 p-2 sm:p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
                             >
-                              {selectedTask.priority.charAt(0).toUpperCase() +
-                                selectedTask.priority.slice(1)}{" "}
-                              Priority
-                            </span>
+                              <div className="flex items-start gap-2">
+                                <div className="flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mt-0.5">
+                                  <span className="text-xs">🕐</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                    Previous Intention
+                                  </h4>
+                                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 italic break-words line-clamp-2">
+                                    "{previousTaskIntention}"
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
                           )}
-                          {selectedTask.snoozedUntil && (
-                            <span className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
-                              💤 Previously Snoozed
-                            </span>
-                          )}
-                        </div>
-                      </div>
 
-                      {/* Mobile-Optimized Action Buttons */}
-                      <div className="pt-4">
-                        {/* Mobile: Stack buttons vertically */}
-                        <div className="flex flex-col sm:hidden gap-3">
-                          <Button
-                            size="lg"
-                            onClick={() => handleMarkDone(selectedTask.id)}
-                            className="bg-green-600 hover:bg-green-700 text-white w-full h-12 text-base font-medium"
-                          >
-                            ✅ Mark Done
-                          </Button>
-                          <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <h2 className="text-xl sm:text-2xl font-bold mb-2 leading-tight break-words">
+                            {selectedTask.title}
+                          </h2>
+                          {selectedTask.description && (
+                            <p className="text-sm sm:text-base text-muted-foreground break-words">
+                              {selectedTask.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {selectedTask.priority && (
+                              <span
+                                className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${
+                                  selectedTask.priority === "high"
+                                    ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+                                    : selectedTask.priority === "medium"
+                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
+                                    : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                }`}
+                              >
+                                {selectedTask.priority.charAt(0).toUpperCase() +
+                                  selectedTask.priority.slice(1)}{" "}
+                                Priority
+                              </span>
+                            )}
+                            {selectedTask.snoozedUntil && (
+                              <span className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                                💤 Previously Snoozed
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Mobile-Optimized Action Buttons - Always at bottom */}
+                        <div className="pt-4 mt-auto">
+                          {/* Mobile: Stack buttons vertically */}
+                          <div className="flex flex-col sm:hidden gap-3">
+                            <Button
+                              size="lg"
+                              onClick={() => handleMarkDone(selectedTask.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white w-full h-12 text-base font-medium"
+                            >
+                              ✅ Mark Done
+                            </Button>
+                            <div className="grid grid-cols-2 gap-3">
+                              <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => handlePostpone(selectedTask.id)}
+                                className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 h-12"
+                              >
+                                💭 Tomorrow
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => handleSnooze(selectedTask.id, 2)}
+                                className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950 h-12"
+                              >
+                                💤 Snooze 2h
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Desktop: Horizontal layout */}
+                          <div className="hidden sm:flex justify-center gap-4">
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => handleMarkDone(selectedTask.id)}
+                              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                            >
+                              ✅ Done
+                            </Button>
                             <Button
                               variant="outline"
                               size="lg"
                               onClick={() => handlePostpone(selectedTask.id)}
-                              className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 h-12"
+                              className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
                             >
                               💭 Tomorrow
                             </Button>
@@ -1233,136 +1439,319 @@ export function FocusMode({
                               variant="outline"
                               size="lg"
                               onClick={() => handleSnooze(selectedTask.id, 2)}
-                              className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950 h-12"
+                              className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
                             >
                               💤 Snooze 2h
                             </Button>
                           </div>
                         </div>
 
-                        {/* Desktop: Horizontal layout */}
-                        <div className="hidden sm:flex justify-center gap-4">
+                        {/* Mobile: Navigation Controls */}
+                        <div className="flex sm:hidden justify-between items-center pt-4 border-t">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="lg"
-                            onClick={() => handleMarkDone(selectedTask.id)}
-                            className="text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                            onClick={handlePreviousTask}
+                            disabled={safeCurrentTaskIndex === 0}
+                            className="flex-1 text-muted-foreground"
                           >
-                            ✅ Done
+                            ← Previous
                           </Button>
+                          <div className="px-4 text-sm text-muted-foreground">
+                            {safeCurrentTaskIndex + 1} of{" "}
+                            {processedTasks.length}
+                          </div>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="lg"
-                            onClick={() => handlePostpone(selectedTask.id)}
-                            className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                            onClick={handleNextTask}
+                            disabled={
+                              safeCurrentTaskIndex === processedTasks.length - 1
+                            }
+                            className="flex-1 text-muted-foreground"
                           >
-                            💭 Tomorrow
+                            Next →
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={() => handleSnooze(selectedTask.id, 2)}
-                            className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
-                          >
-                            💤 Snooze 2h
-                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <p>No task selected</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Side Panel - Pomodoro Timer or Shortcuts */}
+            <AnimatePresence>
+              {showSidePanel && (
+                <motion.div
+                  initial={{ x: "100%", opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: "100%", opacity: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    ease: "easeInOut",
+                  }}
+                  className="w-[40%] border-l border-[#CDA351]/30 bg-white/98 dark:bg-gray-900/98 backdrop-blur-md overflow-y-auto"
+                >
+                  {sidePanelContent === "pomodoro" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="p-4 h-full"
+                    >
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
+                          Pomodoro Timer
+                        </h2>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleTogglePomodoro}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-center h-full">
+                        <PomodoroTimer
+                          isActive={isPomodoroMode}
+                          onComplete={handlePomodoroComplete}
+                          externalToggle={pomodoroToggleTrigger}
+                          onToggleChange={setPomodoroIsRunning}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {sidePanelContent === "shortcuts" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="p-4 h-full"
+                    >
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
+                          Keyboard Shortcuts
+                        </h2>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleToggleShortcuts}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {/* Shortcuts organized by category */}
+                      <div className="space-y-6">
+                        {/* Task Actions */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Task Actions
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Complete Task
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Enter
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Pomodoro Play/Pause
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Space
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Snooze Task (2h)
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  S
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Postpone to Tomorrow
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⇧
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  →
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Navigation
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Next Task
+                              </span>
+                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                →
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Previous Task
+                              </span>
+                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                ←
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Exit Focus Mode
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Esc
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Focus Tools */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Focus Tools
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Pomodoro
+                              </span>
+                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                P
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Focus Lock
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  L
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Show/Hide Shortcuts
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  /
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Quick Note
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Ctrl
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  N
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Mobile: Navigation Controls */}
-                      <div className="flex sm:hidden justify-between items-center pt-4 border-t">
-                        <Button
-                          variant="ghost"
-                          size="lg"
-                          onClick={handlePreviousTask}
-                          disabled={safeCurrentTaskIndex === 0}
-                          className="flex-1 text-muted-foreground"
-                        >
-                          ← Previous
-                        </Button>
-                        <div className="px-4 text-sm text-muted-foreground">
-                          {safeCurrentTaskIndex + 1} of {processedTasks.length}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="lg"
-                          onClick={handleNextTask}
-                          disabled={
-                            safeCurrentTaskIndex === processedTasks.length - 1
-                          }
-                          className="flex-1 text-muted-foreground"
-                        >
-                          Next →
-                        </Button>
+                      {/* Footer tip */}
+                      <div className="mt-8 p-3 bg-[#CDA351]/10 rounded-lg border border-[#CDA351]/20">
+                        <p className="text-xs text-[#CDA351] font-medium">
+                          💡 Tip: These shortcuts work even when Focus Lock is
+                          enabled (except exit shortcuts)
+                        </p>
                       </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center space-y-4 px-4"
-                >
-                  <div className="text-4xl sm:text-6xl mb-4">🎯</div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white">
-                    No Tasks Available
-                  </h2>
-                  <p className="text-white/80 text-sm sm:text-base">
-                    All tasks are complete or no tasks are scheduled for today.
-                  </p>
-                  <Button
-                    onClick={handleExit}
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
-                    Exit Focus Mode
-                  </Button>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Enhanced Mobile-Responsive Navigation Hints */}
-          <div className="p-3 sm:p-4 text-center text-xs sm:text-sm border-t border-[#CDA351]/30 space-y-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm">
-            {/* Desktop keyboard shortcuts */}
-            <div className="hidden sm:flex flex-wrap justify-center gap-4">
-              <span className="text-[#1A1A1A] dark:text-white">
-                ←→ Navigate tasks
-              </span>
-              <span className="text-[#1A1A1A] dark:text-white">
-                Space Mark done
-              </span>
-              <span className="text-[#1A1A1A] dark:text-white">
-                ⌘⇧→ Postpone
-              </span>
-              <span className="text-[#1A1A1A] dark:text-white">⌘S Snooze</span>
-              <span className="text-[#1A1A1A] dark:text-white">P Pomodoro</span>
-            </div>
-            {/* Mobile touch instructions */}
-            <div className="sm:hidden">
-              <span className="text-[#1A1A1A] dark:text-white">
-                Tap buttons above to interact with tasks
-              </span>
-            </div>
-            <p>
+          {/* External Quick Note Dialog */}
+          <QuickNoteButton
+            currentTaskId={selectedTask?.id}
+            currentTaskTitle={selectedTask?.title}
+            open={showQuickNoteDialog}
+            onOpenChange={setShowQuickNoteDialog}
+          />
+
+          {/* Enhanced Mobile-Responsive Navigation Hints - Simplified */}
+          <div className="p-3 sm:p-4 text-center text-xs sm:text-sm border-t border-[#CDA351]/30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm">
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleShortcuts}
+                className="text-xs text-muted-foreground hover:text-[#CDA351] transition-colors"
+              >
+                <span className="mr-1">⌘</span>
+                View Shortcuts (Press ⌘+/ for shortcuts)
+              </Button>
               {focusLockEnabled ? (
-                <span className="text-red-500 font-medium">
-                  Focus Lock is active - Exit disabled
+                <span className="text-red-500 font-medium text-xs">
+                  🔒 Focus Lock Active
                 </span>
               ) : (
-                <>
-                  <span className="hidden sm:inline text-[#7E7E7E] dark:text-gray-400">
-                    Press Esc to exit
-                  </span>
-                  <span className="sm:hidden text-[#7E7E7E] dark:text-gray-400">
-                    Tap Exit to leave Focus Mode
-                  </span>
-                </>
+                <span className="text-muted-foreground text-xs"></span>
               )}
-            </p>
+            </div>
           </div>
         </div>
       </motion.div>

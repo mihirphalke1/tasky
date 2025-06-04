@@ -1,6 +1,10 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  enableIndexedDbPersistence,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,3 +19,27 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
+
+// Enable offline persistence for better data reliability
+let persistenceEnabled = false;
+
+const initializePersistence = async () => {
+  try {
+    await enableIndexedDbPersistence(db);
+    persistenceEnabled = true;
+    console.log("Firebase offline persistence enabled");
+  } catch (err: any) {
+    if (err.code === "failed-precondition") {
+      console.warn("Firebase persistence failed: Multiple tabs open");
+    } else if (err.code === "unimplemented") {
+      console.warn("Firebase persistence not supported in this browser");
+    } else {
+      console.error("Error enabling Firebase persistence:", err);
+    }
+  }
+};
+
+// Initialize persistence
+initializePersistence();
+
+export { persistenceEnabled };

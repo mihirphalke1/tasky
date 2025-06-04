@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, signInWithPopup, signOut } from "firebase/auth";
+import {
+  User,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -26,28 +32,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    console.log("Setting up authentication state listener");
 
-    return () => unsubscribe();
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        console.log(
+          "Auth state changed:",
+          user ? "User authenticated" : "User not authenticated"
+        );
+        setUser(user);
+        setLoading(false);
+
+        // Log user information for debugging
+        if (user) {
+          console.log("User ID:", user.uid);
+          console.log("User email:", user.email);
+        } else {
+          console.log("No authenticated user");
+        }
+      },
+      (error) => {
+        console.error("Auth state change error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      console.log("Cleaning up authentication listener");
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
     try {
+      setLoading(true);
+      console.log("Attempting Google sign-in");
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
+        console.log("Google sign-in successful:", result.user.uid);
         navigate("/dashboard");
       }
     } catch (error) {
       console.error("Error signing in with Google:", error);
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
+      console.log("Attempting logout");
       await signOut(auth);
+      console.log("Logout successful");
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -59,6 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     signInWithGoogle,
     logout,
+    isAuthenticated: !!user,
   };
 
   return (

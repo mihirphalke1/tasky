@@ -14,10 +14,14 @@ import { AuthProvider } from "./lib/AuthContext";
 import { useEffect } from "react";
 import { testFirebaseConnection } from "./lib/firebaseTest";
 import FocusMode from "./pages/FocusMode";
+import { useStreakTracking } from "./hooks/useStreakTracking";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
+  // Initialize streak tracking
+  useStreakTracking();
+
   useEffect(() => {
     testFirebaseConnection();
   }, []);

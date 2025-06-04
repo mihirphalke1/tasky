@@ -8,7 +8,12 @@ import {
   getFocusSessionsByTaskId,
   getTaskIntention,
 } from "@/lib/focusService";
-import { Task, Note, FocusSession, TaskIntention } from "@/types";
+import {
+  generateInsights,
+  getTaskInsights,
+  initializeDefaultInsightRules,
+} from "@/lib/insightsService";
+import { Task, Note, FocusSession, TaskIntention, TaskInsight } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -46,8 +51,26 @@ import {
   Lightbulb,
   Zap,
   Activity,
+  Flame,
+  Battery,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  doc,
+} from "firebase/firestore";
+import {
+  useKeyboardShortcuts,
+  type ShortcutAction,
+  type KeyboardShortcut,
+  createGlobalShortcuts,
+} from "@/hooks/useKeyboardShortcuts";
+import { useTheme } from "next-themes";
 
 // Debug function to test task access
 const debugTaskAccess = async (taskId: string, userId: string) => {
@@ -89,55 +112,265 @@ const TaskDetailPage = () => {
   const [taskIntention, setTaskIntention] = useState<TaskIntention | null>(
     null
   );
+  const [taskInsights, setTaskInsights] = useState<TaskInsight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const [showQuickNote, setShowQuickNote] = useState(false);
+
+  // Create standardized global shortcuts
+  const globalShortcuts = createGlobalShortcuts({
+    navigate,
+    openQuickNote: () => setShowQuickNote(true),
+    toggleTheme: () => {
+      const newTheme = theme === "light" ? "dark" : "light";
+      setTheme(newTheme);
+      toast.success("Theme Toggled", {
+        description: `Switched to ${newTheme} mode`,
+        duration: 1500,
+      });
+    },
+    enableFocusMode: true,
+    enableTaskActions: false, // Don't show task actions on task detail page
+  });
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts(globalShortcuts);
 
   useEffect(() => {
-    console.log("TaskDetailPage useEffect triggered");
-    console.log("User:", user);
-    console.log("User UID:", user?.uid);
-    console.log("Auth loading:", authLoading);
-    console.log("TaskId:", taskId);
-
-    // Don't proceed if auth is still loading
-    if (authLoading) {
-      console.log("Auth still loading, waiting...");
-      return;
-    }
+    if (authLoading) return;
 
     if (!user || !user.uid) {
-      console.log("No user or user.uid found, redirecting to home");
       navigate("/");
       toast.error("Please log in to view task details");
       return;
     }
 
     if (!taskId) {
-      console.log("No taskId provided");
       setError("Task ID is required");
       setIsLoading(false);
       return;
     }
 
-    console.log("User is authenticated, proceeding with loadTaskDetails");
     loadTaskDetails();
   }, [user, user?.uid, authLoading, taskId, navigate]);
 
+  // Set up real-time listeners for notes and task intentions
+  useEffect(() => {
+    if (!taskId || !user?.uid || authLoading) return;
+
+    console.log(
+      "Setting up real-time listeners for user:",
+      user.uid,
+      "task:",
+      taskId
+    );
+
+    // Set up task listener for real-time task updates
+    const taskRef = doc(db, "tasks", taskId);
+    const taskUnsubscribe = onSnapshot(
+      taskRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const updatedTask = {
+            id: snapshot.id,
+            userId: data.userId,
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            section: data.section,
+            tags: data.tags || [],
+            completed: data.completed,
+            completedAt: data.completedAt?.toDate(),
+            dueDate: data.dueDate?.toDate(),
+            createdAt: data.createdAt.toDate(),
+            lastModified: data.lastModified.toDate(),
+            status: data.status || "pending",
+          } as Task;
+          setTask(updatedTask);
+          console.log("Task updated in real-time:", updatedTask.title);
+        }
+      },
+      (error) => {
+        console.error("Error in task listener:", error);
+      }
+    );
+
+    // Set up notes listener
+    const notesRef = collection(db, "notes");
+    const notesQuery = query(
+      notesRef,
+      where("taskId", "==", taskId),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const notesUnsubscribe = onSnapshot(
+      notesQuery,
+      (snapshot) => {
+        const updatedNotes = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId,
+            content: data.content,
+            taskId: data.taskId,
+            isGeneral: data.isGeneral,
+            createdAt: data.createdAt.toDate(),
+          } as Note;
+        });
+        setNotes(updatedNotes);
+        console.log(
+          "Notes updated in real-time:",
+          updatedNotes.length,
+          "for user:",
+          user.uid
+        );
+      },
+      (error) => {
+        console.error("Error in notes listener:", error);
+        // If there's an error, try to fetch notes manually as fallback
+        getNotesByTaskId(taskId)
+          .then((fallbackNotes) => {
+            setNotes(fallbackNotes);
+            console.log("Fallback notes loaded:", fallbackNotes.length);
+          })
+          .catch((fallbackError) => {
+            console.error("Fallback notes fetch failed:", fallbackError);
+          });
+      }
+    );
+
+    // Set up task intentions listener
+    const intentionsRef = collection(db, "taskIntentions");
+    const intentionsQuery = query(
+      intentionsRef,
+      where("taskId", "==", taskId),
+      orderBy("createdAt", "desc")
+    );
+
+    const intentionsUnsubscribe = onSnapshot(
+      intentionsQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          setTaskIntention({
+            id: doc.id,
+            taskId: data.taskId,
+            intention: data.intention,
+            createdAt: data.createdAt.toDate(),
+            sessionStartTime: data.sessionStartTime.toDate(),
+          });
+        } else {
+          setTaskIntention(null);
+        }
+        console.log("Task intentions updated in real-time");
+      },
+      (error) => {
+        console.error("Error in intentions listener:", error);
+        // Fallback
+        getTaskIntention(taskId)
+          .then((fallbackIntention) => {
+            setTaskIntention(fallbackIntention);
+            console.log("Fallback intention loaded");
+          })
+          .catch((fallbackError) => {
+            console.error("Fallback intention fetch failed:", fallbackError);
+          });
+      }
+    );
+
+    // Set up focus sessions listener
+    const sessionsRef = collection(db, "focusSessions");
+    const sessionsQuery = query(
+      sessionsRef,
+      where("taskId", "==", taskId),
+      where("userId", "==", user.uid),
+      orderBy("startTime", "desc")
+    );
+
+    const sessionsUnsubscribe = onSnapshot(
+      sessionsQuery,
+      (snapshot) => {
+        const updatedSessions = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId,
+            taskId: data.taskId,
+            startTime: data.startTime.toDate(),
+            endTime: data.endTime?.toDate(),
+            duration: data.duration || 0,
+            notes: data.notes || [],
+            pomodoroCount: data.pomodoroCount || 0,
+            intention: data.intention || "",
+          } as FocusSession;
+        });
+        setFocusSessions(updatedSessions);
+        console.log(
+          "Focus sessions updated in real-time:",
+          updatedSessions.length,
+          "for user:",
+          user.uid
+        );
+
+        // Update task completion status if needed
+        if (task && updatedSessions.some((session) => session.endTime)) {
+          const completedSessions = updatedSessions.filter(
+            (session) => session.endTime
+          );
+          const totalFocusTime = completedSessions.reduce(
+            (total, session) => total + session.duration,
+            0
+          );
+
+          // If task is not completed and has significant focus time, mark it as in progress
+          if (!task.completed && totalFocusTime > 0) {
+            setTask((prev) =>
+              prev ? { ...prev, status: "in_progress" } : null
+            );
+          }
+        }
+      },
+      (error) => {
+        console.error("Error in focus sessions listener:", error);
+        // Fallback
+        getFocusSessionsByTaskId(user.uid, taskId)
+          .then((fallbackSessions) => {
+            setFocusSessions(fallbackSessions);
+            console.log(
+              "Fallback focus sessions loaded:",
+              fallbackSessions.length
+            );
+          })
+          .catch((fallbackError) => {
+            console.error(
+              "Fallback focus sessions fetch failed:",
+              fallbackError
+            );
+          });
+      }
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      console.log("Cleaning up real-time listeners");
+      taskUnsubscribe();
+      notesUnsubscribe();
+      intentionsUnsubscribe();
+      sessionsUnsubscribe();
+    };
+  }, [taskId, user?.uid, authLoading]);
+
   const loadTaskDetails = async () => {
     try {
-      console.log(
-        "Loading task details for taskId:",
-        taskId,
-        "user:",
-        user?.uid
-      );
-
-      // Run debug check first
+      console.log("Loading initial task details...");
       const debugResult = await debugTaskAccess(taskId, user.uid);
 
-      // If debug found the task in user's tasks but direct access failed, something is wrong
       if (debugResult.taskExists && !debugResult.directTask) {
         setError(
           "Task exists but cannot be accessed directly. This might be a permissions issue."
@@ -145,76 +378,113 @@ const TaskDetailPage = () => {
         return;
       }
 
-      // If task doesn't exist in user's tasks at all
       if (!debugResult.taskExists) {
         setError("Task not found in your tasks");
         return;
       }
 
-      // Use the task from debug result if direct access failed but task exists
       const taskData = debugResult.directTask || debugResult.taskExists;
 
       if (!taskData) {
-        console.log("Task not found for ID:", taskId);
         setError("Task not found");
         return;
       }
 
       if (taskData.userId !== user.uid) {
-        console.log(
-          "Permission denied: Task belongs to",
-          taskData.userId,
-          "but user is",
-          user.uid
-        );
         setError("You don't have permission to view this task");
         return;
       }
 
-      // Load remaining data
-      const [taskNotes, sessions, intention] = await Promise.all([
-        getNotesByTaskId(taskId).catch((error) => {
-          console.warn("Error loading notes:", error);
-          return [];
-        }),
-        getFocusSessionsByTaskId(user.uid, taskId).catch((error) => {
-          console.warn("Error loading focus sessions:", error);
-          return [];
-        }),
-        getTaskIntention(taskId).catch((error) => {
-          console.warn("Error loading task intention:", error);
-          return null;
-        }),
-      ]);
-
-      console.log("All data loaded successfully");
       setTask(taskData);
-      setNotes(taskNotes);
-      setFocusSessions(sessions);
-      setTaskIntention(intention);
-    } catch (error) {
-      console.error("Error loading task details:", error);
 
-      // More specific error messages
-      let errorMessage = "Failed to load task details";
-      let errorDescription = "Please try again later";
-
-      if (error.code === "permission-denied") {
-        errorMessage = "Permission denied";
-        errorDescription = "You don't have permission to access this task";
-      } else if (error.message?.includes("not found")) {
-        errorMessage = "Task not found";
-        errorDescription = "The task you're looking for doesn't exist";
-      } else if (error.message?.includes("network")) {
-        errorMessage = "Network error";
-        errorDescription = "Please check your internet connection";
+      // Initialize insight rules for new users
+      try {
+        await initializeDefaultInsightRules(user.uid);
+      } catch (error) {
+        console.warn("Failed to initialize insight rules:", error);
       }
 
-      setError(errorMessage);
-      toast.error(errorMessage, {
-        description: errorDescription,
-      });
-    } finally {
+      // Load all related data initially to ensure persistence
+      try {
+        console.log("Loading initial notes...");
+        const initialNotes = await getNotesByTaskId(taskId);
+        setNotes(initialNotes);
+        console.log("Initial notes loaded:", initialNotes.length);
+      } catch (error) {
+        console.warn("Failed to load initial notes:", error);
+      }
+
+      try {
+        console.log("Loading initial focus sessions...");
+        const initialSessions = await getFocusSessionsByTaskId(
+          user.uid,
+          taskId
+        );
+        setFocusSessions(initialSessions);
+        console.log("Initial focus sessions loaded:", initialSessions.length);
+
+        // Generate insights based on focus session data
+        if (initialSessions.length > 0) {
+          const completedSessions = initialSessions.filter(
+            (session) => session.endTime
+          );
+          const totalFocusTime = completedSessions.reduce(
+            (total, session) => total + session.duration,
+            0
+          );
+          const totalPomodoros = completedSessions.reduce(
+            (total, session) => total + session.pomodoroCount,
+            0
+          );
+          const totalSessions = completedSessions.length;
+          const avgSessionDuration =
+            totalSessions > 0 ? Math.round(totalFocusTime / totalSessions) : 0;
+          const focusScore =
+            totalSessions > 0
+              ? Math.min(100, (totalFocusTime / (totalSessions * 25)) * 100)
+              : 0;
+
+          // Generate insights
+          try {
+            const insights = await generateInsights(user.uid, taskId, {
+              focusScore: Math.round(focusScore),
+              totalPomodoros,
+              avgSessionDuration,
+              totalSessions,
+              currentStreak: 0, // We'll get this from user streak
+              totalFocusTime,
+            });
+            setTaskInsights(insights);
+            console.log("Generated insights:", insights.length);
+          } catch (error) {
+            console.warn("Failed to generate insights:", error);
+          }
+        } else {
+          // Load existing insights
+          try {
+            const existingInsights = await getTaskInsights(user.uid, taskId);
+            setTaskInsights(existingInsights);
+          } catch (error) {
+            console.warn("Failed to load existing insights:", error);
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to load initial focus sessions:", error);
+      }
+
+      try {
+        console.log("Loading initial task intention...");
+        const initialIntention = await getTaskIntention(taskId);
+        setTaskIntention(initialIntention);
+        console.log("Initial intention loaded:", !!initialIntention);
+      } catch (error) {
+        console.warn("Failed to load initial task intention:", error);
+      }
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error loading task details:", error);
+      setError("Failed to load task details");
       setIsLoading(false);
     }
   };
@@ -222,13 +492,10 @@ const TaskDetailPage = () => {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNote(noteId);
-      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
       toast.success("Note deleted successfully");
     } catch (error) {
       console.error("Error deleting note:", error);
-      toast.error("Failed to delete note", {
-        description: "Please try again later",
-      });
+      toast.error("Failed to delete note");
     }
   };
 
@@ -246,8 +513,16 @@ const TaskDetailPage = () => {
       0
     );
     const totalSessions = completedSessions.length;
-    const averageSessionTime =
-      totalSessions > 0 ? totalFocusTime / totalSessions : 0;
+
+    // Calculate average session duration
+    const avgSessionDuration =
+      totalSessions > 0 ? Math.round(totalFocusTime / totalSessions) : 0;
+
+    // Calculate completion rate
+    const completionRate =
+      totalSessions > 0
+        ? Math.round((completedSessions.length / totalSessions) * 100)
+        : 0;
 
     // Calculate focus score based on session completion and efficiency
     const focusScore =
@@ -255,15 +530,129 @@ const TaskDetailPage = () => {
         ? Math.min(100, (totalFocusTime / (totalSessions * 25)) * 100)
         : 0;
 
+    // Get the most recent session
+    const mostRecentSession = completedSessions[0];
+
+    // Calculate focus streak (consecutive days with completed sessions)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sessionsByDay = completedSessions.reduce((acc, session) => {
+      const sessionDate = new Date(session.endTime);
+      sessionDate.setHours(0, 0, 0, 0);
+      const dayKey = sessionDate.toISOString();
+      if (!acc[dayKey]) {
+        acc[dayKey] = [];
+      }
+      acc[dayKey].push(session);
+      return acc;
+    }, {} as Record<string, FocusSession[]>);
+
+    const daysWithSessions = Object.keys(sessionsByDay).sort();
+    let currentStreak = 0;
+    let checkingDate = today;
+
+    while (true) {
+      const dateKey = checkingDate.toISOString();
+      if (sessionsByDay[dateKey]) {
+        currentStreak++;
+        checkingDate.setDate(checkingDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
     return {
       totalFocusTime,
       totalPomodoros,
       totalSessions,
-      averageSessionTime,
-      focusScore: Math.round(focusScore),
+      avgSessionDuration,
+      completionRate,
+      currentStreak,
+      mostRecentSession,
+      sessionsByDay,
       completedSessions,
+      focusScore: Math.round(focusScore),
     };
   }, [focusSessions]);
+
+  // Render analytics section
+  const renderAnalytics = () => {
+    if (focusSessions.length === 0) {
+      return (
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Analytics
+            </CardTitle>
+            <CardDescription>
+              No focus sessions recorded yet. Start a focus session to see your
+              analytics.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      );
+    }
+
+    return (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Focus Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">
+                {formatTime(focusAnalytics.totalFocusTime)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {focusAnalytics.totalSessions} sessions completed
+              </div>
+              <Progress value={focusAnalytics.completionRate} className="h-2" />
+              <div className="text-sm text-muted-foreground">
+                {focusAnalytics.completionRate}% completion rate
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Productivity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">
+                {focusAnalytics.totalPomodoros}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Pomodoros completed
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {focusAnalytics.currentStreak} day streak
+              </div>
+              {focusAnalytics.mostRecentSession && (
+                <div className="text-sm text-muted-foreground">
+                  Last session:{" "}
+                  {formatDistanceToNow(
+                    focusAnalytics.mostRecentSession.endTime
+                  )}{" "}
+                  ago
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
 
   const getPriorityColor = (priority: string) => {
     const colors = {
@@ -298,6 +687,61 @@ const TaskDetailPage = () => {
     const remainingMinutes = minutes % 60;
     return `${hours}h ${remainingMinutes}m`;
   };
+
+  // Data validation and recovery mechanism
+  useEffect(() => {
+    if (!user?.uid || !taskId || isLoading) return;
+
+    // Set up a periodic check to ensure data is still loaded
+    const dataValidationInterval = setInterval(() => {
+      // Check if we have the basic data we need
+      if (!task) {
+        console.warn("Task data missing, attempting recovery...");
+        loadTaskDetails();
+        return;
+      }
+
+      // Validate that user still owns the task
+      if (task.userId !== user.uid) {
+        console.error("Task ownership mismatch, redirecting...");
+        navigate("/dashboard");
+        return;
+      }
+
+      console.log("Data validation passed:", {
+        task: !!task,
+        notes: notes.length,
+        sessions: focusSessions.length,
+        intention: !!taskIntention,
+      });
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(dataValidationInterval);
+  }, [
+    user?.uid,
+    taskId,
+    task,
+    notes.length,
+    focusSessions.length,
+    taskIntention,
+    isLoading,
+    navigate,
+  ]);
+
+  // Recovery mechanism for lost real-time connections
+  useEffect(() => {
+    if (!user?.uid || !taskId || isLoading) return;
+
+    const recoveryTimeout = setTimeout(() => {
+      // If after 5 seconds we still don't have basic data, try recovery
+      if (!task && !error) {
+        console.warn("Data not loaded after timeout, attempting recovery...");
+        loadTaskDetails();
+      }
+    }, 5000);
+
+    return () => clearTimeout(recoveryTimeout);
+  }, [user?.uid, taskId, task, error, isLoading]);
 
   if (!user) return null;
 
@@ -844,7 +1288,7 @@ const TaskDetailPage = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-[#CDA351]">
-                        {formatTime(focusAnalytics.averageSessionTime)}
+                        {formatTime(focusAnalytics.avgSessionDuration)}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Average Session Length
@@ -894,56 +1338,107 @@ const TaskDetailPage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {focusAnalytics.totalSessions === 0 ? (
+                    {taskInsights.length === 0 ? (
                       <p className="text-muted-foreground">
                         Complete some focus sessions to see insights here.
                       </p>
                     ) : (
-                      <>
-                        {focusAnalytics.focusScore >= 80 && (
-                          <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                            <Zap className="h-5 w-5 text-green-600" />
-                            <p className="text-sm">
-                              <strong>Excellent focus!</strong> Your sessions
-                              are highly productive with great time management.
-                            </p>
-                          </div>
-                        )}
+                      <div className="space-y-3">
+                        {taskInsights.map((insight) => {
+                          // Function to get the appropriate icon component
+                          const getInsightIcon = (iconName: string) => {
+                            switch (iconName) {
+                              case "Zap":
+                                return <Zap className="h-5 w-5" />;
+                              case "Coffee":
+                                return <Coffee className="h-5 w-5" />;
+                              case "Clock":
+                                return <Clock className="h-5 w-5" />;
+                              case "Target":
+                                return <Target className="h-5 w-5" />;
+                              case "TrendingUp":
+                                return <TrendingUp className="h-5 w-5" />;
+                              case "Flame":
+                                return <Flame className="h-5 w-5" />;
+                              case "Battery":
+                                return <Battery className="h-5 w-5" />;
+                              case "Timer":
+                                return <Timer className="h-5 w-5" />;
+                              default:
+                                return <Lightbulb className="h-5 w-5" />;
+                            }
+                          };
 
-                        {focusAnalytics.totalPomodoros >= 10 && (
-                          <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                            <Coffee className="h-5 w-5 text-red-600" />
-                            <p className="text-sm">
-                              <strong>Pomodoro master!</strong> You've completed{" "}
-                              {focusAnalytics.totalPomodoros} pomodoros on this
-                              task.
-                            </p>
-                          </div>
-                        )}
+                          // Function to get the appropriate color classes
+                          const getColorClasses = (color: string) => {
+                            switch (color) {
+                              case "green":
+                                return {
+                                  bg: "bg-green-50 dark:bg-green-950/20",
+                                  text: "text-green-600",
+                                };
+                              case "red":
+                                return {
+                                  bg: "bg-red-50 dark:bg-red-950/20",
+                                  text: "text-red-600",
+                                };
+                              case "blue":
+                                return {
+                                  bg: "bg-blue-50 dark:bg-blue-950/20",
+                                  text: "text-blue-600",
+                                };
+                              case "purple":
+                                return {
+                                  bg: "bg-purple-50 dark:bg-purple-950/20",
+                                  text: "text-purple-600",
+                                };
+                              case "yellow":
+                                return {
+                                  bg: "bg-yellow-50 dark:bg-yellow-950/20",
+                                  text: "text-yellow-600",
+                                };
+                              case "orange":
+                                return {
+                                  bg: "bg-orange-50 dark:bg-orange-950/20",
+                                  text: "text-orange-600",
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-50 dark:bg-gray-950/20",
+                                  text: "text-gray-600",
+                                };
+                            }
+                          };
 
-                        {focusAnalytics.averageSessionTime > 60 && (
-                          <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                            <Clock className="h-5 w-5 text-blue-600" />
-                            <p className="text-sm">
-                              <strong>Deep work specialist!</strong> Your
-                              average session length of{" "}
-                              {formatTime(focusAnalytics.averageSessionTime)}{" "}
-                              shows great sustained focus.
-                            </p>
-                          </div>
-                        )}
+                          const colorClasses = getColorClasses(insight.color);
 
-                        {focusAnalytics.totalSessions >= 5 && (
-                          <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                            <Target className="h-5 w-5 text-purple-600" />
-                            <p className="text-sm">
-                              <strong>Consistent performer!</strong> You've
-                              completed {focusAnalytics.totalSessions} focus
-                              sessions on this task.
-                            </p>
-                          </div>
-                        )}
-                      </>
+                          return (
+                            <motion.div
+                              key={insight.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className={`flex items-center gap-3 p-3 ${colorClasses.bg} rounded-lg`}
+                            >
+                              <div className={colorClasses.text}>
+                                {getInsightIcon(insight.icon)}
+                              </div>
+                              <div>
+                                <p className="text-sm">
+                                  <strong>{insight.title}</strong>{" "}
+                                  {insight.description}
+                                </p>
+                                {insight.value !== undefined &&
+                                  insight.threshold !== undefined && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Value: {insight.value} (threshold:{" "}
+                                      {insight.threshold})
+                                    </p>
+                                  )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -952,6 +1447,14 @@ const TaskDetailPage = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Quick Note Dialog */}
+      <QuickNoteButton
+        currentTaskId={task?.id}
+        currentTaskTitle={task?.title}
+        open={showQuickNote}
+        onOpenChange={setShowQuickNote}
+      />
     </div>
   );
 };

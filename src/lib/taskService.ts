@@ -174,6 +174,17 @@ export const addTask = async (
       const docRef = await addDoc(tasksRef, taskData);
       console.log("Task added successfully with ID:", docRef.id);
 
+      // Update daily stats for today since a new task was added
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { updateDailyStatsForDate } = await import("./streakService");
+        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+        await updateDailyStatsForDate(userId, today);
+      } catch (error) {
+        console.warn("Failed to update daily stats:", error);
+        // Don't throw here as the main task creation was successful
+      }
+
       // Verify the task was added
       const verifySnapshot = await getDoc(docRef);
       if (!verifySnapshot.exists()) {
@@ -218,6 +229,12 @@ export const updateTask = async (
       const taskRef = doc(db, "tasks", taskId);
       const now = new Date();
 
+      // Get the current task to check previous completion status
+      const currentTaskSnapshot = await getDoc(taskRef);
+      const currentTask = currentTaskSnapshot.exists()
+        ? currentTaskSnapshot.data()
+        : null;
+
       // Ensure all fields are properly formatted for Firestore
       const taskData = {
         ...task,
@@ -239,6 +256,26 @@ export const updateTask = async (
 
       await updateDoc(taskRef, taskData);
       console.log("Task updated successfully");
+
+      // Check if task completion status changed
+      const wasCompleted = currentTask?.completed || false;
+      const isNowCompleted = task.completed || false;
+
+      // If completion status changed or task was just completed, update daily stats
+      if (wasCompleted !== isNowCompleted || isNowCompleted) {
+        try {
+          // Import dynamically to avoid circular dependencies
+          const { updateDailyStatsForDate } = await import("./streakService");
+          const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+
+          if (currentTask?.userId) {
+            await updateDailyStatsForDate(currentTask.userId, today);
+          }
+        } catch (error) {
+          console.warn("Failed to update daily stats:", error);
+          // Don't throw here as the main task update was successful
+        }
+      }
 
       // Verify the task was updated
       const verifySnapshot = await getDoc(taskRef);

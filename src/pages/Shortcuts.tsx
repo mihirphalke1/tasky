@@ -22,7 +22,11 @@ import {
   formatShortcutKeys,
   useKeyboardShortcuts,
   type KeyboardShortcut,
+  createGlobalShortcuts,
 } from "@/hooks/useKeyboardShortcuts";
+import { useTheme } from "next-themes";
+import { toast } from "sonner";
+import { QuickNoteButton } from "@/components/QuickNoteButton";
 
 interface ShortcutDisplay {
   id: string;
@@ -63,24 +67,24 @@ const shortcuts: ShortcutDisplay[] = [
       windows: ["ctrl", "/"],
     },
   },
-
-  // Focus Mode
   {
-    id: "focus-exit",
-    description: "Exit Focus Mode (press twice)",
-    category: "focus",
+    id: "notes",
+    description: "View Notes Page",
+    category: "navigation",
     keys: {
-      mac: ["escape"],
-      windows: ["escape"],
+      mac: ["meta", "shift", "n"],
+      windows: ["ctrl", "shift", "n"],
     },
   },
+
+  // Focus Mode
   {
     id: "focus-next",
     description: "Navigate to Next Task",
     category: "focus",
     keys: {
-      mac: ["→"],
-      windows: ["→"],
+      mac: ["arrowright"],
+      windows: ["arrowright"],
     },
   },
   {
@@ -88,13 +92,22 @@ const shortcuts: ShortcutDisplay[] = [
     description: "Navigate to Previous Task",
     category: "focus",
     keys: {
-      mac: ["←"],
-      windows: ["←"],
+      mac: ["arrowleft"],
+      windows: ["arrowleft"],
     },
   },
   {
     id: "focus-complete",
-    description: "Mark Current Task as Done",
+    description: "Complete Current Task",
+    category: "focus",
+    keys: {
+      mac: ["meta", "enter"],
+      windows: ["ctrl", "enter"],
+    },
+  },
+  {
+    id: "focus-pomodoro-toggle",
+    description: "Pomodoro Play/Pause",
     category: "focus",
     keys: {
       mac: ["space"],
@@ -102,12 +115,21 @@ const shortcuts: ShortcutDisplay[] = [
     },
   },
   {
+    id: "focus-pomodoro",
+    description: "Toggle Pomodoro Timer",
+    category: "focus",
+    keys: {
+      mac: ["p"],
+      windows: ["p"],
+    },
+  },
+  {
     id: "focus-postpone",
     description: "Postpone Task to Tomorrow",
     category: "focus",
     keys: {
-      mac: ["meta", "shift", "→"],
-      windows: ["ctrl", "shift", "→"],
+      mac: ["meta", "shift", "arrowright"],
+      windows: ["ctrl", "shift", "arrowright"],
     },
   },
   {
@@ -120,19 +142,37 @@ const shortcuts: ShortcutDisplay[] = [
     },
   },
   {
-    id: "focus-pomodoro",
-    description: "Toggle Pomodoro Timer",
+    id: "focus-lock",
+    description: "Toggle Focus Lock",
     category: "focus",
     keys: {
-      mac: ["p"],
-      windows: ["p"],
+      mac: ["meta", "l"],
+      windows: ["ctrl", "l"],
+    },
+  },
+  {
+    id: "focus-shortcuts",
+    description: "Show/Hide Shortcuts Panel",
+    category: "focus",
+    keys: {
+      mac: ["meta", "/"],
+      windows: ["ctrl", "/"],
+    },
+  },
+  {
+    id: "focus-exit",
+    description: "Exit Focus Mode",
+    category: "focus",
+    keys: {
+      mac: ["meta", "escape"],
+      windows: ["ctrl", "escape"],
     },
   },
 
   // Tasks
   {
     id: "add-task",
-    description: "Add New Task",
+    description: "Add New Task (Dashboard)",
     category: "tasks",
     keys: {
       mac: ["meta", "j"],
@@ -150,11 +190,20 @@ const shortcuts: ShortcutDisplay[] = [
   },
   {
     id: "search",
-    description: "Search Tasks",
+    description: "Search Tasks (Dashboard)",
     category: "tasks",
     keys: {
       mac: ["meta", "k"],
       windows: ["ctrl", "k"],
+    },
+  },
+  {
+    id: "toggle-input-mode",
+    description: "Toggle Smart/Traditional Input",
+    category: "tasks",
+    keys: {
+      mac: ["meta", "shift", "i"],
+      windows: ["ctrl", "shift", "i"],
     },
   },
   {
@@ -179,7 +228,7 @@ const shortcuts: ShortcutDisplay[] = [
   },
   {
     id: "escape",
-    description: "Close Dialogs/Cancel",
+    description: "Close Dialogs/Cancel Actions",
     category: "general",
     keys: {
       mac: ["escape"],
@@ -196,18 +245,21 @@ const categoryIcons = {
 };
 
 const categoryDescriptions = {
-  navigation: "Navigate between pages and modes",
-  tasks: "Manage and organize your tasks",
-  general: "App-wide functionality and settings",
-  focus: "Shortcuts available in Focus Mode for distraction-free work",
+  navigation: "Navigate between pages and modes throughout the app",
+  tasks: "Manage and organize your tasks on the dashboard",
+  general: "App-wide functionality, themes, and global actions",
+  focus:
+    "Productivity shortcuts available in Focus Mode for distraction-free work",
 };
 
 const Shortcuts = () => {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [deviceInfo, setDeviceInfo] = useState({
     isMac: false,
     isDesktop: false,
   });
+  const [showQuickNote, setShowQuickNote] = useState(false);
 
   useEffect(() => {
     setDeviceInfo({
@@ -216,21 +268,21 @@ const Shortcuts = () => {
     });
   }, []);
 
-  // Use global shortcuts instead of custom escape handler
-  const globalShortcuts: KeyboardShortcut[] = [
-    {
-      id: "escape",
-      description: "Return to Dashboard",
-      category: "navigation",
-      keys: {
-        mac: ["escape"],
-        windows: ["escape"],
-      },
-      action: () => navigate("/dashboard"),
-      priority: 100,
-      allowInModal: true,
+  // Use global shortcuts but exclude show-shortcuts since we're on this page
+  const globalShortcuts = createGlobalShortcuts({
+    navigate,
+    openQuickNote: () => setShowQuickNote(true),
+    toggleTheme: () => {
+      const newTheme = theme === "light" ? "dark" : "light";
+      setTheme(newTheme);
+      toast.success("Theme Toggled", {
+        description: `Switched to ${newTheme} mode`,
+        duration: 1500,
+      });
     },
-  ];
+    enableFocusMode: true,
+    enableTaskActions: false,
+  }).filter((s) => s.id !== "show-shortcuts"); // Remove show-shortcuts since we're already here
 
   useKeyboardShortcuts(globalShortcuts);
 
@@ -339,15 +391,19 @@ const Shortcuts = () => {
             </h3>
           </div>
           <p className="text-[#7E7E7E] dark:text-gray-400">
-            Press{" "}
+            Master these essential shortcuts: Press{" "}
             <kbd className="px-2 py-1 bg-[#CDA351]/10 text-[#CDA351] rounded text-sm font-mono">
               {deviceInfo.isMac ? "⌘ + /" : "Ctrl + /"}
             </kbd>{" "}
-            anywhere in the app to quickly access this shortcuts page, or{" "}
+            to quickly access shortcuts,{" "}
             <kbd className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-sm font-mono">
-              Esc
+              {deviceInfo.isMac ? "⌘ + Ctrl + N" : "Ctrl + Alt + N"}
             </kbd>{" "}
-            to return to the dashboard.
+            for quick notes, and{" "}
+            <kbd className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded text-sm font-mono">
+              {deviceInfo.isMac ? "⌘ + Shift + ↵" : "Ctrl + Shift + Enter"}
+            </kbd>{" "}
+            to enter Focus Mode from anywhere.
           </p>
         </motion.div>
 
@@ -442,6 +498,9 @@ const Shortcuts = () => {
           </p>
         </motion.div>
       </div>
+
+      {/* Quick Note Dialog */}
+      <QuickNoteButton open={showQuickNote} onOpenChange={setShowQuickNote} />
     </div>
   );
 };
