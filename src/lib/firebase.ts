@@ -12,6 +12,14 @@ import {
 } from "firebase/firestore";
 import { logger } from "./logger";
 
+// Disable Firebase internal logging in production
+if (process.env.NODE_ENV === "production") {
+  // @ts-ignore - Firebase internal property
+  window.__FIREBASE_DUMP_INTERNALS__ = false;
+  // @ts-ignore - Firebase internal property
+  window.__FIREBASE_DEBUG__ = false;
+}
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
