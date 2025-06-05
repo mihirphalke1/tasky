@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { testFirebaseConnection } from "./lib/firebaseTest";
 import FocusMode from "./pages/FocusMode";
 import { useStreakTracking } from "./hooks/useStreakTracking";
+import PWAInstall from "./components/PWAInstall";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => {
               <AppContent />
               <Toaster />
               <Sonner />
+              <PWAInstall variant="notification" />
             </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>

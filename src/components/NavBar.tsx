@@ -38,6 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import PWAInstall from "./PWAInstall";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
@@ -291,6 +292,13 @@ const NavBar = () => {
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-[#CDA351]/10" />
+
+              {/* PWA Install Option in Profile Dropdown */}
+              <div className="p-1">
+                <PWAInstall variant="menu-item" />
+              </div>
+
+              <DropdownMenuSeparator className="bg-[#CDA351]/10" />
               <DropdownMenuItem
                 className="cursor-pointer text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 focus:bg-[#CDA351]/10 transition-all duration-200 font-medium"
                 onClick={logout}
@@ -401,6 +409,11 @@ const NavBar = () => {
                   <Keyboard className="mr-3 h-5 w-5" />
                   <span className="font-medium">Shortcuts</span>
                 </Button>
+
+                {/* PWA Install Option in Hamburger Menu */}
+                <div className="border border-[#CDA351]/20 rounded-lg overflow-hidden">
+                  <PWAInstall variant="menu-item" />
+                </div>
 
                 <Button
                   onClick={() => handleNavigation("/focus")}
