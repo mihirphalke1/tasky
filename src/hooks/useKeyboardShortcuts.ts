@@ -22,7 +22,8 @@ export type ShortcutAction =
   | "postpone-task"
   | "exit-focus"
   | "toggle-input-mode"
-  | "streak-calendar";
+  | "streak-calendar"
+  | "toggle-task-notes";
 
 export interface KeyboardShortcut {
   id: ShortcutAction;
@@ -227,6 +228,7 @@ const getDefaultPriority = (id: ShortcutAction): number => {
     "focus-mode": 70,
     notes: 65,
     "streak-calendar": 75,
+    "toggle-task-notes": 75,
     "clear-completed": 60,
     "next-task": 50,
     "previous-task": 50,
@@ -472,8 +474,8 @@ export const createGlobalShortcuts = (options: {
     description: "View Notes",
     category: "navigation",
     keys: {
-      mac: ["meta", "shift", "n"],
-      windows: ["ctrl", "shift", "n"],
+      mac: ["n"],
+      windows: ["n"],
     },
     action: () => options.navigate("/notes"),
     priority: 65,

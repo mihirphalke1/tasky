@@ -120,6 +120,8 @@ const TaskDetailPage = () => {
   );
   const [taskInsights, setTaskInsights] = useState<TaskInsight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notesLoading, setNotesLoading] = useState(true); // Track notes loading separately
+  const [notesError, setNotesError] = useState<string | null>(null); // Track notes error separately
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -205,7 +207,7 @@ const TaskDetailPage = () => {
       }
     );
 
-    // Set up notes listener
+    // Set up notes listener - this will handle all notes loading
     const notesRef = collection(db, "notes");
     const notesQuery = query(
       notesRef,
@@ -229,6 +231,8 @@ const TaskDetailPage = () => {
           } as Note;
         });
         setNotes(updatedNotes);
+        setNotesLoading(false); // Notes have been loaded
+        setNotesError(null); // Clear any previous errors
         console.log(
           "Notes updated in real-time:",
           updatedNotes.length,
@@ -238,14 +242,18 @@ const TaskDetailPage = () => {
       },
       (error) => {
         console.error("Error in notes listener:", error);
+        setNotesLoading(false); // Even on error, stop loading state
+        setNotesError("Failed to load notes. Please refresh the page.");
         // If there's an error, try to fetch notes manually as fallback
         getNotesByTaskId(taskId)
           .then((fallbackNotes) => {
             setNotes(fallbackNotes);
+            setNotesError(null); // Clear error if fallback succeeds
             console.log("Fallback notes loaded:", fallbackNotes.length);
           })
           .catch((fallbackError) => {
             console.error("Fallback notes fetch failed:", fallbackError);
+            setNotesError("Failed to load notes. Please try again later.");
           });
       }
     );
@@ -324,23 +332,7 @@ const TaskDetailPage = () => {
           user.uid
         );
 
-        // Update task completion status if needed
-        if (task && updatedSessions.some((session) => session.endTime)) {
-          const completedSessions = updatedSessions.filter(
-            (session) => session.endTime
-          );
-          const totalFocusTime = completedSessions.reduce(
-            (total, session) => total + session.duration,
-            0
-          );
-
-          // If task is not completed and has significant focus time, mark it as in progress
-          if (!task.completed && totalFocusTime > 0) {
-            setTask((prev) =>
-              prev ? { ...prev, status: "in_progress" } : null
-            );
-          }
-        }
+        // Note: Task status updates will be handled separately to avoid dependency issues
       },
       (error) => {
         console.error("Error in focus sessions listener:", error);
@@ -362,7 +354,7 @@ const TaskDetailPage = () => {
       }
     );
 
-    // Cleanup listeners on unmount
+    // Return cleanup function
     return () => {
       console.log("Cleaning up real-time listeners");
       taskUnsubscribe();
@@ -410,15 +402,8 @@ const TaskDetailPage = () => {
         console.warn("Failed to initialize insight rules:", error);
       }
 
-      // Load all related data initially to ensure persistence
-      try {
-        console.log("Loading initial notes...");
-        const initialNotes = await getNotesByTaskId(taskId);
-        setNotes(initialNotes);
-        console.log("Initial notes loaded:", initialNotes.length);
-      } catch (error) {
-        console.warn("Failed to load initial notes:", error);
-      }
+      // Don't load initial notes here anymore - let the real-time listener handle it
+      // This eliminates the race condition
 
       try {
         console.log("Loading initial focus sessions...");
@@ -556,7 +541,7 @@ const TaskDetailPage = () => {
 
     const daysWithSessions = Object.keys(sessionsByDay).sort();
     let currentStreak = 0;
-    let checkingDate = today;
+    const checkingDate = today;
 
     while (true) {
       const dateKey = checkingDate.toISOString();
@@ -710,28 +695,29 @@ const TaskDetailPage = () => {
       // Validate that user still owns the task
       if (task.userId !== user.uid) {
         console.error("Task ownership mismatch, redirecting...");
-        navigate("/dashboard");
+        navigate("/");
         return;
       }
 
-      console.log("Data validation passed:", {
-        task: !!task,
-        notes: notes.length,
-        sessions: focusSessions.length,
-        intention: !!taskIntention,
-      });
+      // Throttled logging to prevent spam
+      if (Math.random() < 0.1) {
+        // Only log 10% of the time
+        console.log("Data validation passed:", {
+          task: !!task,
+          notes: notes.length,
+          sessions: focusSessions.length,
+          intention: !!taskIntention,
+        });
+      }
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(dataValidationInterval);
   }, [
     user?.uid,
     taskId,
-    task,
-    notes.length,
-    focusSessions.length,
-    taskIntention,
     isLoading,
-    navigate,
+    // Only include essential dependencies to prevent excessive re-runs
+    !!task, // Convert to boolean to reduce re-runs
   ]);
 
   // Recovery mechanism for lost real-time connections
@@ -747,7 +733,7 @@ const TaskDetailPage = () => {
     }, 5000);
 
     return () => clearTimeout(recoveryTimeout);
-  }, [user?.uid, taskId, task, error, isLoading]);
+  }, [user?.uid, taskId, isLoading]); // Simplified dependencies
 
   if (authLoading) {
     return (
@@ -1234,12 +1220,56 @@ const TaskDetailPage = () => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <StickyNote className="h-4 w-4" />
                   <span>
-                    {notes.length} {notes.length === 1 ? "note" : "notes"}
+                    {notesLoading
+                      ? "Loading..."
+                      : `${notes.length} ${
+                          notes.length === 1 ? "note" : "notes"
+                        }`}
                   </span>
                 </div>
               </div>
 
-              {notes.length === 0 ? (
+              {notesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-[#CDA351]/20 rounded-full" />
+                      <div className="w-12 h-12 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-base font-medium">
+                        Loading notes...
+                      </p>
+                      <p className="text-muted-foreground text-sm mt-1">
+                        Getting your task notes ready
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : notesError ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="h-8 w-8 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-red-600 dark:text-red-400 mb-2">
+                    Failed to load notes
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    {notesError}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setNotesLoading(true);
+                      setNotesError(null);
+                      // The real-time listener will automatically retry
+                    }}
+                    variant="outline"
+                    size="default"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : notes.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-[#CDA351]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <StickyNote className="h-8 w-8 text-[#CDA351]" />

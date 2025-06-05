@@ -80,8 +80,8 @@ const shortcuts: ShortcutDisplay[] = [
     description: "View Notes Page",
     category: "navigation",
     keys: {
-      mac: ["meta", "shift", "n"],
-      windows: ["ctrl", "shift", "n"],
+      mac: ["n"],
+      windows: ["n"],
     },
   },
 
@@ -129,6 +129,15 @@ const shortcuts: ShortcutDisplay[] = [
     keys: {
       mac: ["p"],
       windows: ["p"],
+    },
+  },
+  {
+    id: "focus-task-notes",
+    description: "Toggle Task Notes Panel",
+    category: "focus",
+    keys: {
+      mac: ["n"],
+      windows: ["n"],
     },
   },
   {
@@ -539,7 +548,6 @@ const Shortcuts = () => {
         onOpenChange={setShowQuickNote}
         currentTaskId={undefined}
         currentTaskTitle={undefined}
-        variant="floating"
       />
     </PageWrapper>
   );

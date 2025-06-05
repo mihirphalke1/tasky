@@ -155,17 +155,8 @@ const Index = () => {
 
   // Set up real-time task subscription
   useEffect(() => {
-    // Wait for auth to complete before checking user
+    // ProtectedRoute ensures user is authenticated, so we can proceed directly
     if (authLoading) {
-      return;
-    }
-
-    // Only redirect if auth is complete and no user is found
-    if (!user) {
-      console.log(
-        "No authenticated user after auth completion, redirecting to landing"
-      );
-      navigate("/");
       return;
     }
 
@@ -187,7 +178,7 @@ const Index = () => {
 
         // Subscribe to real-time task updates
         unsubscribe = subscribeToTasks(
-          user.uid,
+          user!.uid, // Non-null assertion is safe because ProtectedRoute ensures user exists
           (updatedTasks) => {
             console.log("Received task update:", updatedTasks);
             clearTimeout(timeoutId);
@@ -204,7 +195,7 @@ const Index = () => {
                 "Setting up task synchronization. This may take a moment..."
               );
               // Try direct fetch as fallback
-              getTasks(user.uid)
+              getTasks(user!.uid)
                 .then((tasks) => {
                   setTasks(tasks);
                   setLoading(false);
@@ -228,7 +219,7 @@ const Index = () => {
 
         // Fallback to direct fetch
         try {
-          const tasks = await getTasks(user.uid);
+          const tasks = await getTasks(user!.uid);
           setTasks(tasks);
           setLoading(false);
           setError(null);
@@ -250,7 +241,7 @@ const Index = () => {
         unsubscribe();
       }
     };
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]); // Removed navigate dependency
 
   const handleAddTask = async (newTask: Omit<Task, "id" | "userId">) => {
     if (!user) {

@@ -144,7 +144,8 @@ const NotesPage = () => {
                 userId: data.userId,
                 content: data.content,
                 taskId: data.taskId,
-                isGeneral: data.isGeneral,
+                isGeneral:
+                  data.isGeneral !== undefined ? data.isGeneral : !data.taskId,
                 createdAt: data.createdAt.toDate(),
               } as Note;
 

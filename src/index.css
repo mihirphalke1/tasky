@@ -229,23 +229,24 @@
 }
 
 .streak-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(205, 163, 81, 0.1);
+  border-radius: 6px;
 }
 
 .streak-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #cda351;
-  border-radius: 3px;
-  opacity: 0.7;
+  background: linear-gradient(to bottom, #cda351, #e6c17a);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .streak-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #b8923a;
-  opacity: 1;
+  background: linear-gradient(to bottom, #b8933e, #cda351);
 }
 
-/* Smooth scroll behavior */
 .streak-scroll-container {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #cda351 rgba(205, 163, 81, 0.1);
 }
 
 /* Touch-friendly interactions */

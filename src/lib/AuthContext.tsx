@@ -6,7 +6,6 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   saveSession,
   clearSession,
@@ -42,19 +41,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Check for valid session immediately on initialization
-  const hasValidSessionOnInit = shouldAutoSignIn();
-
   const [user, setUser] = useState<User | null>(null);
-  // If we have a valid session, don't start in loading state
-  const [loading, setLoading] = useState(!hasValidSessionOnInit);
+  const [loading, setLoading] = useState(true); // Always start with loading true
   const [sessionDaysRemaining, setSessionDaysRemaining] = useState(0);
   const [hasShownExpiryWarning, setHasShownExpiryWarning] = useState(false);
-  const [authInitialized, setAuthInitialized] = useState(hasValidSessionOnInit);
-  const [initializationAttempts, setInitializationAttempts] = useState(0);
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track if this is the initial app load
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Function to refresh the user session
   const refreshUserSession = () => {
@@ -80,45 +71,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     console.log("Setting up authentication state listener");
 
-    // Check if there's a valid stored session before Firebase auth initializes
+    // Check if we should expect a user to be signed in
     const hasValidSession = shouldAutoSignIn();
     console.log("Has valid session on init:", hasValidSession);
 
-    // Only set timeout if we don't have a valid session or need retry
-    let authTimeout: NodeJS.Timeout | null = null;
-
-    if (!hasValidSession || initializationAttempts > 0) {
-      // Shorter, more aggressive timeout for cases without valid session
-      const maxInitTime = Math.max(3000, 8000 - initializationAttempts * 1500);
-      console.log(
-        `Auth timeout set to ${maxInitTime}ms (attempt ${
-          initializationAttempts + 1
-        })`
-      );
-
-      authTimeout = setTimeout(() => {
-        if (!authInitialized) {
-          console.warn(
-            `Authentication initialization timeout after ${maxInitTime}ms - forcing completion`
-          );
-          setLoading(false);
-          setAuthInitialized(true);
-          setInitializationAttempts((prev) => prev + 1);
-
-          // If we have a valid session but auth hasn't initialized, show a warning
-          if (hasValidSession) {
-            toast.info("Authentication taking longer than expected", {
-              description: "You may need to sign in again if issues persist",
-              duration: 4000,
-            });
-          }
-        }
-      }, maxInitTime);
-    } else {
-      console.log(
-        "Valid session found - skipping timeout, waiting for Firebase auth"
-      );
-    }
+    // Set up a timeout to prevent infinite loading (simplified)
+    const authTimeout = setTimeout(() => {
+      console.log("Auth initialization timeout - setting loading to false");
+      setLoading(false);
+    }, 5000); // Simple 5-second timeout
 
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -128,29 +89,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           user ? `User authenticated: ${user.email}` : "User not authenticated"
         );
 
-        if (authTimeout) clearTimeout(authTimeout);
-        setAuthInitialized(true);
-        setInitializationAttempts(0); // Reset attempts on successful auth
+        clearTimeout(authTimeout); // Clear timeout since auth state resolved
 
         if (user) {
           // User is signed in
           console.log("User ID:", user.uid);
           console.log("User email:", user.email);
 
-          // Save/update session (this will preserve existing session start time)
+          // Save/update session
           saveSession(user);
           setSessionDaysRemaining(getSessionTimeRemaining());
 
-          // Only show welcome messages during initial authentication flows, not page refreshes
-          const wasOnLandingPage = location.pathname === "/";
-          const isAutoSignIn = hasValidSession && isInitialLoad;
-
-          if (isAutoSignIn && wasOnLandingPage) {
-            // Auto sign-in from landing page - show welcome message
+          // Show welcome message only on initial load with auto-sign-in
+          if (isInitialLoad && hasValidSession) {
             const daysRemaining = getSessionTimeRemaining();
-            console.log(
-              "Auto sign-in from landing page - showing welcome message"
-            );
             if (daysRemaining > 1) {
               toast.success("Welcome back!", {
                 description: `Your session is valid for ${daysRemaining} more days`,
@@ -162,20 +114,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 duration: 3000,
               });
             }
-          } else if (!hasValidSession && !isInitialLoad) {
-            // Fresh sign-in (not auto sign-in) - this is handled in signInWithGoogle
-            console.log(
-              "Fresh sign-in detected - toast will be shown by signInWithGoogle"
-            );
-          } else {
-            // Silent auto sign-in (page refresh) - no toast needed
-            console.log("Silent auto sign-in - no toast notification needed");
-          }
-
-          // Only navigate to dashboard if the user is on the landing page
-          if (location.pathname === "/") {
-            console.log("Navigating from landing page to dashboard");
-            navigate("/dashboard");
           }
         } else {
           // User is signed out
@@ -187,12 +125,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setUser(user);
         setLoading(false);
-        setIsInitialLoad(false); // Mark that initial load is complete
+        setIsInitialLoad(false);
       },
       (error) => {
         console.error("Auth state change error:", error);
-        if (authTimeout) clearTimeout(authTimeout);
-        setAuthInitialized(true);
+        clearTimeout(authTimeout);
         clearSession();
         setLoading(false);
         setIsInitialLoad(false);
@@ -207,10 +144,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       console.log("Cleaning up authentication listener");
-      if (authTimeout) clearTimeout(authTimeout);
+      clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, [initializationAttempts, location.pathname, navigate]); // Removed persistenceReady dependency
+  }, []); // No dependencies - this effect should only run once
 
   // Set up session refresh interval and expiry warnings
   useEffect(() => {
@@ -293,7 +230,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (result.user) {
         console.log("Google sign-in successful:", result.user.uid);
         // Session will be saved in the onAuthStateChanged callback
-        navigate("/dashboard");
+        // Navigation will be handled by the route protection components
         toast.success("Welcome to Tasky!", {
           description: "You're signed in for the next 7 days",
           duration: 2000,
@@ -329,7 +266,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await signOut(auth);
       clearSession();
       console.log("Logout successful");
-      navigate("/");
+      // Navigation will be handled by the route protection components
       toast.success("Signed out", {
         description: "Come back anytime!",
         duration: 2000,
@@ -354,34 +291,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     extendUserSession,
   };
 
-  // Simplified loading screen
-  if (loading && !authInitialized) {
+  // Show loading screen while authentication is being determined
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="w-12 h-12 border-4 border-[#CDA351]/20 rounded-full"></div>
-            <div className="w-12 h-12 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+      <div className="min-h-screen bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8">
+          <div className="relative mx-auto w-16 h-16">
+            <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold tracking-wider text-[#1A1A1A] dark:text-white">
+              <span className="tracking-widest">T</span>
+              <span className="tracking-widest">A</span>
+              <span className="tracking-widest">S</span>
+              <span className="tracking-widest">K</span>
+              <span className="tracking-widest">Y</span>
+              <span className="text-[#CDA351] tracking-widest">.</span>
+              <span className="text-[#CDA351] tracking-widest">A</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+            </h2>
+            <div className="w-12 h-0.5 bg-[#CDA351] mx-auto"></div>
             <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
-              {initializationAttempts === 0
-                ? "Authenticating..."
-                : "Reconnecting..."}
+              Authenticating...
             </p>
-            <p className="text-sm text-muted-foreground">
-              {initializationAttempts === 0
-                ? "Checking your login status"
-                : `Attempt ${initializationAttempts + 1} - Please wait`}
+            <p className="text-sm text-[#7E7E7E] dark:text-gray-400 font-medium">
+              Checking your session
             </p>
-            {initializationAttempts > 1 && (
-              <button
-                onClick={() => window.location.reload()}
-                className="text-sm text-[#CDA351] hover:underline mt-2"
-              >
-                Refresh page if this continues
-              </button>
-            )}
           </div>
         </div>
       </div>

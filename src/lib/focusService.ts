@@ -110,10 +110,13 @@ export const addNote = async (
       userId,
       content,
       taskId: taskId || null,
+      isGeneral: !taskId,
       createdAt: Timestamp.fromDate(new Date()),
     };
 
+    console.log("Creating note with data:", noteData);
     const docRef = await addDoc(notesRef, noteData);
+    console.log("Note created successfully with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
     console.error("Error adding note:", error);
@@ -139,7 +142,7 @@ export const getNotes = async (userId: string): Promise<Note[]> => {
         userId: data.userId,
         content: data.content,
         taskId: data.taskId,
-        isGeneral: !data.taskId,
+        isGeneral: data.isGeneral !== undefined ? data.isGeneral : !data.taskId,
         createdAt: data.createdAt.toDate(),
       } as Note;
     });
@@ -149,12 +152,16 @@ export const getNotes = async (userId: string): Promise<Note[]> => {
   }
 };
 
-export const getNotesByTaskId = async (taskId: string): Promise<Note[]> => {
+export const getNotesByTaskId = async (
+  taskId: string,
+  userId: string
+): Promise<Note[]> => {
   try {
     const notesRef = collection(db, "notes");
     const q = query(
       notesRef,
       where("taskId", "==", taskId),
+      where("userId", "==", userId),
       orderBy("createdAt", "desc")
     );
 
@@ -198,7 +205,7 @@ export const getNotesWithTaskDetails = async (
         userId: data.userId,
         content: data.content,
         taskId: data.taskId,
-        isGeneral: !data.taskId,
+        isGeneral: data.isGeneral !== undefined ? data.isGeneral : !data.taskId,
         createdAt: data.createdAt.toDate(),
       };
 

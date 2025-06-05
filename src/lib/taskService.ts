@@ -397,7 +397,7 @@ export const clearCompletedTasks = async (userId: string): Promise<void> => {
     // Filter out already hidden tasks in memory
     const tasksToHide = querySnapshot.docs.filter((doc) => {
       const data = doc.data();
-      return !Boolean(data.hidden); // Only process tasks that aren't already hidden
+      return !data.hidden; // Only process tasks that aren't already hidden
     });
 
     if (tasksToHide.length === 0) {

@@ -169,12 +169,20 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
     isStreakDay: boolean,
     completionPercentage: number
   ) => {
-    if (!isStreakDay) return "bg-gray-100 dark:bg-gray-800";
+    if (!isStreakDay) {
+      return "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-gray-100 hover:to-gray-150 dark:hover:from-gray-700 dark:hover:to-gray-600";
+    }
 
-    if (completionPercentage >= 90) return "bg-green-500";
-    if (completionPercentage >= 70) return "bg-orange-500";
-    if (completionPercentage >= 50) return "bg-red-500";
-    return "bg-red-500";
+    if (completionPercentage >= 90) {
+      return "bg-gradient-to-br from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 shadow-green-200 dark:shadow-green-900/30";
+    }
+    if (completionPercentage >= 70) {
+      return "bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 shadow-orange-200 dark:shadow-orange-900/30";
+    }
+    if (completionPercentage >= 50) {
+      return "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 shadow-red-200 dark:shadow-red-900/30";
+    }
+    return "bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600";
   };
 
   const DayTooltip: React.FC<{
@@ -340,49 +348,10 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col space-y-6 max-h-[80vh]">
+        <div className="flex flex-col space-y-6 max-h-[80vh] pb-4">
           {!showDayDetail ? (
             <>
               {/* How it works info */}
-              <div className="bg-gradient-to-r from-[#CDA351]/10 to-[#CDA351]/5 border border-[#CDA351]/20 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-[#CDA351]/20 rounded-full flex items-center justify-center">
-                      <Flame className="w-4 h-4 text-[#CDA351]" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-[#1A1A1A] dark:text-white mb-2">
-                      How Your Streak Works
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-green-500 rounded"></div>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          90-100% = Excellent day
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          70-89% = Great progress
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-red-500 rounded"></div>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          50-69% = Streak maintained
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                      💡 Complete at least 50% of your daily tasks to keep your
-                      streak alive. Hover over any day to see details, click to
-                      dive deeper!
-                    </p>
-                  </div>
-                </div>
-              </div>
 
               {/* Streak Stats Header */}
               {streakData && (
@@ -471,20 +440,23 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Calendar Grid */}
-              <div className="bg-white dark:bg-gray-900 rounded-lg border border-[#CDA351]/20 p-4">
+              <div className="bg-gradient-to-br from-white to-[#FAF8F6] dark:from-gray-900 dark:to-gray-800 rounded-xl border border-[#CDA351]/20 p-4 shadow-sm">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#CDA351]"></div>
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-[#CDA351]/20 rounded-full"></div>
+                      <div className="w-12 h-12 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {/* Calendar Header */}
-                    <div className="grid grid-cols-7 gap-1 mb-2">
+                    <div className="grid grid-cols-7 gap-2 mb-3">
                       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                         (day) => (
                           <div
                             key={day}
-                            className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 p-2"
+                            className="h-8 text-center text-xs sm:text-sm font-semibold text-[#CDA351] flex items-center justify-center bg-[#CDA351]/5 rounded-lg border border-[#CDA351]/10"
                           >
                             {day}
                           </div>
@@ -493,7 +465,7 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Calendar Days */}
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-2 auto-rows-fr">
                       {monthlyData?.daysWithData.map((day) => (
                         <DayTooltip
                           key={day.date}
@@ -505,13 +477,13 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
                               day.stats && handleDayClick(day.date, day.stats)
                             }
                             className={cn(
-                              "w-10 h-10 rounded-lg relative flex items-center justify-center text-sm font-medium transition-all duration-200",
+                              "aspect-square w-full rounded-lg relative flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 border-2 max-h-[60px] min-h-[40px]",
                               day.isToday
-                                ? "ring-2 ring-[#CDA351] ring-offset-2 dark:ring-offset-gray-900"
-                                : "",
+                                ? "ring-2 ring-[#CDA351] ring-offset-1 ring-offset-white dark:ring-offset-gray-900 border-[#CDA351]/50"
+                                : "border-transparent",
                               day.stats
-                                ? "hover:scale-110 cursor-pointer shadow-sm hover:shadow-md"
-                                : "text-gray-400 dark:text-gray-600",
+                                ? "hover:scale-105 cursor-pointer shadow-sm hover:shadow-lg hover:border-[#CDA351]/30"
+                                : "text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-800",
                               getStreakColor(
                                 day.isStreakDay,
                                 day.stats?.completionPercentage || 0
@@ -521,37 +493,38 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
                           >
                             <span
                               className={cn(
+                                "relative z-10",
                                 day.stats && day.stats.completionPercentage > 0
-                                  ? "text-white font-semibold"
-                                  : "text-gray-700 dark:text-gray-300"
+                                  ? "text-white font-bold drop-shadow-sm"
+                                  : "text-gray-600 dark:text-gray-400 font-medium"
                               )}
                             >
                               {day.dayOfMonth}
                             </span>
 
-                            {/* Streak indicator - Enhanced visibility with background */}
+                            {/* Streak indicator - Scaled appropriately */}
                             {day.isStreakDay && (
                               <div
                                 className={cn(
-                                  "absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border shadow-sm",
+                                  "absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center border shadow-lg",
                                   day.stats?.completionPercentage >= 90
-                                    ? "bg-white/90 border-green-200" // White background on green
+                                    ? "bg-gradient-to-r from-[#CDA351] to-[#E6C17A] border-white"
                                     : day.stats?.completionPercentage >= 70
-                                    ? "bg-white/95 border-orange-200" // White background on orange
-                                    : "bg-white/90 border-red-200" // White background on red
+                                    ? "bg-gradient-to-r from-orange-400 to-orange-500 border-white"
+                                    : "bg-gradient-to-r from-red-400 to-red-500 border-white"
                                 )}
                               >
                                 <Flame
                                   className={cn(
-                                    "w-2.5 h-2.5",
-                                    day.stats?.completionPercentage >= 90
-                                      ? "text-green-600" // Dark green on white
-                                      : day.stats?.completionPercentage >= 70
-                                      ? "text-orange-600" // Dark orange on white
-                                      : "text-red-600" // Dark red on white
+                                    "w-2.5 h-2.5 text-white drop-shadow-sm"
                                   )}
                                 />
                               </div>
+                            )}
+
+                            {/* Today indicator - Scaled appropriately */}
+                            {day.isToday && (
+                              <div className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-[#CDA351] rounded-full border border-white dark:border-gray-900 shadow-sm"></div>
                             )}
                           </button>
                         </DayTooltip>
@@ -561,23 +534,42 @@ const StreakCalendar: React.FC<StreakCalendarProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
 
-              {/* Legend - Updated to match actual colors */}
-              <div className="flex items-center justify-center space-x-6 text-xs text-gray-600 dark:text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-gray-300 dark:bg-gray-700 border border-gray-400 dark:border-gray-600"></div>
-                  <span>No activity</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-red-500"></div>
-                  <span>50-69%</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-orange-500"></div>
-                  <span>70-89%</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-green-500"></div>
-                  <span>90-100%</span>
+              {/* Enhanced Legend with better design */}
+              <div className="bg-gradient-to-r from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border border-[#CDA351]/10">
+                <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded-lg bg-gray-100 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-sm"></div>
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">
+                      No activity
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded-lg bg-red-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                    <span className="text-gray-700 dark:text-gray-200 font-medium">
+                      50-69%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded-lg bg-orange-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                    <span className="text-gray-700 dark:text-gray-200 font-medium">
+                      70-89%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded-lg bg-green-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                    <span className="text-gray-700 dark:text-gray-200 font-medium">
+                      90-100%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="relative">
+                      <div className="w-4 h-4 rounded-lg bg-gradient-to-r from-[#CDA351] to-[#E6C17A] border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                      <Flame className="w-2 h-2 text-white absolute top-0.5 left-0.5" />
+                    </div>
+                    <span className="text-[#CDA351] font-semibold">
+                      Streak day
+                    </span>
+                  </div>
                 </div>
               </div>
             </>

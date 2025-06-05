@@ -171,7 +171,9 @@ export function FocusLock({ isLocked, onToggle }: FocusLockProps) {
             </DialogTitle>
             <DialogDescription className="space-y-3 pt-2">
               <p className="font-medium text-foreground">
-                This will block ALL exit methods until manually disabled.
+                This will disable all exit options until you manually turn it
+                off. It’s specifically designed to keep you fully focused on
+                your tasks.
               </p>
 
               <div className="space-y-2 text-sm">
@@ -183,8 +185,6 @@ export function FocusLock({ isLocked, onToggle }: FocusLockProps) {
                   <li>Browser back/forward navigation</li>
                   <li>Page refresh (F5, Cmd/Ctrl+R)</li>
                   <li>Tab closing (Cmd/Ctrl+W)</li>
-                  <li>App switching shortcuts</li>
-                  <li>Developer tools access</li>
                 </ul>
               </div>
 

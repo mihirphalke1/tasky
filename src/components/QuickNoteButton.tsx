@@ -55,13 +55,21 @@ export function QuickNoteButton({
     setIsSaving(true);
 
     try {
-      await addNote(user.uid, noteContent.trim(), currentTaskId);
+      console.log("Saving note with:", {
+        userId: user.uid,
+        content: noteContent.trim(),
+        currentTaskId,
+        isGeneral: !currentTaskId,
+      });
+
+      const noteId = await addNote(user.uid, noteContent.trim(), currentTaskId);
+      console.log("Note saved successfully with ID:", noteId);
 
       const isLinked = !!currentTaskId;
-      toast.success(isLinked ? "Task note saved!" : "Quick note saved!", {
+      toast.success(isLinked ? "Task note saved!" : "General note saved!", {
         description: isLinked
           ? `Note linked to "${currentTaskTitle}"`
-          : "Note saved to your general notes",
+          : "Note saved to your general notes collection",
         duration: 3000,
       });
 
