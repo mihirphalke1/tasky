@@ -19,19 +19,31 @@ const SESSION_WARNING_THRESHOLD = 1 * 24 * 60 * 60 * 1000; // Warn when 1 day le
  * Save user session data to localStorage
  */
 export const saveSession = (user: User): void => {
+  const existingSession = getStoredSession();
+  const now = Date.now();
+
   const sessionData: SessionData = {
     userId: user.uid,
     email: user.email || "",
     displayName: user.displayName,
     photoURL: user.photoURL,
-    lastLogin: Date.now(),
-    sessionStart: Date.now(),
+    lastLogin: now,
+    // Keep existing session start time if available, otherwise start new session
+    sessionStart: existingSession?.sessionStart || now,
     isValid: true,
   };
 
   try {
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-    console.log("Session saved for user:", user.uid);
+    console.log("Session saved for user:", user.uid, {
+      sessionAge: existingSession
+        ? Math.round(
+            (now - (existingSession.sessionStart || now)) /
+              (24 * 60 * 60 * 1000)
+          )
+        : 0,
+      isNewSession: !existingSession,
+    });
   } catch (error) {
     console.error("Error saving session:", error);
   }
@@ -43,9 +55,23 @@ export const saveSession = (user: User): void => {
 export const getStoredSession = (): SessionData | null => {
   try {
     const sessionJson = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!sessionJson) return null;
+    if (!sessionJson) {
+      console.log("No stored session found");
+      return null;
+    }
 
     const sessionData: SessionData = JSON.parse(sessionJson);
+    console.log("Retrieved stored session:", {
+      userId: sessionData.userId,
+      email: sessionData.email,
+      sessionAge: Math.round(
+        (Date.now() - sessionData.sessionStart) / (24 * 60 * 60 * 1000)
+      ),
+      lastActivityAge: Math.round(
+        (Date.now() - sessionData.lastLogin) / (24 * 60 * 60 * 1000)
+      ),
+      isValid: sessionData.isValid,
+    });
     return sessionData;
   } catch (error) {
     console.error("Error parsing stored session:", error);
@@ -62,7 +88,10 @@ export const isSessionValid = (sessionData?: SessionData | null): boolean => {
     sessionData = getStoredSession();
   }
 
-  if (!sessionData) return false;
+  if (!sessionData) {
+    console.log("No session data to validate");
+    return false;
+  }
 
   const currentTime = Date.now();
   const sessionAge = currentTime - sessionData.sessionStart;
@@ -70,19 +99,23 @@ export const isSessionValid = (sessionData?: SessionData | null): boolean => {
 
   // Session is valid if:
   // 1. It's marked as valid
-  // 2. It's within the 7-day duration
-  // 3. Last activity was within 7 days
-  const isValid =
-    sessionData.isValid &&
-    sessionAge <= SESSION_DURATION &&
-    lastActivityAge <= SESSION_DURATION;
+  // 2. It's within the 7-day duration from session start OR last activity
+  // 3. Changed logic: Either session age OR last activity age should be within 7 days (more lenient)
+  const isValidByAge =
+    sessionAge <= SESSION_DURATION || lastActivityAge <= SESSION_DURATION;
+  const isValid = sessionData.isValid && isValidByAge;
+
+  console.log("Session validation:", {
+    sessionAgeDays: Math.round(sessionAge / (24 * 60 * 60 * 1000)),
+    lastActivityDays: Math.round(lastActivityAge / (24 * 60 * 60 * 1000)),
+    maxDays: 7,
+    isValidByAge,
+    isMarkedValid: sessionData.isValid,
+    finalResult: isValid,
+  });
 
   if (!isValid) {
-    console.log("Session expired or invalid:", {
-      sessionAge: Math.round(sessionAge / (24 * 60 * 60 * 1000)),
-      lastActivityAge: Math.round(lastActivityAge / (24 * 60 * 60 * 1000)),
-      maxDays: 7,
-    });
+    console.log("Session expired or invalid - clearing");
     clearSession();
   }
 
@@ -201,7 +234,15 @@ export const getSessionTimeRemainingHours = (): number => {
  */
 export const shouldAutoSignIn = (): boolean => {
   const sessionData = getStoredSession();
-  return sessionData !== null && isSessionValid(sessionData);
+  const shouldSignIn = sessionData !== null && isSessionValid(sessionData);
+
+  console.log("Should auto sign-in check:", {
+    hasSessionData: !!sessionData,
+    isSessionValid: sessionData ? isSessionValid(sessionData) : false,
+    shouldSignIn,
+  });
+
+  return shouldSignIn;
 };
 
 /**
@@ -232,3 +273,62 @@ export const getSessionInfo = () => {
     isNearExpiry: isSessionNearExpiry(),
   };
 };
+
+/**
+ * Debug function to check session persistence status
+ * Use in browser console: window.debugSession()
+ */
+export const debugSessionPersistence = () => {
+  console.log("=== SESSION PERSISTENCE DEBUG ===");
+
+  // Check localStorage availability
+  try {
+    const testKey = "test_storage";
+    localStorage.setItem(testKey, "test");
+    localStorage.removeItem(testKey);
+    console.log("✅ localStorage is available");
+  } catch (error) {
+    console.log("❌ localStorage is NOT available:", error);
+    return;
+  }
+
+  // Check session data
+  const sessionData = getStoredSession();
+  if (!sessionData) {
+    console.log("❌ No session data found in localStorage");
+    return;
+  }
+
+  console.log("📋 Session Data:", sessionData);
+
+  // Check session validity
+  const isValid = isSessionValid(sessionData);
+  console.log("🔍 Session Valid:", isValid);
+
+  // Check auto sign-in status
+  const shouldSignIn = shouldAutoSignIn();
+  console.log("🔄 Should Auto Sign-in:", shouldSignIn);
+
+  // Check session info
+  const sessionInfo = getSessionInfo();
+  console.log("📊 Session Info:", sessionInfo);
+
+  // Check localStorage raw data
+  const rawData = localStorage.getItem(SESSION_STORAGE_KEY);
+  console.log("🗄️ Raw localStorage data:", rawData);
+
+  console.log("=== END DEBUG ===");
+
+  return {
+    hasSession: !!sessionData,
+    isValid,
+    shouldSignIn,
+    sessionInfo,
+    rawData,
+  };
+};
+
+// Expose debug function globally for easy access
+if (typeof window !== "undefined") {
+  (window as any).debugSession = debugSessionPersistence;
+}

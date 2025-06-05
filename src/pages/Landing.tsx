@@ -5,10 +5,12 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import TypewriterText from "@/components/TypewriterText";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Landing = () => {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
 
   const taglines = [
     "A focused space for your tasks.",
@@ -19,6 +21,14 @@ const Landing = () => {
   // PWA install prompt state
   const [deferredPrompt, setDeferredPrompt] = useState<null | any>(null);
   const [showInstall, setShowInstall] = useState(false);
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -40,6 +50,23 @@ const Landing = () => {
       setDeferredPrompt(null);
     }
   };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-[#CDA351]/20 rounded-full"></div>
+            <div className="w-12 h-12 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+          </div>
+          <p className="text-[#7E7E7E] dark:text-gray-400">
+            Checking your session...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800">

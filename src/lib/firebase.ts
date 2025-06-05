@@ -30,15 +30,12 @@ googleProvider.setCustomParameters({
   prompt: "select_account",
 });
 
-// Enable persistent authentication - sessions will persist across browser restarts
-const initializeAuthPersistence = async () => {
-  try {
-    await setPersistence(auth, browserLocalPersistence);
-    console.log("Firebase Auth persistence enabled");
-  } catch (error) {
-    console.error("Error enabling Auth persistence:", error);
-  }
-};
+// Enable persistent authentication immediately - this is the default for Firebase Auth
+// We're setting it explicitly to ensure it's definitely enabled
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Error enabling Auth persistence:", error);
+  // Don't throw - app should still work
+});
 
 // Enable offline persistence for better data reliability
 let persistenceEnabled = false;
@@ -59,8 +56,7 @@ const initializePersistence = async () => {
   }
 };
 
-// Initialize persistence
-initializeAuthPersistence();
-initializePersistence();
+// Initialize offline persistence
+initializePersistence().catch(console.error);
 
 export { persistenceEnabled };

@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   saveSession,
   clearSession,
@@ -42,12 +42,18 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // Check for valid session immediately on initialization
+  const hasValidSessionOnInit = shouldAutoSignIn();
+
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // If we have a valid session, don't start in loading state
+  const [loading, setLoading] = useState(!hasValidSessionOnInit);
   const [sessionDaysRemaining, setSessionDaysRemaining] = useState(0);
   const [hasShownExpiryWarning, setHasShownExpiryWarning] = useState(false);
-  const [authInitialized, setAuthInitialized] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(hasValidSessionOnInit);
+  const [initializationAttempts, setInitializationAttempts] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Function to refresh the user session
   const refreshUserSession = () => {
@@ -75,53 +81,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Check if there's a valid stored session before Firebase auth initializes
     const hasValidSession = shouldAutoSignIn();
-    if (hasValidSession) {
-      console.log("Valid session found, attempting automatic sign-in");
-      const sessionInfo = getSessionInfo();
-      if (sessionInfo) {
-        console.log("Session info:", {
-          userId: sessionInfo.userId,
-          email: sessionInfo.email,
-          daysRemaining: sessionInfo.daysRemaining,
-          sessionAge: sessionInfo.sessionAgeInDays,
-        });
-      }
-    }
+    console.log("Has valid session on init:", hasValidSession);
 
-    // Add timeout to prevent infinite loading
-    const authTimeout = setTimeout(() => {
-      if (!authInitialized) {
-        console.warn(
-          "Authentication initialization timeout - forcing completion"
-        );
-        setLoading(false);
-        setAuthInitialized(true);
-      }
-    }, 10000); // 10 second timeout
+    // Only set timeout if we don't have a valid session or need retry
+    let authTimeout: NodeJS.Timeout | null = null;
+
+    if (!hasValidSession || initializationAttempts > 0) {
+      // Shorter, more aggressive timeout for cases without valid session
+      const maxInitTime = Math.max(3000, 8000 - initializationAttempts * 1500);
+      console.log(
+        `Auth timeout set to ${maxInitTime}ms (attempt ${
+          initializationAttempts + 1
+        })`
+      );
+
+      authTimeout = setTimeout(() => {
+        if (!authInitialized) {
+          console.warn(
+            `Authentication initialization timeout after ${maxInitTime}ms - forcing completion`
+          );
+          setLoading(false);
+          setAuthInitialized(true);
+          setInitializationAttempts((prev) => prev + 1);
+
+          // If we have a valid session but auth hasn't initialized, show a warning
+          if (hasValidSession) {
+            toast.info("Authentication taking longer than expected", {
+              description: "You may need to sign in again if issues persist",
+              duration: 4000,
+            });
+          }
+        }
+      }, maxInitTime);
+    } else {
+      console.log(
+        "Valid session found - skipping timeout, waiting for Firebase auth"
+      );
+    }
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
         console.log(
           "Auth state changed:",
-          user ? "User authenticated" : "User not authenticated"
+          user ? `User authenticated: ${user.email}` : "User not authenticated"
         );
 
-        clearTimeout(authTimeout);
+        if (authTimeout) clearTimeout(authTimeout);
         setAuthInitialized(true);
+        setInitializationAttempts(0); // Reset attempts on successful auth
 
         if (user) {
           // User is signed in
           console.log("User ID:", user.uid);
           console.log("User email:", user.email);
 
-          // Save/update session
+          // Save/update session (this will preserve existing session start time)
           saveSession(user);
           setSessionDaysRemaining(getSessionTimeRemaining());
 
           // Show welcome back message if this was an automatic sign-in
           if (hasValidSession) {
             const daysRemaining = getSessionTimeRemaining();
+            console.log("Auto sign-in successful - session restored");
             if (daysRemaining > 1) {
               toast.success("Welcome back!", {
                 description: `Your session is valid for ${daysRemaining} more days`,
@@ -133,6 +155,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 duration: 3000,
               });
             }
+          } else {
+            console.log("New sign-in detected");
+          }
+
+          // Automatically navigate to dashboard if the user is on the landing page
+          if (location.pathname === "/") {
+            navigate("/dashboard");
           }
         } else {
           // User is signed out
@@ -147,17 +176,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       },
       (error) => {
         console.error("Auth state change error:", error);
+        if (authTimeout) clearTimeout(authTimeout);
+        setAuthInitialized(true);
         clearSession();
         setLoading(false);
+
+        // Show user-friendly error message
+        toast.error("Authentication Error", {
+          description: "Please try signing in again",
+          duration: 4000,
+        });
       }
     );
 
     return () => {
       console.log("Cleaning up authentication listener");
-      clearTimeout(authTimeout);
+      if (authTimeout) clearTimeout(authTimeout);
       unsubscribe();
     };
-  }, []);
+  }, [initializationAttempts, location.pathname, navigate]); // Removed persistenceReady dependency
 
   // Set up session refresh interval and expiry warnings
   useEffect(() => {
@@ -224,7 +261,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       console.log("Attempting Google sign-in");
+
+      // Add timeout for sign-in process
+      const signInTimeout = setTimeout(() => {
+        console.warn("Sign-in taking longer than expected");
+        toast.info("Sign-in in progress", {
+          description: "This may take a moment...",
+          duration: 3000,
+        });
+      }, 5000);
+
       const result = await signInWithPopup(auth, googleProvider);
+      clearTimeout(signInTimeout);
+
       if (result.user) {
         console.log("Google sign-in successful:", result.user.uid);
         // Session will be saved in the onAuthStateChanged callback
@@ -234,13 +283,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           duration: 2000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in with Google:", error);
       setLoading(false);
-      toast.error("Sign-in failed", {
-        description: "Please try again",
-        duration: 3000,
-      });
+
+      // Handle specific error cases
+      if (error.code === "auth/popup-closed-by-user") {
+        toast.info("Sign-in cancelled", {
+          description: "You can try again anytime",
+          duration: 2000,
+        });
+      } else if (error.code === "auth/popup-blocked") {
+        toast.error("Popup blocked", {
+          description: "Please allow popups for this site and try again",
+          duration: 4000,
+        });
+      } else {
+        toast.error("Sign-in failed", {
+          description: "Please check your connection and try again",
+          duration: 3000,
+        });
+      }
     }
   };
 
@@ -275,13 +338,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     extendUserSession,
   };
 
-  // Show loading spinner instead of blank screen
+  // Simplified loading screen
   if (loading && !authInitialized) {
     return (
       <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Initializing...</p>
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-[#CDA351]/20 rounded-full"></div>
+            <div className="w-12 h-12 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
+              {initializationAttempts === 0
+                ? "Authenticating..."
+                : "Reconnecting..."}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {initializationAttempts === 0
+                ? "Checking your login status"
+                : `Attempt ${initializationAttempts + 1} - Please wait`}
+            </p>
+            {initializationAttempts > 1 && (
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-[#CDA351] hover:underline mt-2"
+              >
+                Refresh page if this continues
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
