@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -45,6 +45,12 @@ import {
 import { useTheme } from "next-themes";
 import { getSectionFromDate } from "@/utils/taskUtils";
 import { motion } from "framer-motion";
+import {
+  PageWrapper,
+  Container,
+  Section,
+  FlexContainer,
+} from "@/components/ui/layout";
 
 const sections: { id: TaskSectionType; title: string }[] = [
   { id: "today", title: "Today" },
@@ -429,107 +435,119 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900">
+    <PageWrapper>
       <NavBar />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <Header onSearchClick={() => setShowSearch(true)} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#7E7E7E] hover:text-[#CDA351] dark:text-gray-400 dark:hover:text-[#CDA351]"
-              >
-                <Settings2 className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleClearCompleted}>
-                Hide completed tasks
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <Container size="xl" padding="md">
+        <Section spacing="md">
+          <FlexContainer
+            direction="row"
+            justify="between"
+            align="center"
+            gap="md"
+            wrap
+            className="mb-4 sm:mb-6 md:mb-8"
+          >
+            <Header onSearchClick={() => setShowSearch(true)} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-[#7E7E7E] hover:text-[#CDA351] dark:text-gray-400 dark:hover:text-[#CDA351] h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 self-end sm:self-auto"
+                >
+                  <Settings2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleClearCompleted}>
+                  Hide completed tasks
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </FlexContainer>
 
-        <TaskOverview tasks={dashboardTasks} />
+          <TaskOverview tasks={dashboardTasks} />
 
-        {/* Task Input Toggle */}
-        <div className="flex items-center justify-center mb-4">
-          <div className="bg-white dark:bg-gray-800 rounded-full p-1 shadow-lg border-2 border-[#CDA351]/20 dark:border-[#CDA351]/30">
-            <div className="flex items-center">
-              <Button
-                variant={!smartInputMode ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSmartInputMode(false)}
-                className={`rounded-full px-4 py-2 transition-all duration-200 ${
-                  !smartInputMode
-                    ? "bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-md"
-                    : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
-                }`}
-              >
-                <Plus size={16} className="mr-2" />
-                Traditional
-              </Button>
-              <Button
-                variant={smartInputMode ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSmartInputMode(true)}
-                className={`rounded-full px-4 py-2 transition-all duration-200 ${
-                  smartInputMode
-                    ? "bg-gradient-to-r from-[#CDA351] to-[#E6C17A] hover:from-[#CDA351]/90 hover:to-[#E6C17A]/90 text-white shadow-md"
-                    : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
-                }`}
-              >
-                <Sparkles size={16} className="mr-2" />
-                Smart Input
-              </Button>
+          {/* Task Input Toggle */}
+          <FlexContainer justify="center" className="mb-4 sm:mb-6 px-2 sm:px-4">
+            <div className="bg-white dark:bg-gray-800 rounded-full p-1 shadow-lg border-2 border-[#CDA351]/20 dark:border-[#CDA351]/30 w-full max-w-xs sm:max-w-sm md:max-w-md">
+              <div className="flex items-center">
+                <Button
+                  variant={!smartInputMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setSmartInputMode(false)}
+                  className={`rounded-full px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 transition-all duration-200 flex-1 text-xs sm:text-sm md:text-base ${
+                    !smartInputMode
+                      ? "bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-md"
+                      : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
+                  }`}
+                >
+                  <Plus size={12} className="mr-1 sm:mr-2 md:size-14" />
+                  <span className="hidden xs:inline">Traditional</span>
+                  <span className="xs:hidden">Trad</span>
+                </Button>
+                <Button
+                  variant={smartInputMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setSmartInputMode(true)}
+                  className={`rounded-full px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 transition-all duration-200 flex-1 text-xs sm:text-sm md:text-base ${
+                    smartInputMode
+                      ? "bg-gradient-to-r from-[#CDA351] to-[#E6C17A] hover:from-[#CDA351]/90 hover:to-[#E6C17A]/90 text-white shadow-md"
+                      : "text-gray-600 hover:text-[#CDA351] hover:bg-[#CDA351]/10 dark:text-gray-300 dark:hover:text-[#CDA351]"
+                  }`}
+                >
+                  <Sparkles size={12} className="mr-1 sm:mr-2 md:size-14" />
+                  <span className="hidden xs:inline">Smart Input</span>
+                  <span className="xs:hidden">Smart</span>
+                </Button>
+              </div>
             </div>
+          </FlexContainer>
+
+          {/* Conditional Task Input Rendering */}
+          {smartInputMode ? (
+            <NLPTaskInput onAddTask={handleAddTask} ref={nlpTaskInputRef} />
+          ) : (
+            <TaskInput onAddTask={handleAddTask} ref={taskInputRef} />
+          )}
+
+          <PendingTasksSection
+            tasks={dashboardTasks}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
+          />
+
+          <div className="space-y-6 sm:space-y-8">
+            {sections.map((section) => (
+              <TaskSection
+                key={section.id}
+                title={section.title}
+                tasks={dashboardTasks}
+                section={section.id}
+                onUpdateTask={handleUpdateTask}
+                onDeleteTask={handleDeleteTask}
+                onDragEnd={handleDragEnd}
+              />
+            ))}
           </div>
-        </div>
-
-        {/* Conditional Task Input Rendering */}
-        {smartInputMode ? (
-          <NLPTaskInput onAddTask={handleAddTask} ref={nlpTaskInputRef} />
-        ) : (
-          <TaskInput onAddTask={handleAddTask} ref={taskInputRef} />
-        )}
-
-        <PendingTasksSection
-          tasks={dashboardTasks}
-          onUpdateTask={handleUpdateTask}
-          onDeleteTask={handleDeleteTask}
-        />
-
-        <div className="space-y-8">
-          {sections.map((section) => (
-            <TaskSection
-              key={section.id}
-              title={section.title}
-              tasks={dashboardTasks}
-              section={section.id}
-              onUpdateTask={handleUpdateTask}
-              onDeleteTask={handleDeleteTask}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-        </div>
-      </div>
+        </Section>
+      </Container>
 
       {showSearch && (
         <Search tasks={allTasks} onClose={() => setShowSearch(false)} />
       )}
 
       {/* Global Quick Note Button */}
-      <div className="fixed bottom-6 right-6 z-40 flex gap-3">
+      <div className="fixed bottom-4 sm:bottom-6 md:bottom-8 right-4 sm:right-6 md:right-8 z-40 flex gap-3 sm:gap-4">
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
             size="default"
-            className="rounded-full px-4 py-2 bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-lg flex items-center gap-2"
+            className="rounded-full px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 bg-[#CDA351] hover:bg-[#CDA351]/90 text-white shadow-lg flex items-center gap-2 sm:gap-3 text-xs sm:text-sm md:text-base font-medium"
             onClick={openQuickNote}
           >
-            <PenTool className="h-5 w-5" />
-            <span>Quick Note</span>
+            <PenTool className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Quick Note</span>
+            <span className="sm:hidden">Note</span>
           </Button>
         </motion.div>
         <QuickNoteButton
@@ -542,7 +560,7 @@ const Index = () => {
       </div>
 
       <PWAInstallPrompt />
-    </div>
+    </PageWrapper>
   );
 };
 

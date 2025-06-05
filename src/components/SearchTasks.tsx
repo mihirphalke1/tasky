@@ -89,17 +89,23 @@ export const SearchTasks = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+    <div className="w-full max-w-none sm:max-w-4xl mx-auto p-3 sm:p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
           Search Tasks
         </h2>
-        <Button onClick={onClose} variant="outline">
-          Close (Esc)
+        <Button
+          onClick={onClose}
+          variant="outline"
+          size="sm"
+          className="self-end sm:self-auto"
+        >
+          <span className="hidden xs:inline">Close (Esc)</span>
+          <span className="xs:hidden">Close</span>
         </Button>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 sm:mb-6">
         <div className="relative flex-1">
           <Input
             type="text"
@@ -107,58 +113,67 @@ export const SearchTasks = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="pl-10"
+            className="pl-8 sm:pl-10 h-10 sm:h-12 text-sm sm:text-base"
             disabled={isSearching}
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5" />
         </div>
-        <Button
-          onClick={handleSearch}
-          disabled={isSearching || !searchQuery.trim()}
-          variant="default"
-        >
-          {isSearching ? "Searching..." : "Search"}
-        </Button>
-        {searchQuery && (
+        <div className="flex gap-2">
           <Button
-            onClick={handleClearSearch}
-            variant="ghost"
-            disabled={isSearching}
+            onClick={handleSearch}
+            disabled={isSearching || !searchQuery.trim()}
+            variant="default"
+            size="sm"
+            className="h-10 sm:h-12 px-3 sm:px-4"
           >
-            <X className="h-4 w-4" />
+            <span className="hidden xs:inline">
+              {isSearching ? "Searching..." : "Search"}
+            </span>
+            <span className="xs:hidden">{isSearching ? "..." : "Go"}</span>
           </Button>
-        )}
+          {searchQuery && (
+            <Button
+              onClick={handleClearSearch}
+              variant="ghost"
+              disabled={isSearching}
+              size="sm"
+              className="h-10 sm:h-12 px-2 sm:px-3"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="text-center text-red-500 dark:text-red-400 py-4">
+        <div className="text-center text-red-500 dark:text-red-400 py-4 text-sm sm:text-base">
           {error}
         </div>
       )}
 
       {isSearching ? (
-        <div className="text-center py-8">
-          <div className="animate-pulse text-gray-500 dark:text-gray-400">
+        <div className="text-center py-6 sm:py-8">
+          <div className="animate-pulse text-gray-500 dark:text-gray-400 text-sm sm:text-base">
             Searching tasks...
           </div>
         </div>
       ) : searchResults.length > 0 ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-base sm:text-lg font-semibold">
             Found {searchResults.length} tasks
           </h2>
           <div className="space-y-2">
             {searchResults.map((task) => (
               <div
                 key={task.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4"
               >
                 <TaskItem
                   task={task}
                   onUpdate={onUpdateTask}
                   onDelete={onDeleteTask}
                 />
-                <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 space-y-1">
                   <p>Created: {format(task.createdAt, "MMM d, yyyy h:mm a")}</p>
                   <p>
                     Last Modified:{" "}
@@ -173,7 +188,7 @@ export const SearchTasks = ({
           </div>
         </div>
       ) : searchQuery && !isSearching ? (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+        <div className="text-center text-gray-500 dark:text-gray-400 py-6 sm:py-8 text-sm sm:text-base">
           No tasks found matching "{searchQuery}"
         </div>
       ) : null}

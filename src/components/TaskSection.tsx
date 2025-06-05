@@ -60,12 +60,12 @@ const TaskSection = ({
   });
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-[#1A1A1A] dark:text-white">
+    <div className="mb-6 sm:mb-8">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-[#1A1A1A] dark:text-white">
           {title}
         </h2>
-        <span className="text-sm text-[#7E7E7E] dark:text-gray-400">
+        <span className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400">
           {incompleteTasks.length} remaining
         </span>
       </div>

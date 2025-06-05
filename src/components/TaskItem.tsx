@@ -109,27 +109,27 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`group relative flex items-start gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-[#CDA351]/10 hover:border-[#CDA351]/20 transition-colors ${
+          className={`group relative flex items-start gap-3 p-3 sm:p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-[#CDA351]/10 hover:border-[#CDA351]/20 transition-colors ${
             task.completed ? "opacity-60" : ""
           }`}
         >
           <Button
             variant="ghost"
             size="icon"
-            className={`h-6 w-6 rounded-full border-2 transition-colors ${
+            className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full border-2 transition-colors touch-manipulation ${
               task.completed
                 ? "bg-[#CDA351] border-[#CDA351] text-white"
                 : "border-gray-300 dark:border-gray-600 hover:border-[#CDA351]"
             }`}
             onClick={handleToggleComplete}
           >
-            {task.completed && <Check className="h-4 w-4" />}
+            {task.completed && <Check className="h-3 w-3 sm:h-4 sm:w-4" />}
           </Button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3
-                className={`font-medium text-[#1A1A1A] dark:text-white truncate ${
+                className={`font-medium text-sm sm:text-base text-[#1A1A1A] dark:text-white truncate ${
                   task.completed
                     ? "line-through text-[#7E7E7E] dark:text-gray-400"
                     : ""
@@ -137,22 +137,26 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
               >
                 {task.title}
               </h3>
-              <Flag className={`w-4 h-4 ${priorityColors[task.priority]}`} />
+              <Flag
+                className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${
+                  priorityColors[task.priority]
+                }`}
+              />
             </div>
 
             {task.description && (
-              <p className="text-sm text-[#7E7E7E] dark:text-gray-400 mt-1 line-clamp-2">
+              <p className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400 mt-1 line-clamp-2">
                 {task.description}
               </p>
             )}
 
-            <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2 items-center">
               {task.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1 sm:gap-1.5">
                   {task.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2.5 py-0.5 rounded-full"
+                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2 py-0.5 rounded-full"
                     >
                       {tag}
                     </span>
@@ -168,30 +172,30 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                       : "text-[#7E7E7E] dark:text-gray-400"
                   }`}
                 >
-                  <Calendar size={12} />
+                  <Calendar size={10} className="sm:w-3 sm:h-3" />
                   {formatDate(task.dueDate)}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex gap-1">
+          <div className="flex gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#7E7E7E] hover:text-[#CDA351] dark:text-gray-400 dark:hover:text-[#CDA351]"
+              className="h-8 w-8 sm:h-9 sm:w-9 text-[#7E7E7E] hover:text-[#CDA351] dark:text-gray-400 dark:hover:text-[#CDA351] touch-manipulation"
               onClick={() => setIsEditing(true)}
             >
-              <Edit size={16} />
+              <Edit size={14} className="sm:w-4 sm:h-4" />
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-[#7E7E7E] hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+              className="h-8 w-8 sm:h-9 sm:w-9 text-[#7E7E7E] hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 touch-manipulation"
               onClick={() => setIsDeleting(true)}
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} className="sm:w-4 sm:h-4" />
             </Button>
           </div>
         </motion.div>

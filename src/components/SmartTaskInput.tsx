@@ -215,7 +215,7 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3 sm:space-y-4", className)}>
       <div className="relative">
         <div className="relative">
           <Input
@@ -225,15 +225,15 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
             onKeyDown={handleKeyDown}
             placeholder="Add a task... (e.g., 'Schedule team meeting tomorrow at 2pm urgent')"
             className={cn(
-              "h-12 pl-12 pr-4 text-base border-[#CDA351]/20 focus:border-[#CDA351] focus:ring-[#CDA351]/20",
+              "h-10 sm:h-12 md:h-14 pl-10 sm:pl-12 pr-3 sm:pr-4 text-sm sm:text-base md:text-lg border-[#CDA351]/20 focus:border-[#CDA351] focus:ring-[#CDA351]/20 rounded-lg sm:rounded-xl",
               isProcessing && "animate-pulse"
             )}
           />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+          <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2">
             {isProcessing ? (
-              <Sparkles className="h-5 w-5 text-[#CDA351] animate-pulse" />
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-[#CDA351] animate-pulse" />
             ) : (
-              <Wand2 className="h-5 w-5 text-[#CDA351]" />
+              <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#CDA351]" />
             )}
           </div>
         </div>
@@ -244,32 +244,32 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 right-0 mt-2 p-4 bg-white dark:bg-gray-800 rounded-xl border border-[#CDA351]/20 shadow-lg z-50"
+              className="absolute top-full left-0 right-0 mt-2 p-3 sm:p-4 bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl border border-[#CDA351]/20 shadow-lg z-50"
             >
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Brain className="h-4 w-4" />
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Smart suggestions based on your input:</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   {parsedTask.dueDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <CalendarIcon className="h-4 w-4 text-[#CDA351]" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-[#CDA351]" />
                       <span>
                         Due: {format(parsedTask.dueDate, "MMM d, h:mm a")}
                       </span>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 text-sm">
-                    <Flag className="h-4 w-4 text-[#CDA351]" />
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Flag className="h-3 w-3 sm:h-4 sm:w-4 text-[#CDA351]" />
                     <span>Priority: {parsedTask.priority}</span>
                   </div>
 
                   {parsedTask.tags.length > 0 && (
-                    <div className="flex items-center gap-2 text-sm col-span-2">
-                      <Tag className="h-4 w-4 text-[#CDA351]" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm col-span-1 sm:col-span-2">
+                      <Tag className="h-3 w-3 sm:h-4 sm:w-4 text-[#CDA351]" />
                       <div className="flex flex-wrap gap-1">
                         {parsedTask.tags.map((tag) => (
                           <span
@@ -284,31 +284,34 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowAdvanced(true)}
-                    className="border-[#CDA351]/20 hover:border-[#CDA351]/40 hover:bg-[#CDA351]/5"
+                    className="border-[#CDA351]/20 hover:border-[#CDA351]/40 hover:bg-[#CDA351]/5 text-xs sm:text-sm h-8 sm:h-9"
                   >
-                    <List className="h-4 w-4 mr-2" />
-                    Advanced
+                    <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Advanced</span>
+                    <span className="xs:hidden">More</span>
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleSubmit}
                     disabled={isProcessing}
-                    className="bg-[#CDA351] hover:bg-[#CDA351]/90"
+                    className="bg-[#CDA351] hover:bg-[#CDA351]/90 text-xs sm:text-sm h-8 sm:h-9"
                   >
                     {isProcessing ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Processing...
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1 sm:mr-2" />
+                        <span className="hidden xs:inline">Processing...</span>
+                        <span className="xs:hidden">...</span>
                       </>
                     ) : (
                       <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Add Task
+                        <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden xs:inline">Add Task</span>
+                        <span className="xs:hidden">Add</span>
                       </>
                     )}
                   </Button>
@@ -320,10 +323,10 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
       </div>
 
       <Dialog open={showAdvanced} onOpenChange={setShowAdvanced}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <List className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <List className="h-4 w-4 sm:h-5 sm:w-5" />
               Advanced Task Settings
             </DialogTitle>
           </DialogHeader>
@@ -339,6 +342,7 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                   )
                 }
                 placeholder="Enter task title..."
+                className="text-sm sm:text-base"
               />
             </div>
 
@@ -353,10 +357,11 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                 }
                 placeholder="Add a description..."
                 rows={3}
+                className="text-sm sm:text-base"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Due Date</label>
                 <Select
@@ -380,12 +385,16 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                     )
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Select due date" />
                   </SelectTrigger>
                   <SelectContent>
                     {quickDateOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-sm"
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
@@ -405,7 +414,7 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                     )
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>

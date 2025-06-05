@@ -934,21 +934,21 @@ const NotesPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FAF8F6] via-[#F8F6F3] to-[#F5F3F0] dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <NavBar />
-      <main className="container mx-auto px-6 py-8 max-w-7xl">
-        <div className="flex h-[calc(100vh-120px)] gap-8">
-          {/* Enhanced Left Sidebar - 30% */}
-          <div className="w-[30%] flex flex-col">
+      <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-none sm:max-w-7xl">
+        <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-120px)] gap-4 sm:gap-6 lg:gap-8">
+          {/* Enhanced Left Sidebar - Mobile: Full width, Desktop: 30% */}
+          <div className="w-full lg:w-[30%] flex flex-col">
             {/* Enhanced Header */}
-            <div className="mb-8 px-2">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/10 rounded-2xl">
-                  <BookOpen className="h-8 w-8 text-[#CDA351]" />
+            <div className="mb-4 sm:mb-6 lg:mb-8 px-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/10 rounded-xl sm:rounded-2xl self-start sm:self-auto">
+                  <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-[#CDA351]" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                     My Notes
                   </h1>
-                  <p className="text-muted-foreground dark:text-gray-400">
+                  <p className="text-sm sm:text-base text-muted-foreground dark:text-gray-400">
                     Organize your thoughts and ideas!
                   </p>
                 </div>
@@ -956,34 +956,34 @@ const NotesPage = () => {
             </div>
 
             {/* Enhanced Search */}
-            <div className="mb-6 px-2">
+            <div className="mb-4 sm:mb-6 px-2">
               <div className="relative group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-gray-400 h-5 w-5 group-focus-within:text-[#CDA351] transition-colors" />
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-gray-400 h-4 w-4 sm:h-5 sm:w-5 group-focus-within:text-[#CDA351] transition-colors" />
                 <Input
                   placeholder="Search notes, tasks, and content..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-[#CDA351] focus:ring-[#CDA351] dark:text-gray-100 dark:placeholder-gray-400 text-base rounded-xl shadow-sm"
+                  className="pl-10 sm:pl-12 h-10 sm:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-[#CDA351] focus:ring-[#CDA351] dark:text-gray-100 dark:placeholder-gray-400 text-sm sm:text-base rounded-lg sm:rounded-xl shadow-sm"
                 />
                 {searchQuery && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                    className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                     onClick={() => setSearchQuery("")}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 )}
               </div>
             </div>
 
             {/* Enhanced Navigation Tabs */}
-            <div className="flex flex-col gap-3 mb-8 px-2">
+            <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 lg:mb-8 px-2">
               <Button
                 variant={activeTab === "all" ? "default" : "ghost"}
                 className={cn(
-                  "justify-start h-16 text-left px-5 py-4 rounded-xl transition-all duration-200",
+                  "justify-start h-12 sm:h-14 lg:h-16 text-left px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl transition-all duration-200",
                   activeTab === "all"
                     ? "bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white shadow-lg transform scale-105"
                     : "hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
@@ -994,17 +994,19 @@ const NotesPage = () => {
                   navigate("/notes");
                 }}
               >
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full">
                   <div
                     className={cn(
-                      "p-2 rounded-lg",
+                      "p-1.5 sm:p-2 rounded-md sm:rounded-lg",
                       activeTab === "all" ? "bg-white/20" : "bg-[#CDA351]/10"
                     )}
                   >
-                    <Layers3 className="h-5 w-5" />
+                    <Layers3 className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-sm">All Notes</div>
+                    <div className="font-semibold text-xs sm:text-sm">
+                      All Notes
+                    </div>
                     <div
                       className={cn(
                         "text-xs mt-0.5",
@@ -1022,7 +1024,7 @@ const NotesPage = () => {
               <Button
                 variant={activeTab === "general" ? "default" : "ghost"}
                 className={cn(
-                  "justify-start h-16 text-left px-5 py-4 rounded-xl transition-all duration-200",
+                  "justify-start h-12 sm:h-14 lg:h-16 text-left px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl transition-all duration-200",
                   activeTab === "general"
                     ? "bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white shadow-lg transform scale-105"
                     : "hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
@@ -1033,19 +1035,21 @@ const NotesPage = () => {
                   navigate("/notes");
                 }}
               >
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full">
                   <div
                     className={cn(
-                      "p-2 rounded-lg",
+                      "p-1.5 sm:p-2 rounded-md sm:rounded-lg",
                       activeTab === "general"
                         ? "bg-white/20"
                         : "bg-[#CDA351]/10"
                     )}
                   >
-                    <StickyNote className="h-5 w-5" />
+                    <StickyNote className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-sm">General Notes</div>
+                    <div className="font-semibold text-xs sm:text-sm">
+                      General Notes
+                    </div>
                     <div
                       className={cn(
                         "text-xs mt-0.5",
@@ -1063,7 +1067,7 @@ const NotesPage = () => {
               <Button
                 variant={activeTab === "tasks" ? "default" : "ghost"}
                 className={cn(
-                  "justify-start h-16 text-left px-5 py-4 rounded-xl transition-all duration-200",
+                  "justify-start h-12 sm:h-14 lg:h-16 text-left px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl transition-all duration-200",
                   activeTab === "tasks"
                     ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white shadow-lg transform scale-105"
                     : "hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
@@ -1074,17 +1078,19 @@ const NotesPage = () => {
                   navigate("/notes");
                 }}
               >
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full">
                   <div
                     className={cn(
-                      "p-2 rounded-lg",
+                      "p-1.5 sm:p-2 rounded-md sm:rounded-lg",
                       activeTab === "tasks" ? "bg-white/20" : "bg-blue-500/10"
                     )}
                   >
-                    <LinkIcon className="h-5 w-5" />
+                    <LinkIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-sm">Task Notes</div>
+                    <div className="font-semibold text-xs sm:text-sm">
+                      Task Notes
+                    </div>
                     <div
                       className={cn(
                         "text-xs mt-0.5",
@@ -1100,22 +1106,22 @@ const NotesPage = () => {
               </Button>
             </div>
 
-            {/* Enhanced Stats Card */}
-            <div className="mt-auto mx-2 p-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-lg">
-              <div className="flex items-center gap-3 mb-5">
+            {/* Enhanced Stats Card - Hidden on mobile, visible on lg+ */}
+            <div className="hidden lg:block mt-auto mx-2 p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-600 shadow-lg">
+              <div className="flex items-center gap-3 mb-4 sm:mb-5">
                 <div className="p-2 bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/10 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-[#CDA351]" />
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-[#CDA351]" />
                 </div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
                   Quick Stats
                 </h3>
               </div>
-              <div className="space-y-4 text-sm">
+              <div className="space-y-3 sm:space-y-4 text-sm">
                 <div className="flex justify-between items-center py-2">
                   <span className="text-muted-foreground dark:text-gray-400 font-medium">
                     Total Notes:
                   </span>
-                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                  <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100">
                     {notes.length}
                   </span>
                 </div>
@@ -1128,9 +1134,10 @@ const NotesPage = () => {
                     {notes.filter((n) => n.isGeneral).length}
                   </span>
                 </div>
+                <Separator className="dark:bg-gray-600" />
                 <div className="flex justify-between items-center py-2">
                   <span className="text-muted-foreground dark:text-gray-400 font-medium">
-                    Task-linked:
+                    Linked:
                   </span>
                   <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {notes.filter((n) => !n.isGeneral).length}
@@ -1153,38 +1160,38 @@ const NotesPage = () => {
             </div>
           </div>
 
-          {/* Enhanced Right Content - 70% */}
-          <div className="w-[70%] flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-xl">
-            <ScrollArea className="flex-1 p-8">
+          {/* Enhanced Right Content - Mobile: Full width, Desktop: 70% */}
+          <div className="w-full lg:w-[70%] flex flex-col bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-600 shadow-xl">
+            <ScrollArea className="flex-1 p-4 sm:p-6 lg:p-8">
               {authLoading ? (
-                <div className="flex items-center justify-center h-96">
-                  <div className="flex flex-col items-center gap-6">
+                <div className="flex items-center justify-center h-48 sm:h-64 lg:h-96">
+                  <div className="flex flex-col items-center gap-4 sm:gap-6">
                     <div className="relative">
-                      <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full" />
-                      <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351]/20 rounded-full" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
                     </div>
                     <div className="text-center">
-                      <p className="text-muted-foreground dark:text-gray-400 text-lg font-medium">
+                      <p className="text-muted-foreground dark:text-gray-400 text-base sm:text-lg font-medium">
                         Authenticating...
                       </p>
-                      <p className="text-muted-foreground dark:text-gray-500 text-sm mt-1">
+                      <p className="text-muted-foreground dark:text-gray-500 text-xs sm:text-sm mt-1">
                         Verifying your access
                       </p>
                     </div>
                   </div>
                 </div>
               ) : isLoading ? (
-                <div className="flex items-center justify-center h-96">
-                  <div className="flex flex-col items-center gap-6">
+                <div className="flex items-center justify-center h-48 sm:h-64 lg:h-96">
+                  <div className="flex flex-col items-center gap-4 sm:gap-6">
                     <div className="relative">
-                      <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full" />
-                      <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351]/20 rounded-full" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
                     </div>
                     <div className="text-center">
-                      <p className="text-muted-foreground dark:text-gray-400 text-lg font-medium">
+                      <p className="text-muted-foreground dark:text-gray-400 text-base sm:text-lg font-medium">
                         Loading your notes...
                       </p>
-                      <p className="text-muted-foreground dark:text-gray-500 text-sm mt-1">
+                      <p className="text-muted-foreground dark:text-gray-500 text-xs sm:text-sm mt-1">
                         Organizing your thoughts
                       </p>
                     </div>

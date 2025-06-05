@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 
 interface StreakButtonProps {
   className?: string;
+  variant?: "navbar" | "hamburger"; // Add variant prop for different contexts
 }
 
 export interface StreakButtonRef {
@@ -32,7 +33,7 @@ export interface StreakButtonRef {
 }
 
 const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
-  ({ className }, ref) => {
+  ({ className, variant = "navbar" }, ref) => {
     const { user } = useAuth();
     const [streakData, setStreakData] = useState<StreakData | null>(null);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -218,7 +219,7 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
     if (!user?.uid) return null;
 
     const getStreakDisplay = () => {
-      if (isLoading) return "0"; // Show 0 instead of ... to prevent layout shift
+      if (isLoading) return "0";
       if (error && !streakData) return "0";
       return (streakData?.currentStreak || 0).toString();
     };
@@ -250,6 +251,53 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
       return `${streak} day streak! You're a productivity legend! 🏆`;
     };
 
+    // Get enhanced styling for hamburger menu
+    const getHamburgerStyles = () => {
+      if (variant !== "hamburger") return {};
+
+      const streak = streakData?.currentStreak || 0;
+      const baseStyles = "w-full justify-start h-12 px-4 py-3";
+
+      if (streak >= 7) {
+        return {
+          className: cn(
+            baseStyles,
+            "bg-gradient-to-r from-[#CDA351]/10 to-[#CDA351]/5",
+            "border border-[#CDA351]/20",
+            "text-[#1A1A1A] dark:text-white",
+            "hover:from-[#CDA351]/20 hover:to-[#CDA351]/10",
+            "hover:border-[#CDA351]/30",
+            "shadow-sm hover:shadow-md",
+            "font-medium"
+          ),
+          priority: true,
+        };
+      } else if (streak >= 3) {
+        return {
+          className: cn(
+            baseStyles,
+            "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10",
+            "border border-amber-200/50 dark:border-amber-700/50",
+            "text-[#1A1A1A] dark:text-white",
+            "hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20",
+            "font-medium"
+          ),
+          priority: false,
+        };
+      }
+
+      return {
+        className: cn(
+          baseStyles,
+          "text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10"
+        ),
+        priority: false,
+      };
+    };
+
+    const hamburgerStyles = getHamburgerStyles();
+    const isHamburgerVariant = variant === "hamburger";
+
     return (
       <>
         <TooltipProvider>
@@ -257,77 +305,144 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
+                size={isHamburgerVariant ? "default" : "sm"}
                 onClick={handleCalendarOpen}
                 className={cn(
-                  "text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-300 transform hover:scale-105 active:scale-95 relative group shadow-sm hover:shadow-md",
-                  "border border-transparent hover:border-[#CDA351]/20",
+                  // Base styles for navbar variant
+                  !isHamburgerVariant &&
+                    "text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-300 transform hover:scale-105 active:scale-95 relative group shadow-sm hover:shadow-md border border-transparent hover:border-[#CDA351]/20 h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4",
+
+                  // Enhanced styles for hamburger variant
+                  isHamburgerVariant && hamburgerStyles.className,
+
+                  // Common styles
+                  "relative group transition-all duration-300",
+
+                  // Ring for active streaks (both variants)
                   streakData &&
                     streakData.currentStreak > 0 &&
+                    !isHamburgerVariant &&
                     "ring-1 ring-[#CDA351]/10",
+
                   className
                 )}
               >
-                <div className="flex items-center space-x-2">
+                <div
+                  className={cn(
+                    "flex items-center",
+                    isHamburgerVariant ? "space-x-3" : "space-x-1 sm:space-x-2"
+                  )}
+                >
                   <Flame
                     className={cn(
-                      "w-4 h-4 transition-all duration-300 group-hover:scale-110",
+                      isHamburgerVariant ? "w-5 h-5" : "w-3 h-3 sm:w-4 sm:h-4",
+                      "transition-all duration-300 group-hover:scale-110",
                       getStreakColor()
                     )}
                   />
-                  <span className="font-medium">
-                    <span className="hidden sm:inline">Streak:</span>
+                  <div className="flex flex-col items-start">
                     <span
                       className={cn(
-                        "ml-1 font-semibold transition-all duration-300",
-                        getStreakColor(),
-                        streakData &&
-                          streakData.currentStreak > 0 &&
-                          "drop-shadow-sm"
+                        "font-medium",
+                        isHamburgerVariant ? "text-sm" : "text-xs sm:text-sm"
                       )}
                     >
-                      {getStreakDisplay()}
+                      {isHamburgerVariant ? (
+                        <span>Productivity Streak</span>
+                      ) : (
+                        <>
+                          <span className="hidden sm:inline">Streak:</span>
+                          <span
+                            className={cn(
+                              "ml-0 sm:ml-1 font-semibold transition-all duration-300 text-xs sm:text-sm",
+                              getStreakColor(),
+                              streakData &&
+                                streakData.currentStreak > 0 &&
+                                "drop-shadow-sm"
+                            )}
+                          >
+                            {getStreakDisplay()}
+                          </span>
+                        </>
+                      )}
                     </span>
-                  </span>
+                    {isHamburgerVariant && (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span
+                          className={cn("text-lg font-bold", getStreakColor())}
+                        >
+                          {streakData && streakData.currentStreak >= 30
+                            ? "🏆"
+                            : streakData && streakData.currentStreak >= 14
+                            ? "💎"
+                            : streakData && streakData.currentStreak >= 7
+                            ? "🔥"
+                            : streakData && streakData.currentStreak >= 3
+                            ? "⚡"
+                            : "🔥"}{" "}
+                          {getStreakDisplay()} days
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Streak milestone badge - Enhanced styling */}
-                {!isLoading && streakData && streakData.currentStreak > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "absolute -top-2 -right-2 h-6 w-6 p-0 text-xs font-bold border-2 border-white dark:border-gray-900 transform transition-all duration-300 hover:scale-110",
-                      streakData.currentStreak >= 30
-                        ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
-                        : streakData.currentStreak >= 14
-                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                        : streakData.currentStreak >= 7
-                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
-                        : streakData.currentStreak >= 3
-                        ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white"
-                        : "bg-gradient-to-br from-orange-400 to-orange-500 text-white"
+                {/* Milestone badge for navbar variant only */}
+                {!isLoading &&
+                  !isHamburgerVariant &&
+                  streakData &&
+                  streakData.currentStreak > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "absolute -top-1 sm:-top-2 -right-1 sm:-right-2 h-4 w-4 sm:h-6 sm:w-6 p-0 text-xs font-bold border-2 border-white dark:border-gray-900 transform transition-all duration-300 hover:scale-110",
+                        streakData.currentStreak >= 30
+                          ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                          : streakData.currentStreak >= 14
+                          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                          : streakData.currentStreak >= 7
+                          ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
+                          : streakData.currentStreak >= 3
+                          ? "bg-gradient-to-br from-yellow-400 to-yellow-500 text-white"
+                          : "bg-gradient-to-br from-orange-400 to-orange-500 text-white"
+                      )}
+                    >
+                      <span className="drop-shadow-sm text-xs">
+                        {streakData.currentStreak >= 30
+                          ? "🏆"
+                          : streakData.currentStreak >= 14
+                          ? "💎"
+                          : streakData.currentStreak >= 7
+                          ? "🔥"
+                          : streakData.currentStreak >= 3
+                          ? "⚡"
+                          : "✨"}
+                      </span>
+                    </Badge>
+                  )}
+
+                {/* Progress indicator for hamburger variant */}
+                {isHamburgerVariant && streakData && (
+                  <div className="ml-auto flex flex-col items-end gap-1">
+                    {streakData.currentStreak > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#CDA351] to-[#E6C17A] animate-pulse"></div>
                     )}
-                  >
-                    <span className="drop-shadow-sm">
-                      {streakData.currentStreak >= 30
-                        ? "🏆"
-                        : streakData.currentStreak >= 14
-                        ? "💎"
-                        : streakData.currentStreak >= 7
-                        ? "🔥"
-                        : streakData.currentStreak >= 3
-                        ? "⚡"
-                        : "✨"}
-                    </span>
-                  </Badge>
+                  </div>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
+            <TooltipContent
+              side={isHamburgerVariant ? "left" : "bottom"}
+              className="max-w-xs sm:max-w-sm"
+            >
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Flame className={cn("w-4 h-4", getStreakColor())} />
-                  <span className="font-semibold">{getStreakMessage()}</span>
+                  <Flame
+                    className={cn("w-3 h-3 sm:w-4 sm:h-4", getStreakColor())}
+                  />
+                  <span className="font-semibold text-xs sm:text-sm">
+                    {getStreakMessage()}
+                  </span>
                 </div>
 
                 {!isLoading && streakData && (
@@ -335,7 +450,7 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
                     <div className="flex items-center justify-between">
                       <span>Best streak:</span>
                       <span className="flex items-center space-x-1">
-                        <TrendingUp className="w-3 h-3" />
+                        <TrendingUp className="w-2 h-2 sm:w-3 sm:h-3" />
                         <span>{streakData.longestStreak} days</span>
                       </span>
                     </div>
@@ -344,8 +459,11 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
                       <span>{streakData.totalDaysActive}</span>
                     </div>
                     <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-[#CDA351] font-medium">
-                        Click to view calendar (or press S)
+                      <span className="text-[#CDA351] font-medium text-xs">
+                        <span className="hidden sm:inline">
+                          Click to view calendar (or press S)
+                        </span>
+                        <span className="sm:hidden">Tap to view calendar</span>
                       </span>
                     </div>
                   </div>

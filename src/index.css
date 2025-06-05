@@ -45,6 +45,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Touch targets - minimum 44px for accessibility */
+    --touch-target-min: 44px;
   }
 
   .dark {
@@ -97,10 +100,27 @@
     font-family: "Space Grotesk", "Inter", sans-serif;
     --tw-bg-opacity: 1;
     background: linear-gradient(to bottom, #faf8f6 0%, #efe7dd 100%);
+    /* Improve text rendering on mobile */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   .dark body {
     background: linear-gradient(to bottom, #18181b 0%, #23272e 100%);
+  }
+
+  /* Responsive text sizing */
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  @media (min-width: 641px) {
+    html {
+      font-size: 16px;
+    }
   }
 }
 
@@ -226,4 +246,54 @@
 /* Smooth scroll behavior */
 .streak-scroll-container {
   scroll-behavior: smooth;
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  /* Ensure minimum touch target size */
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+}
+
+/* Improve button responsiveness */
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Responsive container improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Responsive typography improvements */
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1.75rem;
+  }
+  h2 {
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.75rem;
+  }
+  h3 {
+    font-size: 1rem; /* text-base */
+    line-height: 1.5rem;
+  }
+  .text-2xl {
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1.75rem;
+  }
+  .text-xl {
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.75rem;
+  }
+  .text-lg {
+    font-size: 1rem; /* text-base */
+    line-height: 1.5rem;
+  }
 }

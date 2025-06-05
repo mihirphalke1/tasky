@@ -11,6 +11,7 @@ import {
   Shield,
   Clock,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,12 +37,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const NavBar = () => {
   const { theme, setTheme } = useTheme();
   const { user, logout, sessionDaysRemaining, extendUserSession } = useAuth();
   const navigate = useNavigate();
   const [showShortcuts, setShowShortcuts] = useState(isDesktop());
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const streakButtonRef = useRef<StreakButtonRef>(null);
 
   // Check if session is near expiry (1 day or less)
@@ -94,10 +97,15 @@ const NavBar = () => {
   // Enable global keyboard shortcuts
   useKeyboardShortcuts(globalShortcuts);
 
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <nav className="sticky top-0 z-50 w-full py-3 px-6 mb-4 flex items-center justify-between border-b border-[#CDA351]/20 shadow-lg backdrop-blur-md bg-[#FAF8F6] dark:bg-gray-900 dark:border-[#CDA351]/10">
+    <nav className="sticky top-0 z-50 w-full py-2 sm:py-3 px-3 sm:px-6 mb-4 flex items-center justify-between border-b border-[#CDA351]/20 shadow-lg backdrop-blur-md bg-[#FAF8F6] dark:bg-gray-900 dark:border-[#CDA351]/10">
       <div className="flex items-center">
-        <h1 className="text-xl font-bold text-[#1A1A1A] dark:text-white tracking-tight">
+        <h1 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white tracking-tight">
           <span className="transition-colors duration-200 hover:text-[#CDA351]">
             T
           </span>
@@ -120,7 +128,8 @@ const NavBar = () => {
         </h1>
       </div>
 
-      <div className="flex items-center gap-1">
+      {/* Desktop Navigation */}
+      <div className="hidden md:flex items-center gap-1">
         <div className="flex items-center gap-1 mr-4 p-1 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-[#CDA351]/10 dark:border-[#CDA351]/5">
           <Button
             variant="ghost"
@@ -129,8 +138,7 @@ const NavBar = () => {
             className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95"
           >
             <Home className="mr-1.5 h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-            <span className="sm:hidden font-medium">Home</span>
+            <span className="font-medium">Dashboard</span>
           </Button>
 
           <Button
@@ -140,17 +148,19 @@ const NavBar = () => {
             className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95"
           >
             <StickyNote className="mr-1.5 h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Notes</span>
+            <span className="font-medium">Notes</span>
           </Button>
 
-          <StreakButton ref={streakButtonRef} />
+          <div className="w-full">
+            <StreakButton ref={streakButtonRef} className="w-full" />
+          </div>
 
           {showShortcuts && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/shortcuts")}
-              className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95 hidden sm:flex"
+              className="text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/10 transition-all duration-200 transform hover:scale-105 active:scale-95"
               title="Keyboard Shortcuts (Cmd/Ctrl + /)"
             >
               <Keyboard className="mr-1.5 h-4 w-4" />
@@ -165,8 +175,7 @@ const NavBar = () => {
           className="bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 active:scale-95 border-2 border-[#CDA351]/20 hover:border-[#CDA351]/40 mx-2"
         >
           <Timer className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Focus Mode</span>
-          <span className="sm:hidden">Focus</span>
+          <span>Focus Mode</span>
           <div className="absolute inset-0 bg-white/20 rounded opacity-0 hover:opacity-100 transition-opacity duration-300" />
         </Button>
 
@@ -292,6 +301,179 @@ const NavBar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className="flex md:hidden items-center gap-2">
+        {/* Focus Mode Button - Mobile */}
+        <Button
+          size="sm"
+          onClick={() => navigate("/focus")}
+          className="bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-xs px-3 py-2"
+        >
+          <Timer className="h-4 w-4" />
+        </Button>
+
+        {/* Theme Toggle - Mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          className="rounded-full h-8 w-8 transition-all duration-300 hover:bg-[#CDA351]/10"
+        >
+          {theme === "light" ? (
+            <Moon size={16} className="text-gray-600 dark:text-gray-400" />
+          ) : (
+            <Sun size={16} className="text-gray-600 dark:text-gray-400" />
+          )}
+        </Button>
+
+        {/* Mobile Menu */}
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-8 w-8 transition-all duration-300 hover:bg-[#CDA351]/10"
+            >
+              <Menu size={16} className="text-gray-600 dark:text-gray-400" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-72 p-0">
+            <div className="flex flex-col h-full">
+              {/* User Profile Header */}
+              <div className="flex items-center gap-4 p-4 sm:p-6 bg-gradient-to-r from-[#CDA351]/5 to-transparent border-b border-[#CDA351]/10">
+                <Avatar className="h-12 w-12 ring-2 ring-[#CDA351]/20 ring-offset-2 ring-offset-white dark:ring-offset-gray-900">
+                  {user?.photoURL ? (
+                    <AvatarImage
+                      src={user.photoURL}
+                      alt={user.displayName || ""}
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/10 text-[#CDA351] font-semibold text-base">
+                      {user?.displayName?.[0] || <User size={18} />}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <p className="font-semibold text-base text-[#1A1A1A] dark:text-white truncate">
+                    {user?.displayName}
+                  </p>
+                  <p className="text-sm text-[#7E7E7E] dark:text-gray-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Navigation Items */}
+              <div className="flex-1 p-4 sm:p-6 space-y-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/dashboard")}
+                  className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                >
+                  <Home className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Dashboard</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/notes")}
+                  className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                >
+                  <StickyNote className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Notes</span>
+                </Button>
+
+                <div className="w-full">
+                  <StreakButton
+                    ref={streakButtonRef}
+                    className="w-full rounded-lg"
+                    variant="hamburger"
+                  />
+                </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/shortcuts")}
+                  className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                >
+                  <Keyboard className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Shortcuts</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleNavigation("/focus")}
+                  className="w-full bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white font-semibold h-12 mt-6 px-4 py-3 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Timer className="mr-3 h-5 w-5" />
+                  <span>Focus Mode</span>
+                </Button>
+              </div>
+
+              {/* Session Status & Logout */}
+              <div className="p-4 sm:p-6 border-t border-[#CDA351]/10 space-y-4">
+                {/* Session Status */}
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-2">
+                    <Shield
+                      className={`h-4 w-4 ${
+                        isSessionNearExpiry
+                          ? "text-orange-600"
+                          : "text-green-600"
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        isSessionNearExpiry
+                          ? "text-orange-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {isSessionNearExpiry
+                        ? "Session Expiring"
+                        : "Session Active"}
+                    </span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`text-xs px-3 py-1 ${
+                      isSessionNearExpiry
+                        ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                        : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                    }`}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {sessionDaysRemaining}d left
+                  </Badge>
+                </div>
+
+                {/* Extend Session Button */}
+                {isSessionNearExpiry && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={extendUserSession}
+                    className="w-full text-sm h-10 border-[#CDA351] text-[#CDA351] hover:bg-[#CDA351] hover:text-white px-4 py-2"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Extend Session
+                  </Button>
+                )}
+
+                {/* Logout Button */}
+                <Button
+                  variant="ghost"
+                  onClick={logout}
+                  className="w-full justify-start text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 h-11 px-4 py-3"
+                >
+                  <LogOut className="mr-3 h-4 w-4" />
+                  <span className="font-medium">Log out</span>
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

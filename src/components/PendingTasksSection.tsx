@@ -142,33 +142,36 @@ const PendingTasksSection = ({
   };
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mb-6 sm:mb-8">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-[#1A1A1A] dark:text-white">
+          <h2 className="text-lg sm:text-xl font-semibold text-[#1A1A1A] dark:text-white">
             Pending Tasks
           </h2>
-          <Clock className="w-5 h-5 text-[#CDA351]" />
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#CDA351]" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[#7E7E7E] dark:text-gray-400">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <span className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400 hidden xs:inline">
             {totalPendingTasks} task{totalPendingTasks !== 1 ? "s" : ""} with
             due dates
           </span>
+          <span className="text-xs text-[#7E7E7E] dark:text-gray-400 xs:hidden">
+            {totalPendingTasks} pending
+          </span>
           {/* Summary badges */}
-          <div className="flex gap-1 ml-2">
+          <div className="flex gap-1 ml-1 sm:ml-2">
             {categorizedTasks.overdue.length > 0 && (
-              <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 text-xs font-medium px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full">
                 {categorizedTasks.overdue.length}
               </span>
             )}
             {categorizedTasks.today.length > 0 && (
-              <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-500 text-xs font-medium px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-500 text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full">
                 {categorizedTasks.today.length}
               </span>
             )}
             {categorizedTasks.tomorrow.length > 0 && (
-              <span className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full">
                 {categorizedTasks.tomorrow.length}
               </span>
             )}

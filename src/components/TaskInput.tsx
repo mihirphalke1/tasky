@@ -169,146 +169,167 @@ const TaskInput = forwardRef<TaskInputRef, TaskInputProps>(
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-8 shadow-md border-2 border-[#CDA351]/20 mb-8"
+        className="w-full bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 shadow-md border-2 border-[#CDA351]/20 mb-6 sm:mb-8"
       >
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-3 sm:gap-4 flex-1">
-              <div className="bg-[#CDA351]/10 p-3 sm:p-4 rounded-xl">
-                <Plus size={28} className="text-[#CDA351]" />
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 sm:space-y-4 md:space-y-6"
+        >
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1">
+              <div className="bg-[#CDA351]/10 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl">
+                <Plus
+                  size={20}
+                  className="sm:w-6 sm:h-6 md:w-7 md:h-7 text-[#CDA351]"
+                />
               </div>
               <Input
                 type="text"
                 placeholder="Add a new task..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 border-2 border-[#CDA351]/20 shadow-none focus-visible:ring-2 focus-visible:ring-[#CDA351]/30 text-lg sm:text-xl font-medium h-14 sm:h-16 px-4 bg-white dark:bg-gray-900 rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="flex-1 border-2 border-[#CDA351]/20 shadow-none focus-visible:ring-2 focus-visible:ring-[#CDA351]/30 text-base sm:text-lg md:text-xl font-medium h-10 sm:h-12 md:h-14 lg:h-16 px-3 sm:px-4 bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 ref={titleInputRef}
               />
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-0">
-              <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center gap-2 text-base sm:text-lg font-medium h-12 sm:h-14 px-4 rounded-xl ${
-                      dueDate
-                        ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
-                        : "border-[#CDA351]/20"
-                    }`}
+
+            {/* Action buttons row */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg font-medium h-8 sm:h-10 md:h-12 lg:h-14 px-2 sm:px-3 md:px-4 rounded-lg sm:rounded-xl ${
+                        dueDate
+                          ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
+                          : "border-[#CDA351]/20"
+                      }`}
+                    >
+                      <Calendar
+                        size={16}
+                        className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                      />
+                      <span className="hidden xs:inline">
+                        {dueDate ? format(dueDate, "MMM d") : "Due"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-3 sm:p-4"
+                    align="start"
+                    side="bottom"
+                    sideOffset={5}
                   >
-                    <Calendar size={22} className="sm:w-[22px] sm:h-[22px]" />
-                    {dueDate ? format(dueDate, "MMM d") : "Due date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-3 sm:p-4"
-                  align="start"
-                  side="bottom"
-                  sideOffset={5}
-                >
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {quickDateOptions.map((option) => (
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                        {quickDateOptions.map((option) => (
+                          <Button
+                            key={option.label}
+                            variant="outline"
+                            size="sm"
+                            className={`text-xs sm:text-sm ${
+                              (dueDate &&
+                                option.value &&
+                                format(dueDate, "yyyy-MM-dd") ===
+                                  format(option.value, "yyyy-MM-dd")) ||
+                              (!dueDate && !option.value)
+                                ? "bg-[#CDA351]/10 text-[#CDA351] border-[#CDA351]/20"
+                                : ""
+                            }`}
+                            onClick={() => {
+                              setDueDate(option.value);
+                              setShowDatePicker(false);
+                            }}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="border-t pt-3 sm:pt-4">
+                        <CalendarComponent
+                          mode="single"
+                          selected={dueDate || undefined}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                        />
+                        {dueDate && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full mt-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
+                            onClick={() => {
+                              setDueDate(null);
+                              setShowDatePicker(false);
+                            }}
+                          >
+                            Clear date
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Popover open={showTimePicker} onOpenChange={setShowTimePicker}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg font-medium h-8 sm:h-10 md:h-12 lg:h-14 px-2 sm:px-3 md:px-4 rounded-lg sm:rounded-xl ${
+                        dueDate
+                          ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
+                          : "border-[#CDA351]/20"
+                      }`}
+                    >
+                      <Clock
+                        size={16}
+                        className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                      />
+                      <span className="hidden xs:inline">
+                        {dueDate ? format(dueDate, "h:mm a") : "Time"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-2"
+                    align="start"
+                    side="bottom"
+                    sideOffset={5}
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 max-h-[200px] overflow-y-auto">
+                      {timeOptions.map((option) => (
                         <Button
                           key={option.label}
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           className={`text-xs sm:text-sm ${
-                            (dueDate &&
-                              option.value &&
-                              format(dueDate, "yyyy-MM-dd") ===
-                                format(option.value, "yyyy-MM-dd")) ||
-                            (!dueDate && !option.value)
-                              ? "bg-[#CDA351]/10 text-[#CDA351] border-[#CDA351]/20"
+                            dueDate &&
+                            dueDate.getHours() === option.hours &&
+                            dueDate.getMinutes() === option.minutes
+                              ? "bg-[#CDA351]/10 text-[#CDA351]"
                               : ""
                           }`}
-                          onClick={() => {
-                            setDueDate(option.value);
-                            setShowDatePicker(false);
-                          }}
+                          onClick={() =>
+                            handleTimeSelect(option.hours, option.minutes)
+                          }
                         >
                           {option.label}
                         </Button>
                       ))}
                     </div>
-                    <div className="border-t pt-3 sm:pt-4">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dueDate || undefined}
-                        onSelect={handleDateSelect}
-                        initialFocus
-                      />
-                      {dueDate && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full mt-2 text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
-                          onClick={() => {
-                            setDueDate(null);
-                            setShowDatePicker(false);
-                          }}
-                        >
-                          Clear date
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <Popover open={showTimePicker} onOpenChange={setShowTimePicker}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center gap-2 text-base sm:text-lg font-medium h-12 sm:h-14 px-4 rounded-xl ${
-                      dueDate
-                        ? "text-[#CDA351] border-[#CDA351]/40 bg-[#CDA351]/5"
-                        : "border-[#CDA351]/20"
-                    }`}
-                  >
-                    <Clock size={22} className="sm:w-[22px] sm:h-[22px]" />
-                    {dueDate ? format(dueDate, "h:mm a") : "Time"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-2"
-                  align="start"
-                  side="bottom"
-                  sideOffset={5}
-                >
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 max-h-[200px] overflow-y-auto">
-                    {timeOptions.map((option) => (
-                      <Button
-                        key={option.label}
-                        variant="ghost"
-                        size="sm"
-                        className={`text-xs sm:text-sm ${
-                          dueDate &&
-                          dueDate.getHours() === option.hours &&
-                          dueDate.getMinutes() === option.minutes
-                            ? "bg-[#CDA351]/10 text-[#CDA351]"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleTimeSelect(option.hours, option.minutes)
-                        }
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               <Button
                 type="submit"
-                size="lg"
-                className="bg-[#CDA351] hover:bg-[#CDA351]/90 transition-all duration-200 text-white shadow-lg hover:shadow-xl text-lg sm:text-xl font-bold h-12 sm:h-14 px-8 rounded-xl"
+                size="default"
+                className="bg-[#CDA351] hover:bg-[#CDA351]/90 transition-all duration-200 text-white shadow-lg hover:shadow-xl text-sm sm:text-base md:text-lg lg:text-xl font-bold h-8 sm:h-10 md:h-12 lg:h-14 px-4 sm:px-6 md:px-8 rounded-lg sm:rounded-xl"
               >
-                Add
+                <span className="hidden xs:inline">Add Task</span>
+                <span className="xs:hidden">Add</span>
               </Button>
             </div>
           </div>
