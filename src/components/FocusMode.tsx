@@ -118,6 +118,7 @@ export function FocusMode({
   const [pomodoroIsRunning, setPomodoroIsRunning] = useState(false);
   const [showQuickNoteDialog, setShowQuickNoteDialog] = useState(false);
   const [pomodoroToggleTrigger, setPomodoroToggleTrigger] = useState(false);
+  const [pomodoroTimerActive, setPomodoroTimerActive] = useState(false);
 
   // Enhanced task filtering, prioritization, and validation
   const processedTasks = useMemo(() => {
@@ -350,11 +351,13 @@ export function FocusMode({
       setShowSidePanel(false);
       setSidePanelContent(null);
       setIsPomodoroMode(false);
+      setPomodoroTimerActive(false);
     } else {
       // Open pomodoro side panel
       setShowSidePanel(true);
       setSidePanelContent("pomodoro");
       setIsPomodoroMode(true);
+      setPomodoroTimerActive(true);
       setShowShortcuts(false);
     }
   };
@@ -370,13 +373,12 @@ export function FocusMode({
       setShowSidePanel(true);
       setSidePanelContent("shortcuts");
       setShowShortcuts(true);
-      setIsPomodoroMode(false);
     }
   };
 
   // Function to handle pomodoro play/pause
   const handlePomodoroPlayPause = () => {
-    if (!isPomodoroMode) {
+    if (!pomodoroTimerActive) {
       toast.error("Pomodoro timer is not active", {
         description: "Press 'P' to open the Pomodoro timer first",
       });
@@ -1517,7 +1519,7 @@ export function FocusMode({
                       </div>
                       <div className="flex items-center justify-center h-full">
                         <PomodoroTimer
-                          isActive={isPomodoroMode}
+                          isActive={pomodoroTimerActive}
                           onComplete={handlePomodoroComplete}
                           externalToggle={pomodoroToggleTrigger}
                           onToggleChange={setPomodoroIsRunning}

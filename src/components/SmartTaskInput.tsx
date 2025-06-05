@@ -130,6 +130,39 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
       text.toLowerCase().includes("later")
     ) {
       task.section = "someday";
+    } else {
+      // Handle specific day names (monday, tuesday, etc.)
+      const dayNames = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+
+      const foundDay = dayNames.find((day) => text.toLowerCase().includes(day));
+
+      if (foundDay) {
+        // Calculate the next occurrence of this day
+        const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const targetDay = dayNames.indexOf(foundDay) + 1; // Convert to same format
+        const adjustedTargetDay = targetDay === 7 ? 0 : targetDay; // Sunday = 0
+
+        let daysUntilTarget = adjustedTargetDay - currentDay;
+        if (daysUntilTarget <= 0) {
+          daysUntilTarget += 7; // Next week
+        }
+
+        const targetDate = addDays(today, daysUntilTarget);
+        // Set to 11:59 PM by default
+        task.dueDate = setHours(
+          setMinutes(setSeconds(setMilliseconds(targetDate, 0), 0), 0),
+          23
+        );
+        task.section = daysUntilTarget === 1 ? "tomorrow" : "upcoming";
+      }
     }
 
     // Extract priority

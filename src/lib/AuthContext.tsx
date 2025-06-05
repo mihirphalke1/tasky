@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasShownExpiryWarning, setHasShownExpiryWarning] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(hasValidSessionOnInit);
   const [initializationAttempts, setInitializationAttempts] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track if this is the initial app load
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -140,10 +141,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           saveSession(user);
           setSessionDaysRemaining(getSessionTimeRemaining());
 
-          // Show welcome back message if this was an automatic sign-in
-          if (hasValidSession) {
+          // Only show welcome messages during initial authentication flows, not page refreshes
+          const wasOnLandingPage = location.pathname === "/";
+          const isAutoSignIn = hasValidSession && isInitialLoad;
+
+          if (isAutoSignIn && wasOnLandingPage) {
+            // Auto sign-in from landing page - show welcome message
             const daysRemaining = getSessionTimeRemaining();
-            console.log("Auto sign-in successful - session restored");
+            console.log(
+              "Auto sign-in from landing page - showing welcome message"
+            );
             if (daysRemaining > 1) {
               toast.success("Welcome back!", {
                 description: `Your session is valid for ${daysRemaining} more days`,
@@ -155,12 +162,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 duration: 3000,
               });
             }
+          } else if (!hasValidSession && !isInitialLoad) {
+            // Fresh sign-in (not auto sign-in) - this is handled in signInWithGoogle
+            console.log(
+              "Fresh sign-in detected - toast will be shown by signInWithGoogle"
+            );
           } else {
-            console.log("New sign-in detected");
+            // Silent auto sign-in (page refresh) - no toast needed
+            console.log("Silent auto sign-in - no toast notification needed");
           }
 
-          // Automatically navigate to dashboard if the user is on the landing page
+          // Only navigate to dashboard if the user is on the landing page
           if (location.pathname === "/") {
+            console.log("Navigating from landing page to dashboard");
             navigate("/dashboard");
           }
         } else {
@@ -173,6 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setUser(user);
         setLoading(false);
+        setIsInitialLoad(false); // Mark that initial load is complete
       },
       (error) => {
         console.error("Auth state change error:", error);
@@ -180,6 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setAuthInitialized(true);
         clearSession();
         setLoading(false);
+        setIsInitialLoad(false);
 
         // Show user-friendly error message
         toast.error("Authentication Error", {

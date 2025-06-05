@@ -160,11 +160,16 @@ const Index = () => {
       return;
     }
 
+    // Only redirect if auth is complete and no user is found
     if (!user) {
+      console.log(
+        "No authenticated user after auth completion, redirecting to landing"
+      );
       navigate("/");
       return;
     }
 
+    console.log("Setting up task subscription for authenticated user");
     setLoading(true);
     setError(null);
 

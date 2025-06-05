@@ -18,6 +18,8 @@ import {
   getStreakData,
   debugStreakCalculation,
   recalculateStreakFromHistory,
+  createTestStreakData,
+  verifyStreakCalculation,
 } from "@/lib/streakService";
 import { StreakData } from "@/types";
 import StreakCalendar from "./StreakCalendar";
@@ -159,6 +161,29 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
             console.log("Streak recalculated successfully!");
           } catch (error) {
             console.error("Error recalculating streak:", error);
+          }
+        };
+
+        // Add test data creation function
+        (window as any).createTestStreakData = async () => {
+          try {
+            console.log("Creating test streak data...");
+            await createTestStreakData(user.uid);
+            loadStreakData();
+            console.log("Test streak data created successfully!");
+          } catch (error) {
+            console.error("Error creating test streak data:", error);
+          }
+        };
+
+        // Add streak verification function
+        (window as any).verifyStreakCalculation = async () => {
+          try {
+            console.log("Verifying streak calculation...");
+            await verifyStreakCalculation(user.uid);
+            console.log("Streak verification complete!");
+          } catch (error) {
+            console.error("Error verifying streak calculation:", error);
           }
         };
       }
