@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Favicon Test - Tasky</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .test-item {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tasky Favicon Test Page</h1>
+    <p>This page tests if all favicon and icon files are accessible:</p>
+
+    <div class="test-item">
+      <strong>Main Favicon:</strong> /favicon.ico <br /><img
+        src="/favicon.ico"
+        width="32"
+        height="32"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>32x32 PNG:</strong> /icons/favicon-32x32.png <br /><img
+        src="/icons/favicon-32x32.png"
+        width="32"
+        height="32"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>16x16 PNG:</strong> /icons/favicon-16x16.png <br /><img
+        src="/icons/favicon-16x16.png"
+        width="16"
+        height="16"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>Apple Touch Icon:</strong> /icons/apple-touch-icon.png <br /><img
+        src="/icons/apple-touch-icon.png"
+        width="64"
+        height="64"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>Android Chrome 192:</strong> /icons/android-chrome-192x192.png
+      <br /><img
+        src="/icons/android-chrome-192x192.png"
+        width="64"
+        height="64"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>Android Chrome 512:</strong> /icons/android-chrome-512x512.png
+      <br /><img
+        src="/icons/android-chrome-512x512.png"
+        width="64"
+        height="64"
+        onerror="this.parentElement.className+=' error'"
+        onload="this.parentElement.className+=' success'"
+      />
+    </div>
+
+    <div class="test-item">
+      <strong>Manifest:</strong> /manifest.json <br /><a
+        href="/manifest.json"
+        target="_blank"
+        >View Manifest</a
+      >
+    </div>
+
+    <div class="test-item">
+      <strong>Browser Config:</strong> /browserconfig.xml <br /><a
+        href="/browserconfig.xml"
+        target="_blank"
+        >View Browser Config</a
+      >
+    </div>
+  </body>
+</html>
