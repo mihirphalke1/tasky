@@ -106,7 +106,10 @@ const NavBar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full py-2 sm:py-3 px-3 sm:px-6 mb-4 flex items-center justify-between border-b border-[#CDA351]/20 shadow-lg backdrop-blur-md bg-[#FAF8F6] dark:bg-gray-900 dark:border-[#CDA351]/10">
       <div className="flex items-center">
-        <h1 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white tracking-tight">
+        <h1
+          className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white tracking-tight cursor-pointer"
+          onClick={() => navigate("/dashboard")}
+        >
           <span className="transition-colors duration-200 hover:text-[#CDA351]">
             T
           </span>
