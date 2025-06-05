@@ -27,6 +27,7 @@ import {
   MotivationalQuote,
 } from "@/types";
 import { format, startOfDay, endOfDay, parseISO } from "date-fns";
+import { logger } from "./logger";
 
 // Motivational quotes data
 const motivationalQuotes: MotivationalQuote[] = [
@@ -114,12 +115,12 @@ export const addNote = async (
       createdAt: Timestamp.fromDate(new Date()),
     };
 
-    console.log("Creating note with data:", noteData);
+    logger.log("Creating note with data:", noteData);
     const docRef = await addDoc(notesRef, noteData);
-    console.log("Note created successfully with ID:", docRef.id);
+    logger.log("Note created successfully with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Error adding note:", error);
+    logger.error("Error adding note:", error);
     throw new Error("Failed to add note");
   }
 };
@@ -147,7 +148,7 @@ export const getNotes = async (userId: string): Promise<Note[]> => {
       } as Note;
     });
   } catch (error) {
-    console.error("Error getting notes:", error);
+    logger.error("Error getting notes:", error);
     return [];
   }
 };
@@ -179,7 +180,7 @@ export const getNotesByTaskId = async (
       } as Note;
     });
   } catch (error) {
-    console.error("Error getting notes for task:", error);
+    logger.error("Error getting notes for task:", error);
     return [];
   }
 };
@@ -214,9 +215,7 @@ export const getNotesWithTaskDetails = async (
           const { getTaskById } = await import("./taskService");
           note.task = await getTaskById(data.taskId);
         } catch (error) {
-          console.warn(
-            `Failed to load task ${data.taskId} for note ${note.id}`
-          );
+          logger.warn(`Failed to load task ${data.taskId} for note ${note.id}`);
           note.task = null;
         }
       }
@@ -226,7 +225,7 @@ export const getNotesWithTaskDetails = async (
 
     return notes;
   } catch (error) {
-    console.error("Error getting notes with task details:", error);
+    logger.error("Error getting notes with task details:", error);
     return [];
   }
 };
@@ -235,7 +234,7 @@ export const deleteNote = async (noteId: string): Promise<void> => {
   try {
     await deleteDoc(doc(db, "notes", noteId));
   } catch (error) {
-    console.error("Error deleting note:", error);
+    logger.error("Error deleting note:", error);
     throw new Error("Failed to delete note");
   }
 };
@@ -258,7 +257,7 @@ export const saveTaskIntention = async (
     const docRef = await addDoc(intentionsRef, intentionData);
     return docRef.id;
   } catch (error) {
-    console.error("Error saving task intention:", error);
+    logger.error("Error saving task intention:", error);
     throw new Error("Failed to save task intention");
   }
 };
@@ -292,7 +291,7 @@ export const getTaskIntention = async (
       createdAt: data.createdAt.toDate(),
     } as TaskIntention;
   } catch (error) {
-    console.error("Error getting task intention:", error);
+    logger.error("Error getting task intention:", error);
     return null;
   }
 };
@@ -325,9 +324,9 @@ export const createFocusSession = async (
       createdAt: Timestamp.fromDate(now),
     };
 
-    console.log("Creating focus session with data:", sessionData);
+    logger.log("Creating focus session with data:", sessionData);
     const docRef = await addDoc(sessionsRef, sessionData);
-    console.log("Focus session created successfully with ID:", docRef.id);
+    logger.log("Focus session created successfully with ID:", docRef.id);
 
     // Verify the document was created
     const createdDoc = await getDoc(docRef);
@@ -337,7 +336,7 @@ export const createFocusSession = async (
 
     return docRef.id;
   } catch (error) {
-    console.error("Error in createFocusSession:", error);
+    logger.error("Error in createFocusSession:", error);
     throw new Error(`Failed to create focus session: ${error.message}`);
   }
 };
@@ -369,7 +368,7 @@ export const endFocusSession = async (
       pomodoroCount,
     };
 
-    console.log("Ending focus session with data:", updateData);
+    logger.log("Ending focus session with data:", updateData);
     await updateDoc(sessionRef, updateData);
 
     // Update daily stats if we have the session data
@@ -379,9 +378,9 @@ export const endFocusSession = async (
         const { updateDailyStatsForDate } = await import("./streakService");
         const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
         await updateDailyStatsForDate(sessionData.userId, today);
-        console.log("Updated daily stats and streak after focus session");
+        logger.log("Updated daily stats and streak after focus session");
       } catch (error) {
-        console.warn("Failed to update daily stats:", error);
+        logger.warn("Failed to update daily stats:", error);
         // Don't throw here as the main focus session update was successful
       }
     }
@@ -397,9 +396,9 @@ export const endFocusSession = async (
       throw new Error("Focus session end time was not updated properly");
     }
 
-    console.log("Focus session ended successfully");
+    logger.log("Focus session ended successfully");
   } catch (error) {
-    console.error("Error in endFocusSession:", error);
+    logger.error("Error in endFocusSession:", error);
     throw new Error(`Failed to end focus session: ${error.message}`);
   }
 };
@@ -475,12 +474,12 @@ export const getFocusSessionsByTaskId = async (
 // Debug function to check focus session data
 export const debugFocusSessionData = async (userId: string): Promise<void> => {
   if (!userId) {
-    console.error("No user ID provided for debug");
+    logger.error("No user ID provided for debug");
     return;
   }
 
   try {
-    console.log("🔍 Debugging focus session data for user:", userId);
+    logger.log("🔍 Debugging focus session data for user:", userId);
 
     const sessionsRef = collection(db, "focusSessions");
     const q = query(
@@ -495,12 +494,12 @@ export const debugFocusSessionData = async (userId: string): Promise<void> => {
       data: doc.data(),
     }));
 
-    console.log("📊 Total focus sessions found:", sessions.length);
+    logger.log("📊 Total focus sessions found:", sessions.length);
 
     if (sessions.length > 0) {
-      console.log("📝 Recent sessions:");
+      logger.log("📝 Recent sessions:");
       sessions.slice(0, 5).forEach((session, index) => {
-        console.log(`${index + 1}.`, {
+        logger.log(`${index + 1}.`, {
           id: session.id,
           taskId: session.data.taskId,
           startTime: session.data.startTime?.toDate(),
@@ -510,13 +509,13 @@ export const debugFocusSessionData = async (userId: string): Promise<void> => {
         });
       });
     } else {
-      console.log("❌ No focus sessions found for this user");
+      logger.log("❌ No focus sessions found for this user");
     }
 
     // Check if user is properly authenticated
-    console.log("🔐 Auth check - User ID:", userId);
+    logger.log("🔐 Auth check - User ID:", userId);
   } catch (error) {
-    console.error("❌ Error debugging focus session data:", error);
+    logger.error("❌ Error debugging focus session data:", error);
   }
 };
 
@@ -525,7 +524,7 @@ export const verifyFocusSessionPersistence = async (
   sessionId: string
 ): Promise<boolean> => {
   if (!sessionId) {
-    console.error("No session ID provided for verification");
+    logger.error("No session ID provided for verification");
     return false;
   }
 
@@ -535,7 +534,7 @@ export const verifyFocusSessionPersistence = async (
 
     if (sessionDoc.exists()) {
       const data = sessionDoc.data();
-      console.log("✅ Focus session verified in Firebase:", {
+      logger.log("✅ Focus session verified in Firebase:", {
         id: sessionId,
         userId: data.userId,
         taskId: data.taskId,
@@ -545,11 +544,11 @@ export const verifyFocusSessionPersistence = async (
       });
       return true;
     } else {
-      console.error("❌ Focus session not found in Firebase:", sessionId);
+      logger.error("❌ Focus session not found in Firebase:", sessionId);
       return false;
     }
   } catch (error) {
-    console.error("❌ Error verifying focus session:", error);
+    logger.error("❌ Error verifying focus session:", error);
     return false;
   }
 };

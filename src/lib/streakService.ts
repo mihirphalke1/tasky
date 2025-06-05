@@ -34,6 +34,7 @@ import {
   isSameDay,
   parseISO,
 } from "date-fns";
+import { logger } from "./logger";
 
 const STREAK_THRESHOLD = 50; // Default minimum completion percentage for streak
 
@@ -84,7 +85,7 @@ export const getDailyStats = async (
       lastUpdated: data.lastUpdated?.toDate() || new Date(),
     } as DailyStats;
   } catch (error) {
-    console.error("Error getting daily stats:", error);
+    logger.error("Error getting daily stats:", error);
     return null;
   }
 };
@@ -198,7 +199,7 @@ export const saveDailyStats = async (
   dailyStats: DailyStats
 ): Promise<string> => {
   try {
-    console.log("Attempting to save daily stats:", dailyStats);
+    logger.log("Attempting to save daily stats:", dailyStats);
 
     const statsRef = collection(db, "dailyStats");
     const q = query(
@@ -228,28 +229,28 @@ export const saveDailyStats = async (
       lastUpdated: Timestamp.fromDate(new Date()),
     };
 
-    console.log("Prepared stats data for Firestore:", statsData);
+    logger.log("Prepared stats data for Firestore:", statsData);
 
     if (querySnapshot.empty) {
       // Create new document
-      console.log("Creating new daily stats document");
+      logger.log("Creating new daily stats document");
       const docRef = await addDoc(statsRef, {
         ...statsData,
         createdAt: Timestamp.fromDate(new Date()),
       });
-      console.log("Successfully created daily stats with ID:", docRef.id);
+      logger.log("Successfully created daily stats with ID:", docRef.id);
       return docRef.id;
     } else {
       // Update existing document
-      console.log("Updating existing daily stats document");
+      logger.log("Updating existing daily stats document");
       const doc = querySnapshot.docs[0];
       await updateDoc(doc.ref, statsData);
-      console.log("Successfully updated daily stats with ID:", doc.id);
+      logger.log("Successfully updated daily stats with ID:", doc.id);
       return doc.id;
     }
   } catch (error) {
-    console.error("Error saving daily stats:", error);
-    console.error("Error details:", {
+    logger.error("Error saving daily stats:", error);
+    logger.error("Error details:", {
       code: error.code,
       message: error.message,
       userId: dailyStats.userId,
@@ -266,12 +267,12 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
   }
 
   try {
-    console.log("Getting streak data for user:", userId);
+    logger.log("Getting streak data for user:", userId);
     const streakRef = doc(db, "streakData", userId);
     const streakDoc = await getDoc(streakRef);
 
     if (!streakDoc.exists()) {
-      console.log("No streak data found, creating initial streak data");
+      logger.log("No streak data found, creating initial streak data");
       // Create initial streak data
       const initialStreak: StreakData = {
         id: userId,
@@ -290,7 +291,7 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
         lastUpdated: Timestamp.fromDate(new Date()),
       });
 
-      console.log("Created initial streak data:", initialStreak);
+      logger.log("Created initial streak data:", initialStreak);
       return initialStreak;
     }
 
@@ -307,11 +308,11 @@ export const getStreakData = async (userId: string): Promise<StreakData> => {
       streakHistory: data.streakHistory || [],
     } as StreakData;
 
-    console.log("Retrieved streak data:", streakData);
+    logger.log("Retrieved streak data:", streakData);
     return streakData;
   } catch (error) {
-    console.error("Error getting streak data:", error);
-    console.error("Error details:", {
+    logger.error("Error getting streak data:", error);
+    logger.error("Error details:", {
       code: error.code,
       message: error.message,
       userId: userId,
@@ -327,12 +328,12 @@ export const updateStreakData = async (
   isStreakDay: boolean
 ): Promise<StreakData> => {
   try {
-    console.log("=== STREAK UPDATE DEBUG ===");
-    console.log("Date:", date);
-    console.log("Is Streak Day:", isStreakDay);
+    logger.log("=== STREAK UPDATE DEBUG ===");
+    logger.log("Date:", date);
+    logger.log("Is Streak Day:", isStreakDay);
 
     const currentStreak = await getStreakData(userId);
-    console.log("Current streak data:", {
+    logger.log("Current streak data:", {
       currentStreak: currentStreak.currentStreak,
       lastActiveDate: currentStreak.lastActiveDate,
       totalDaysActive: currentStreak.totalDaysActive,
@@ -340,14 +341,14 @@ export const updateStreakData = async (
 
     // Instead of just checking yesterday, we need to recalculate from history
     // to ensure the streak calculation is accurate
-    console.log("Recalculating streak from history to ensure accuracy...");
+    logger.log("Recalculating streak from history to ensure accuracy...");
     const recalculatedStreak = await recalculateStreakFromHistory(userId);
 
-    console.log("=== STREAK UPDATE COMPLETE ===");
-    console.log("Final updated streak data:", recalculatedStreak);
+    logger.log("=== STREAK UPDATE COMPLETE ===");
+    logger.log("Final updated streak data:", recalculatedStreak);
     return recalculatedStreak;
   } catch (error) {
-    console.error("Error updating streak data:", error);
+    logger.error("Error updating streak data:", error);
     throw new Error("Failed to update streak data");
   }
 };
@@ -425,7 +426,7 @@ export const getMonthlyStreakView = async (
       daysWithData,
     };
   } catch (error) {
-    console.error("Error getting monthly streak view:", error);
+    logger.error("Error getting monthly streak view:", error);
     throw new Error("Failed to get monthly streak view");
   }
 };
@@ -454,7 +455,7 @@ export const updateDailyStatsForDate = async (
     await saveDailyStats(dailyStats);
     await updateStreakData(userId, date, dailyStats.streakDay);
   } catch (error) {
-    console.error("Error updating daily stats:", error);
+    logger.error("Error updating daily stats:", error);
   }
 };
 
@@ -500,7 +501,7 @@ export const getDailyStatsRange = async (
       } as DailyStats;
     });
   } catch (error) {
-    console.error("Error getting daily stats range:", error);
+    logger.error("Error getting daily stats range:", error);
     return [];
   }
 };
@@ -510,7 +511,7 @@ export const recalculateStreakFromHistory = async (
   userId: string
 ): Promise<StreakData> => {
   try {
-    console.log("=== RECALCULATING STREAK FROM HISTORY ===");
+    logger.log("=== RECALCULATING STREAK FROM HISTORY ===");
 
     // Get all daily stats for the user, sorted by date
     const statsRef = collection(db, "dailyStats");
@@ -534,7 +535,7 @@ export const recalculateStreakFromHistory = async (
       });
     });
 
-    console.log("Found daily stats for recalculation:", allStatsMap.size);
+    logger.log("Found daily stats for recalculation:", allStatsMap.size);
 
     let currentStreak = 0;
     let longestStreak = 0;
@@ -547,11 +548,11 @@ export const recalculateStreakFromHistory = async (
     }> = [];
 
     if (allStatsMap.size === 0) {
-      console.log("No daily stats found");
+      logger.log("No daily stats found");
     } else {
       // Get all dates and sort them
       const allDates = Array.from(allStatsMap.keys()).sort();
-      console.log("All dates with stats:", allDates);
+      logger.log("All dates with stats:", allDates);
 
       // Process all dates chronologically to find streaks
       const streakSequences: Array<{
@@ -567,7 +568,7 @@ export const recalculateStreakFromHistory = async (
         const currentDate = allDates[i];
         const stats = allStatsMap.get(currentDate);
 
-        console.log(`Checking date ${currentDate}:`, {
+        logger.log(`Checking date ${currentDate}:`, {
           streakDay: stats.streakDay,
           completionPercentage: stats.completionPercentage,
           tasksCompleted: stats.tasksCompleted,
@@ -582,7 +583,7 @@ export const recalculateStreakFromHistory = async (
           if (currentSequence.length === 0) {
             // Starting a new sequence
             currentSequence = [currentDate];
-            console.log(`Starting new sequence on ${currentDate}`);
+            logger.log(`Starting new sequence on ${currentDate}`);
           } else {
             // Check if this day is consecutive with the last day in the sequence
             const lastDateInSequence =
@@ -592,19 +593,19 @@ export const recalculateStreakFromHistory = async (
               "yyyy-MM-dd"
             );
 
-            console.log(`Last date in sequence: ${lastDateInSequence}`);
-            console.log(`Expected next date: ${expectedNextDate}`);
-            console.log(`Current date: ${currentDate}`);
+            logger.log(`Last date in sequence: ${lastDateInSequence}`);
+            logger.log(`Expected next date: ${expectedNextDate}`);
+            logger.log(`Current date: ${currentDate}`);
 
             if (currentDate === expectedNextDate) {
               // Consecutive day - add to current sequence
               currentSequence.push(currentDate);
-              console.log(
+              logger.log(
                 `Adding to sequence, now ${currentSequence.length} days`
               );
             } else {
               // Gap found - save current sequence and start new one
-              console.log(
+              logger.log(
                 `Gap found! Saving sequence of ${currentSequence.length} days`
               );
 
@@ -619,13 +620,13 @@ export const recalculateStreakFromHistory = async (
 
               // Start new sequence
               currentSequence = [currentDate];
-              console.log(`Starting new sequence from ${currentDate}`);
+              logger.log(`Starting new sequence from ${currentDate}`);
             }
           }
         } else {
           // Not a streak day - end current sequence if any
           if (currentSequence.length > 0) {
-            console.log(
+            logger.log(
               `Non-streak day ${currentDate} ends sequence of ${currentSequence.length} days`
             );
 
@@ -643,7 +644,7 @@ export const recalculateStreakFromHistory = async (
 
       // Don't forget the last sequence if it exists
       if (currentSequence.length > 0) {
-        console.log(`Adding final sequence of ${currentSequence.length} days`);
+        logger.log(`Adding final sequence of ${currentSequence.length} days`);
         streakSequences.push({
           startDate: currentSequence[0],
           endDate: currentSequence[currentSequence.length - 1],
@@ -652,43 +653,43 @@ export const recalculateStreakFromHistory = async (
         });
       }
 
-      console.log("All streak sequences found:", streakSequences);
+      logger.log("All streak sequences found:", streakSequences);
 
       // Calculate longest streak from all sequences
       longestStreak = Math.max(0, ...streakSequences.map((seq) => seq.length));
-      console.log(`Longest streak: ${longestStreak}`);
+      logger.log(`Longest streak: ${longestStreak}`);
 
       // Determine current streak
       const today = format(new Date(), "yyyy-MM-dd");
       const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
 
-      console.log(`Today: ${today}, Yesterday: ${yesterday}`);
+      logger.log(`Today: ${today}, Yesterday: ${yesterday}`);
 
       // Find the most recent sequence and check if it's current
       if (streakSequences.length > 0) {
         const lastSequence = streakSequences[streakSequences.length - 1];
         const lastDate = lastSequence.endDate;
 
-        console.log(
+        logger.log(
           `Last sequence: ${lastSequence.startDate} to ${lastSequence.endDate} (${lastSequence.length} days)`
         );
-        console.log(`Last sequence dates:`, lastSequence.dates);
+        logger.log(`Last sequence dates:`, lastSequence.dates);
 
         // A streak is current if:
         // 1. It ends today, OR
         // 2. It ends yesterday (allowing for the user to be "in progress" for today)
         const isCurrentStreak = lastDate === today || lastDate === yesterday;
 
-        console.log(
+        logger.log(
           `Is current streak? ${isCurrentStreak} (last date: ${lastDate})`
         );
 
         if (isCurrentStreak) {
           currentStreak = lastSequence.length;
-          console.log(`Current streak: ${currentStreak}`);
+          logger.log(`Current streak: ${currentStreak}`);
         } else {
           currentStreak = 0;
-          console.log(`No current streak (last activity: ${lastDate})`);
+          logger.log(`No current streak (last activity: ${lastDate})`);
         }
 
         // Add completed streaks to history (excluding the current one if applicable)
@@ -706,7 +707,7 @@ export const recalculateStreakFromHistory = async (
       }
     }
 
-    console.log("Final calculated streak data:", {
+    logger.log("Final calculated streak data:", {
       currentStreak,
       longestStreak,
       totalDaysActive,
@@ -733,10 +734,10 @@ export const recalculateStreakFromHistory = async (
       lastUpdated: Timestamp.fromDate(new Date()),
     });
 
-    console.log("=== STREAK RECALCULATION COMPLETE ===");
+    logger.log("=== STREAK RECALCULATION COMPLETE ===");
     return updatedStreak;
   } catch (error) {
-    console.error("Error recalculating streak from history:", error);
+    logger.error("Error recalculating streak from history:", error);
     throw new Error("Failed to recalculate streak from history");
   }
 };
@@ -744,11 +745,11 @@ export const recalculateStreakFromHistory = async (
 // Debug function to help troubleshoot streak issues
 export const debugStreakCalculation = async (userId: string): Promise<void> => {
   try {
-    console.log("=== STREAK DEBUG ANALYSIS ===");
+    logger.log("=== STREAK DEBUG ANALYSIS ===");
 
     // Get current streak data
     const currentStreak = await getStreakData(userId);
-    console.log("Current streak data:", currentStreak);
+    logger.log("Current streak data:", currentStreak);
 
     // Get recent daily stats
     const statsRef = collection(db, "dailyStats");
@@ -773,11 +774,11 @@ export const debugStreakCalculation = async (userId: string): Promise<void> => {
       })
       .reverse(); // Reverse to get chronological order
 
-    console.log("Recent daily stats:", recentStats);
+    logger.log("Recent daily stats:", recentStats);
 
     // Analyze streak days
     const streakDays = recentStats.filter((stat) => stat.streakDay);
-    console.log("Streak days found:", streakDays);
+    logger.log("Streak days found:", streakDays);
 
     // Check for consecutive days
     for (let i = 1; i < streakDays.length; i++) {
@@ -789,24 +790,24 @@ export const debugStreakCalculation = async (userId: string): Promise<void> => {
       );
       const isConsecutive = previous.date === expectedPrevDate;
 
-      console.log(
+      logger.log(
         `Day ${current.date} consecutive with ${previous.date}? ${isConsecutive}`
       );
-      console.log(
+      logger.log(
         `Expected previous date: ${expectedPrevDate}, actual: ${previous.date}`
       );
     }
 
-    console.log("=== STREAK DEBUG COMPLETE ===");
+    logger.log("=== STREAK DEBUG COMPLETE ===");
   } catch (error) {
-    console.error("Error in streak debug analysis:", error);
+    logger.error("Error in streak debug analysis:", error);
   }
 };
 
 // Test function to create sample data for testing streak calculation
 export const createTestStreakData = async (userId: string): Promise<void> => {
   try {
-    console.log("Creating test streak data for user:", userId);
+    logger.log("Creating test streak data for user:", userId);
 
     // Import services dynamically to avoid circular dependencies
     const { getTasks } = await import("./taskService");
@@ -822,7 +823,7 @@ export const createTestStreakData = async (userId: string): Promise<void> => {
       testDates.push(format(testDate, "yyyy-MM-dd"));
     }
 
-    console.log("Test dates:", testDates);
+    logger.log("Test dates:", testDates);
 
     // For each test date, calculate and save daily stats
     for (const date of testDates) {
@@ -838,7 +839,7 @@ export const createTestStreakData = async (userId: string): Promise<void> => {
         focusSessions
       );
       await saveDailyStats(dailyStats);
-      console.log(`Created test data for ${date}:`, {
+      logger.log(`Created test data for ${date}:`, {
         tasksAssigned: dailyStats.tasksAssigned,
         tasksCompleted: dailyStats.tasksCompleted,
         completionPercentage: dailyStats.completionPercentage,
@@ -849,9 +850,9 @@ export const createTestStreakData = async (userId: string): Promise<void> => {
     // Now recalculate the streak
     await recalculateStreakFromHistory(userId);
 
-    console.log("Test streak data creation complete!");
+    logger.log("Test streak data creation complete!");
   } catch (error) {
-    console.error("Error creating test streak data:", error);
+    logger.error("Error creating test streak data:", error);
     throw new Error("Failed to create test streak data");
   }
 };
@@ -861,7 +862,7 @@ export const verifyStreakCalculation = async (
   userId: string
 ): Promise<void> => {
   try {
-    console.log("=== VERIFYING STREAK CALCULATION ===");
+    logger.log("=== VERIFYING STREAK CALCULATION ===");
 
     // Get all daily stats
     const statsRef = collection(db, "dailyStats");
@@ -885,11 +886,11 @@ export const verifyStreakCalculation = async (
       })
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    console.log("=== ALL DAILY STATS (CHRONOLOGICAL) ===");
+    logger.log("=== ALL DAILY STATS (CHRONOLOGICAL) ===");
     allStats.forEach((stat, index) => {
       const status = stat.streakDay ? "🔥" : "❌";
       const percentage = stat.completionPercentage;
-      console.log(
+      logger.log(
         `${index + 1}. ${stat.date}: ${status} ${percentage}% (${
           stat.tasksCompleted
         }/${stat.tasksAssigned} tasks)`
@@ -898,23 +899,23 @@ export const verifyStreakCalculation = async (
 
     // Get current streak data
     const streakData = await getStreakData(userId);
-    console.log("\n=== CURRENT STREAK DATA ===");
-    console.log("Current streak:", streakData.currentStreak);
-    console.log("Longest streak:", streakData.longestStreak);
-    console.log("Total days active:", streakData.totalDaysActive);
-    console.log("Last active date:", streakData.lastActiveDate);
-    console.log("Streak history:", streakData.streakHistory);
+    logger.log("\n=== CURRENT STREAK DATA ===");
+    logger.log("Current streak:", streakData.currentStreak);
+    logger.log("Longest streak:", streakData.longestStreak);
+    logger.log("Total days active:", streakData.totalDaysActive);
+    logger.log("Last active date:", streakData.lastActiveDate);
+    logger.log("Streak history:", streakData.streakHistory);
 
     // Manual analysis of consecutive sequences
-    console.log("\n=== MANUAL SEQUENCE ANALYSIS ===");
+    logger.log("\n=== MANUAL SEQUENCE ANALYSIS ===");
     const streakDays = allStats.filter((stat) => stat.streakDay);
 
     if (streakDays.length === 0) {
-      console.log("❌ No streak days found.");
+      logger.log("❌ No streak days found.");
       return;
     }
 
-    console.log(
+    logger.log(
       `Found ${streakDays.length} streak days:`,
       streakDays.map((d) => d.date)
     );
@@ -933,16 +934,16 @@ export const verifyStreakCalculation = async (
         (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      console.log(
+      logger.log(
         `\nChecking gap between ${previous.date} and ${current.date}:`
       );
-      console.log(`  Days between: ${daysBetween}`);
+      logger.log(`  Days between: ${daysBetween}`);
 
       if (daysBetween === 1) {
-        console.log(`  ✅ Consecutive - adding to current sequence`);
+        logger.log(`  ✅ Consecutive - adding to current sequence`);
         currentSeq.push(current);
       } else {
-        console.log(`  ❌ Gap found - ending sequence`);
+        logger.log(`  ❌ Gap found - ending sequence`);
         sequences.push([...currentSeq]);
         currentSeq = [current];
       }
@@ -951,57 +952,57 @@ export const verifyStreakCalculation = async (
     // Add the final sequence
     sequences.push(currentSeq);
 
-    console.log("\n=== CONSECUTIVE SEQUENCES FOUND ===");
+    logger.log("\n=== CONSECUTIVE SEQUENCES FOUND ===");
     sequences.forEach((sequence, index) => {
       const start = sequence[0].date;
       const end = sequence[sequence.length - 1].date;
       const length = sequence.length;
-      console.log(`Sequence ${index + 1}: ${start} to ${end} (${length} days)`);
-      console.log(`  Dates: ${sequence.map((s) => s.date).join(", ")}`);
+      logger.log(`Sequence ${index + 1}: ${start} to ${end} (${length} days)`);
+      logger.log(`  Dates: ${sequence.map((s) => s.date).join(", ")}`);
     });
 
     // Determine what should be the current streak
     const today = format(new Date(), "yyyy-MM-dd");
     const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
 
-    console.log(`\n=== CURRENT STREAK ANALYSIS ===`);
-    console.log(`Today: ${today}`);
-    console.log(`Yesterday: ${yesterday}`);
+    logger.log(`\n=== CURRENT STREAK ANALYSIS ===`);
+    logger.log(`Today: ${today}`);
+    logger.log(`Yesterday: ${yesterday}`);
 
     if (sequences.length > 0) {
       const lastSequence = sequences[sequences.length - 1];
       const lastDate = lastSequence[lastSequence.length - 1].date;
       const isCurrent = lastDate === today || lastDate === yesterday;
 
-      console.log(`Last sequence ends on: ${lastDate}`);
-      console.log(`Is this current? ${isCurrent ? "YES" : "NO"}`);
+      logger.log(`Last sequence ends on: ${lastDate}`);
+      logger.log(`Is this current? ${isCurrent ? "YES" : "NO"}`);
 
       if (isCurrent) {
-        console.log(`✅ Expected current streak: ${lastSequence.length}`);
-        console.log(
+        logger.log(`✅ Expected current streak: ${lastSequence.length}`);
+        logger.log(
           `✅ Expected longest streak: ${Math.max(
             ...sequences.map((s) => s.length)
           )}`
         );
       } else {
-        console.log(`✅ Expected current streak: 0 (last activity too old)`);
-        console.log(
+        logger.log(`✅ Expected current streak: 0 (last activity too old)`);
+        logger.log(
           `✅ Expected longest streak: ${Math.max(
             ...sequences.map((s) => s.length)
           )}`
         );
       }
 
-      console.log(`\n=== COMPARISON WITH STORED DATA ===`);
+      logger.log(`\n=== COMPARISON WITH STORED DATA ===`);
       const expectedCurrent = isCurrent ? lastSequence.length : 0;
       const expectedLongest = Math.max(...sequences.map((s) => s.length));
 
-      console.log(
+      logger.log(
         `Current streak: Expected ${expectedCurrent}, Got ${
           streakData.currentStreak
         } ${expectedCurrent === streakData.currentStreak ? "✅" : "❌"}`
       );
-      console.log(
+      logger.log(
         `Longest streak: Expected ${expectedLongest}, Got ${
           streakData.longestStreak
         } ${expectedLongest === streakData.longestStreak ? "✅" : "❌"}`
@@ -1011,18 +1012,18 @@ export const verifyStreakCalculation = async (
         expectedCurrent !== streakData.currentStreak ||
         expectedLongest !== streakData.longestStreak
       ) {
-        console.log(
+        logger.log(
           `\n🔧 MISMATCH DETECTED! Run 'await recalculateStreak()' to fix.`
         );
       } else {
-        console.log(`\n✅ All calculations are correct!`);
+        logger.log(`\n✅ All calculations are correct!`);
       }
     } else {
-      console.log(`✅ Expected: No streaks (no streak days found)`);
+      logger.log(`✅ Expected: No streaks (no streak days found)`);
     }
 
-    console.log("=== VERIFICATION COMPLETE ===");
+    logger.log("=== VERIFICATION COMPLETE ===");
   } catch (error) {
-    console.error("Error verifying streak calculation:", error);
+    logger.error("Error verifying streak calculation:", error);
   }
 };

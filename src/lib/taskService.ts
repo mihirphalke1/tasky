@@ -17,14 +17,15 @@ import {
   enableIndexedDbPersistence,
 } from "firebase/firestore";
 import { Task } from "@/types";
+import { logger } from "./logger";
 
 // Enable offline persistence
 const enablePersistence = async () => {
   try {
     await enableIndexedDbPersistence(db);
-    console.log("Offline persistence enabled");
+    logger.log("Offline persistence enabled");
   } catch (error) {
-    console.warn("Error enabling offline persistence:", error);
+    logger.warn("Error enabling offline persistence:", error);
   }
 };
 
@@ -45,7 +46,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
     );
 
     const querySnapshot = await getDocs(q);
-    console.log("Fetched tasks from Firestore:", querySnapshot.docs.length);
+    logger.log("Fetched tasks from Firestore:", querySnapshot.docs.length);
 
     const tasks = querySnapshot.docs.map((doc) => {
       const data = doc.data();
@@ -67,7 +68,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
         section: data.section || "today",
         hidden: Boolean(data.hidden),
       } as Task;
-      console.log("Processed task:", task);
+      logger.log("Processed task:", task);
       return task;
     });
 
@@ -76,15 +77,15 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
       (a, b) => b.lastModified.getTime() - a.lastModified.getTime()
     );
 
-    console.log("Returning sorted tasks:", sortedTasks);
+    logger.log("Returning sorted tasks:", sortedTasks);
     return sortedTasks;
   } catch (error: any) {
     // Check if the error is due to missing index
     if (error.message?.includes("requires an index")) {
-      console.warn("Index is being created. This might take a few minutes.");
+      logger.warn("Index is being created. This might take a few minutes.");
       return [];
     }
-    console.error("Error getting tasks:", error);
+    logger.error("Error getting tasks:", error);
     throw new Error("Failed to get tasks from Firestore");
   }
 };
@@ -166,13 +167,13 @@ export const addTask = async (
       };
 
       // Log the exact data being written to Firestore
-      console.log(
+      logger.log(
         "Writing task data to Firestore:",
         JSON.stringify(taskData, null, 2)
       );
 
       const docRef = await addDoc(tasksRef, taskData);
-      console.log("Task added successfully with ID:", docRef.id);
+      logger.log("Task added successfully with ID:", docRef.id);
 
       // Update daily stats for today since a new task was added
       try {
@@ -181,7 +182,7 @@ export const addTask = async (
         const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
         await updateDailyStatsForDate(userId, today);
       } catch (error) {
-        console.warn("Failed to update daily stats:", error);
+        logger.warn("Failed to update daily stats:", error);
         // Don't throw here as the main task creation was successful
       }
 
@@ -199,7 +200,7 @@ export const addTask = async (
       return docRef.id;
     } catch (error) {
       if (retryCount === maxRetries - 1) {
-        console.error("Error adding task after maximum retries:", error);
+        logger.error("Error adding task after maximum retries:", error);
         throw new Error("Failed to add task to Firestore");
       }
       retryCount++;
@@ -249,13 +250,13 @@ export const updateTask = async (
       };
 
       // Log the exact data being written to Firestore
-      console.log(
+      logger.log(
         "Updating task in Firestore:",
         JSON.stringify(taskData, null, 2)
       );
 
       await updateDoc(taskRef, taskData);
-      console.log("Task updated successfully");
+      logger.log("Task updated successfully");
 
       // Check if task completion status changed
       const wasCompleted = currentTask?.completed || false;
@@ -272,7 +273,7 @@ export const updateTask = async (
             await updateDailyStatsForDate(currentTask.userId, today);
           }
         } catch (error) {
-          console.warn("Failed to update daily stats:", error);
+          logger.warn("Failed to update daily stats:", error);
           // Don't throw here as the main task update was successful
         }
       }
@@ -291,7 +292,7 @@ export const updateTask = async (
       return;
     } catch (error) {
       if (retryCount === maxRetries - 1) {
-        console.error("Error updating task after maximum retries:", error);
+        logger.error("Error updating task after maximum retries:", error);
         throw new Error("Failed to update task in Firestore");
       }
       retryCount++;
@@ -330,7 +331,7 @@ export const deleteTask = async (taskId: string): Promise<void> => {
       return;
     } catch (error) {
       if (retryCount === maxRetries - 1) {
-        console.error("Error deleting task after maximum retries:", error);
+        logger.error("Error deleting task after maximum retries:", error);
         throw new Error("Failed to delete task from Firestore");
       }
       retryCount++;
@@ -373,7 +374,7 @@ export const getTaskById = async (taskId: string): Promise<Task | null> => {
       hidden: Boolean(data.hidden),
     } as Task;
   } catch (error) {
-    console.error("Error getting task by ID:", error);
+    logger.error("Error getting task by ID:", error);
     throw new Error("Failed to get task from Firestore");
   }
 };
@@ -401,7 +402,7 @@ export const clearCompletedTasks = async (userId: string): Promise<void> => {
     });
 
     if (tasksToHide.length === 0) {
-      console.log("No completed tasks to hide");
+      logger.log("No completed tasks to hide");
       return;
     }
 
@@ -414,9 +415,9 @@ export const clearCompletedTasks = async (userId: string): Promise<void> => {
     });
 
     await Promise.all(updatePromises);
-    console.log(`Hidden ${tasksToHide.length} completed tasks`);
+    logger.log(`Hidden ${tasksToHide.length} completed tasks`);
   } catch (error) {
-    console.error("Error hiding completed tasks:", error);
+    logger.error("Error hiding completed tasks:", error);
     throw new Error("Failed to hide completed tasks");
   }
 };
@@ -470,22 +471,22 @@ export const subscribeToTasks = (
             (a, b) => b.lastModified.getTime() - a.lastModified.getTime()
           );
 
-          console.log("Tasks updated:", sortedTasks.length);
+          logger.log("Tasks updated:", sortedTasks.length);
           onTasksUpdate(sortedTasks);
         } catch (error) {
-          console.error("Error processing task snapshot:", error);
+          logger.error("Error processing task snapshot:", error);
           onError(new Error("Failed to process task updates"));
         }
       },
       (error) => {
-        console.error("Error in task subscription:", error);
+        logger.error("Error in task subscription:", error);
         onError(new Error("Failed to subscribe to tasks"));
       }
     );
 
     return unsubscribe;
   } catch (error) {
-    console.error("Error setting up task subscription:", error);
+    logger.error("Error setting up task subscription:", error);
     onError(new Error("Failed to set up task subscription"));
     return () => {};
   }
@@ -521,7 +522,7 @@ export const saveTaskIntention = async (
       lastModified: Timestamp.fromDate(timestamp),
     });
   } catch (error) {
-    console.error("Error saving task intention:", error);
+    logger.error("Error saving task intention:", error);
     throw new Error("Failed to save task intention");
   }
 };
@@ -552,7 +553,7 @@ export const createFocusSession = async (
     const docRef = await addDoc(sessionsRef, sessionData);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating focus session:", error);
+    logger.error("Error creating focus session:", error);
     throw new Error("Failed to create focus session");
   }
 };
@@ -579,7 +580,7 @@ export const endFocusSession = async (
       lastModified: Timestamp.fromDate(now),
     });
   } catch (error) {
-    console.error("Error ending focus session:", error);
+    logger.error("Error ending focus session:", error);
     throw new Error("Failed to end focus session");
   }
 };
@@ -613,7 +614,7 @@ export const getFocusSession = async (
       backgroundImage: data.backgroundImage,
     };
   } catch (error) {
-    console.error("Error getting focus session:", error);
+    logger.error("Error getting focus session:", error);
     throw new Error("Failed to get focus session");
   }
 };

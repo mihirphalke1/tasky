@@ -10,6 +10,7 @@ import {
   enableIndexedDbPersistence,
   connectFirestoreEmulator,
 } from "firebase/firestore";
+import { logger } from "./logger";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,7 +34,7 @@ googleProvider.setCustomParameters({
 // Enable persistent authentication immediately - this is the default for Firebase Auth
 // We're setting it explicitly to ensure it's definitely enabled
 setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Error enabling Auth persistence:", error);
+  logger.error("Error enabling Auth persistence:", error);
   // Don't throw - app should still work
 });
 
@@ -44,19 +45,19 @@ const initializePersistence = async () => {
   try {
     await enableIndexedDbPersistence(db);
     persistenceEnabled = true;
-    console.log("Firebase offline persistence enabled");
+    logger.log("Firebase offline persistence enabled");
   } catch (err: any) {
     if (err.code === "failed-precondition") {
-      console.warn("Firebase persistence failed: Multiple tabs open");
+      logger.warn("Firebase persistence failed: Multiple tabs open");
     } else if (err.code === "unimplemented") {
-      console.warn("Firebase persistence not supported in this browser");
+      logger.warn("Firebase persistence not supported in this browser");
     } else {
-      console.error("Error enabling Firebase persistence:", err);
+      logger.error("Error enabling Firebase persistence:", err);
     }
   }
 };
 
 // Initialize offline persistence
-initializePersistence().catch(console.error);
+initializePersistence().catch(logger.error);
 
 export { persistenceEnabled };

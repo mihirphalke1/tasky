@@ -18,6 +18,7 @@ import {
   isSessionNearExpiry,
 } from "./sessionService";
 import { toast } from "sonner";
+import { logger } from "./logger";
 
 interface AuthContextType {
   user: User | null;
@@ -69,22 +70,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log("Setting up authentication state listener");
+    logger.log("Setting up authentication state listener");
 
     // Check if we should expect a user to be signed in
     const hasValidSession = shouldAutoSignIn();
-    console.log("Has valid session on init:", hasValidSession);
+    logger.log("Has valid session on init:", hasValidSession);
 
     // Set up a timeout to prevent infinite loading (simplified)
     const authTimeout = setTimeout(() => {
-      console.log("Auth initialization timeout - setting loading to false");
+      logger.log("Auth initialization timeout - setting loading to false");
       setLoading(false);
     }, 5000); // Simple 5-second timeout
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        console.log(
+        logger.log(
           "Auth state changed:",
           user ? `User authenticated: ${user.email}` : "User not authenticated"
         );
@@ -93,8 +94,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (user) {
           // User is signed in
-          console.log("User ID:", user.uid);
-          console.log("User email:", user.email);
+          logger.log("User ID:", user.uid);
+          logger.log("User email:", user.email);
 
           // Save/update session
           saveSession(user);
@@ -117,7 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } else {
           // User is signed out
-          console.log("No authenticated user");
+          logger.log("No authenticated user");
           clearSession();
           setSessionDaysRemaining(0);
           setHasShownExpiryWarning(false);
@@ -128,7 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsInitialLoad(false);
       },
       (error) => {
-        console.error("Auth state change error:", error);
+        logger.error("Auth state change error:", error);
         clearTimeout(authTimeout);
         clearSession();
         setLoading(false);
@@ -143,7 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     return () => {
-      console.log("Cleaning up authentication listener");
+      logger.log("Cleaning up authentication listener");
       clearTimeout(authTimeout);
       unsubscribe();
     };
@@ -213,11 +214,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      console.log("Attempting Google sign-in");
+      logger.log("Attempting Google sign-in");
 
       // Add timeout for sign-in process
       const signInTimeout = setTimeout(() => {
-        console.warn("Sign-in taking longer than expected");
+        logger.warn("Sign-in taking longer than expected");
         toast.info("Sign-in in progress", {
           description: "This may take a moment...",
           duration: 3000,
@@ -228,7 +229,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       clearTimeout(signInTimeout);
 
       if (result.user) {
-        console.log("Google sign-in successful:", result.user.uid);
+        logger.log("Google sign-in successful:", result.user.uid);
         // Session will be saved in the onAuthStateChanged callback
         // Navigation will be handled by the route protection components
         toast.success("Welcome to Tasky!", {
@@ -237,7 +238,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
     } catch (error: any) {
-      console.error("Error signing in with Google:", error);
+      logger.error("Error signing in with Google:", error);
       setLoading(false);
 
       // Handle specific error cases
@@ -248,12 +249,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       } else if (error.code === "auth/popup-blocked") {
         toast.error("Popup blocked", {
-          description: "Please allow popups for this site and try again",
-          duration: 4000,
+          description: "Please allow popups for this site",
+          duration: 3000,
         });
       } else {
         toast.error("Sign-in failed", {
-          description: "Please check your connection and try again",
+          description: "Please try again",
           duration: 3000,
         });
       }
@@ -262,18 +263,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      console.log("Attempting logout");
+      logger.log("Attempting logout");
       await signOut(auth);
-      clearSession();
-      console.log("Logout successful");
-      // Navigation will be handled by the route protection components
-      toast.success("Signed out", {
-        description: "Come back anytime!",
-        duration: 2000,
-      });
+      logger.log("Logout successful");
+      toast.success("Logged out successfully");
     } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Sign-out failed", {
+      logger.error("Error signing out:", error);
+      toast.error("Logout failed", {
         description: "Please try again",
         duration: 3000,
       });

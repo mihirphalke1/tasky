@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, collection } from "firebase/firestore";
 import { db } from "./firebase";
 import { initializeDefaultInsightRules } from "./insightsService";
+import { logger } from "./logger";
 
 export interface UserPreferences {
   dashboardMode: "adaptive" | "traditional";
@@ -74,15 +75,15 @@ export const getUserPreferences = async (
       // Initialize insight rules for new user
       try {
         await initializeDefaultInsightRules(userId);
-        console.log("Initialized insight rules for new user:", userId);
+        logger.log("Initialized insight rules for new user:", userId);
       } catch (error) {
-        console.warn("Failed to initialize insight rules for new user:", error);
+        logger.warn("Failed to initialize insight rules for new user:", error);
       }
 
       return newPrefs;
     }
   } catch (error) {
-    console.error("Error getting user preferences:", error);
+    logger.error("Error getting user preferences:", error);
     // Fallback to localStorage
     return getLocalPreferences();
   }
@@ -131,7 +132,7 @@ export const saveUserPreferences = async (
     const prefsRef = doc(db, "userPreferences", userId);
     await setDoc(prefsRef, updatedPrefs, { merge: true });
   } catch (error) {
-    console.error("Error saving user preferences:", error);
+    logger.error("Error saving user preferences:", error);
     // Preferences are already saved to localStorage, so this is not critical
   }
 };
@@ -172,7 +173,7 @@ export const isNewUser = async (userId: string): Promise<boolean> => {
     const preferences = await getUserPreferences(userId);
     return !preferences.hasCompletedOnboarding;
   } catch (error) {
-    console.error("Error checking if user is new:", error);
+    logger.error("Error checking if user is new:", error);
     return true; // Assume new user on error
   }
 };
