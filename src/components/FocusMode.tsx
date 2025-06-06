@@ -239,15 +239,9 @@ const TaskDetailModal = memo(
                     isAfter(task.snoozedUntil, new Date()) && (
                       <div className="flex items-center gap-2">
                         <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200">
-                          Snoozed
+                          <Clock className="h-3 w-3 mr-1" />
+                          Until {format(task.snoozedUntil, "h:mm a")}
                         </Badge>
-                        <span className="text-xs text-softgrey dark:text-gray-400">
-                          until{" "}
-                          {format(
-                            task.snoozedUntil,
-                            "MMM dd, yyyy 'at' h:mm a"
-                          )}
-                        </span>
                       </div>
                     )}
                 </div>
@@ -1543,7 +1537,7 @@ export function FocusMode({
         className={cn(
           "fixed inset-0 z-50",
           !backgroundImage &&
-            "bg-gradient-to-br from-ivory to-sand dark:from-gray-900 dark:to-gray-800",
+            "bg-[linear-gradient(to_bottom,_#faf8f6_0%,_#efe7dd_100%)] dark:bg-[linear-gradient(to_bottom,_#18181b_0%,_#23272e_100%)]",
           focusLockEnabled && "ring-4 ring-red-500/20"
         )}
         style={{

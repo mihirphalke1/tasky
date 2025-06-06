@@ -357,8 +357,10 @@ const Index = () => {
       today.setHours(23, 59, 59, 999);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(23, 59, 59, 999);
       const nextDay = new Date(today);
       nextDay.setDate(nextDay.getDate() + 2);
+      nextDay.setHours(23, 59, 59, 999);
 
       switch (targetSection) {
         case "today":

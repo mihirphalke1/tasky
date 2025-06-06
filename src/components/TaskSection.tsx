@@ -28,10 +28,7 @@ const TaskSection = ({
   // Filter out snoozed tasks that haven't reached their snooze time yet
   const filterActiveTasks = (taskList: Task[]) => {
     return taskList.filter((task) => {
-      // Exclude tasks that are still snoozed
-      if (task.snoozedUntil && isAfter(task.snoozedUntil, new Date())) {
-        return false;
-      }
+      // Include all tasks, even if they are snoozed
       return true;
     });
   };

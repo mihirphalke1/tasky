@@ -407,11 +407,23 @@ export function SmartTaskInput({ onAddTask, className }: SmartTaskInputProps) {
                             section: value as TaskSection,
                             dueDate:
                               value === "today"
-                                ? new Date()
+                                ? (() => {
+                                    const date = new Date();
+                                    date.setHours(23, 59, 59, 999);
+                                    return date;
+                                  })()
                                 : value === "tomorrow"
-                                ? addDays(new Date(), 1)
+                                ? (() => {
+                                    const date = addDays(new Date(), 1);
+                                    date.setHours(23, 59, 59, 999);
+                                    return date;
+                                  })()
                                 : value === "upcoming"
-                                ? addDays(new Date(), 3)
+                                ? (() => {
+                                    const date = addDays(new Date(), 3);
+                                    date.setHours(23, 59, 59, 999);
+                                    return date;
+                                  })()
                                 : null,
                           }
                         : null

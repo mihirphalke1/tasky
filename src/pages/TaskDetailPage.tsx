@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NavBar from "@/components/NavBar";
 import { QuickNoteButton } from "@/components/QuickNoteButton";
 import { toast } from "sonner";
-import { format, formatDistanceToNow, formatDuration } from "date-fns";
+import { format, formatDistanceToNow, formatDuration, isAfter } from "date-fns";
 import {
   ArrowLeft,
   Calendar,
@@ -197,6 +197,7 @@ const TaskDetailPage = () => {
             createdAt: data.createdAt.toDate(),
             lastModified: data.lastModified.toDate(),
             status: data.status || "pending",
+            snoozedUntil: data.snoozedUntil?.toDate(),
           } as Task;
           setTask(updatedTask);
           console.log("Task updated in real-time:", updatedTask.title);
@@ -927,6 +928,21 @@ const TaskDetailPage = () => {
                   </span>
                 </FlexContainer>
               )}
+
+              {!task.completed &&
+                task.snoozedUntil &&
+                isAfter(task.snoozedUntil, new Date()) && (
+                  <FlexContainer
+                    align="center"
+                    gap="sm"
+                    className="text-xs sm:text-sm text-purple-600"
+                  >
+                    <Clock className="h-4 w-4 flex-shrink-0" />
+                    <span className="break-words">
+                      Snoozed until {format(task.snoozedUntil, "h:mm a")}
+                    </span>
+                  </FlexContainer>
+                )}
             </CardContent>
           </Card>
 

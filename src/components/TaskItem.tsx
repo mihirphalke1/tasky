@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { Task, TaskPriority, TaskSection } from "@/types";
-import { Calendar, Check, Edit, Flag, Tag, Trash2, X } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  Edit,
+  Flag,
+  Tag,
+  Trash2,
+  X,
+  Clock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,7 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addDays } from "date-fns";
+import { addDays, isAfter } from "date-fns";
 
 interface TaskItemProps {
   task: Task;
@@ -100,6 +109,10 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
   };
 
   const isTaskOverdue = task.dueDate && isOverdue(task.dueDate);
+  const isTaskSnoozed =
+    !task.completed &&
+    task.snoozedUntil &&
+    isAfter(task.snoozedUntil, new Date());
 
   return (
     <>
@@ -142,6 +155,12 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                   priorityColors[task.priority]
                 }`}
               />
+              {isTaskSnoozed && (
+                <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 text-xs font-medium px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3" />
+                  Until {format(task.snoozedUntil!, "h:mm a")}
+                </span>
+              )}
             </div>
 
             {task.description && (
@@ -341,6 +360,14 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                     mode="single"
                     selected={editedTask.dueDate || undefined}
                     onSelect={(date) => {
+                      if (date) {
+                        // Set time to 11:59 PM if the date is today
+                        const isToday =
+                          new Date().toDateString() === date.toDateString();
+                        if (isToday) {
+                          date.setHours(23, 59, 59, 999);
+                        }
+                      }
                       const newSection = getSectionFromDate(date || null);
                       console.log(
                         "Due date changed:",
