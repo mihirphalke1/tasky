@@ -1166,33 +1166,73 @@ const NotesPage = () => {
             <ScrollArea className="flex-1 p-4 sm:p-6 lg:p-8">
               {authLoading ? (
                 <div className="flex items-center justify-center h-48 sm:h-64 lg:h-96">
-                  <div className="flex flex-col items-center gap-4 sm:gap-6">
-                    <div className="relative">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351]/20 rounded-full" />
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                  <div className="text-center space-y-6 p-8">
+                    <div className="relative mx-auto w-16 h-16">
+                      <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full"></div>
+                      <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground dark:text-gray-400 text-base sm:text-lg font-medium">
+                    <div className="space-y-3">
+                      <h2 className="text-2xl font-bold tracking-wider text-[#1A1A1A] dark:text-white">
+                        <span className="tracking-widest">T</span>
+                        <span className="tracking-widest">A</span>
+                        <span className="tracking-widest">S</span>
+                        <span className="tracking-widest">K</span>
+                        <span className="tracking-widest">Y</span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          .
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          A
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          P
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          P
+                        </span>
+                      </h2>
+                      <div className="w-12 h-0.5 bg-[#CDA351] mx-auto"></div>
+                      <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
                         Authenticating...
                       </p>
-                      <p className="text-muted-foreground dark:text-gray-500 text-xs sm:text-sm mt-1">
-                        Verifying your access
+                      <p className="text-sm text-[#7E7E7E] dark:text-gray-400 font-medium">
+                        Checking your session
                       </p>
                     </div>
                   </div>
                 </div>
               ) : isLoading ? (
                 <div className="flex items-center justify-center h-48 sm:h-64 lg:h-96">
-                  <div className="flex flex-col items-center gap-4 sm:gap-6">
-                    <div className="relative">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351]/20 rounded-full" />
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0" />
+                  <div className="text-center space-y-6 p-8">
+                    <div className="relative mx-auto w-16 h-16">
+                      <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full"></div>
+                      <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground dark:text-gray-400 text-base sm:text-lg font-medium">
+                    <div className="space-y-3">
+                      <h2 className="text-2xl font-bold tracking-wider text-[#1A1A1A] dark:text-white">
+                        <span className="tracking-widest">T</span>
+                        <span className="tracking-widest">A</span>
+                        <span className="tracking-widest">S</span>
+                        <span className="tracking-widest">K</span>
+                        <span className="tracking-widest">Y</span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          .
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          A
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          P
+                        </span>
+                        <span className="text-[#CDA351] tracking-widest">
+                          P
+                        </span>
+                      </h2>
+                      <div className="w-12 h-0.5 bg-[#CDA351] mx-auto"></div>
+                      <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
                         Loading your notes...
                       </p>
-                      <p className="text-muted-foreground dark:text-gray-500 text-xs sm:text-sm mt-1">
+                      <p className="text-sm text-[#7E7E7E] dark:text-gray-400 font-medium">
                         Organizing your thoughts
                       </p>
                     </div>

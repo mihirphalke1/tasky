@@ -345,25 +345,12 @@ export function HowItWorks() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900">
-      {/* Mobile Back Button */}
-      <div className="md:hidden p-4 pt-6 flex items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[#CDA351] font-medium"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Back
-        </Button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative py-12 sm:py-16 px-4 sm:px-6 lg:px-8 overflow-hidden"
+        className="relative pt-16 pb-8 px-4 sm:px-6 lg:px-8 overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[#CDA351]/5 to-transparent" />
         <div className="relative max-w-4xl mx-auto text-center">
@@ -379,11 +366,23 @@ export function HowItWorks() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-lg sm:text-xl text-[#7E7E7E] dark:text-gray-400 max-w-3xl mx-auto"
+            className="text-lg sm:text-xl text-[#7E7E7E] dark:text-gray-400 max-w-3xl mx-auto mb-8"
           >
             Discover how Tasky helps you stay organized and productive with its
             powerful features
           </motion.p>
+
+          {/* Top Get Started Button - Only show if not logged in */}
+          {!user && (
+            <Button
+              onClick={() => navigate("/")}
+              variant="outline"
+              size="lg"
+              className="border-[#CDA351] text-[#CDA351] hover:bg-[#CDA351] hover:text-white transition-all duration-300 dark:border-[#CDA351] dark:text-[#CDA351] dark:hover:bg-[#CDA351] dark:hover:text-white hover:shadow-[0_0_15px_rgba(205,163,81,0.3)]"
+            >
+              Get Started
+            </Button>
+          )}
         </div>
       </motion.div>
 
@@ -443,6 +442,32 @@ export function HowItWorks() {
           ))}
         </div>
       </div>
+
+      {/* Bottom Get Started Section - Only show if not logged in */}
+      {!user && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full py-16 sm:py-20 bg-gradient-to-b from-transparent to-[#CDA351]/5 dark:to-[#CDA351]/10"
+        >
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] dark:text-white mb-4">
+              Ready to Get Started?
+            </h2>
+            <p className="text-lg text-[#7E7E7E] dark:text-gray-400 mb-8">
+              Join Tasky today and transform the way you manage your tasks
+            </p>
+            <Button
+              onClick={() => navigate("/")}
+              size="lg"
+              className="bg-[#CDA351] text-white hover:bg-[#CDA351]/90 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(205,163,81,0.3)] px-12 py-6 text-lg rounded-xl"
+            >
+              Get Started
+            </Button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -1,16 +1,27 @@
 import { Button } from "@/components/ui/button";
-import { Chrome, HelpCircle } from "lucide-react";
+import { Chrome, HelpCircle, Download } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import TypewriterText from "@/components/TypewriterText";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePWAStatus } from "@/components/PWAInstallPrompt";
+import { Badge } from "@/components/ui/badge";
+import { AnimatePresence, motion } from "framer-motion";
+import { isInstallable, isStandalone } from "../lib/pwa-utils";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 const Landing = () => {
   const { signInWithGoogle, loading } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { isInstalled, canInstall, triggerInstall } = usePWAStatus();
 
   const taglines = [
     "A focused space for your tasks.",
@@ -18,29 +29,19 @@ const Landing = () => {
     "No distractions. Just flow.",
   ];
 
-  // PWA install prompt state
-  const [deferredPrompt, setDeferredPrompt] = useState<null | any>(null);
-  const [showInstall, setShowInstall] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstall(true);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  const handleInstallClick = () => {
+    setShowInstallPrompt(true);
+  };
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setShowInstall(false);
-      }
-      setDeferredPrompt(null);
-    }
+  const handleInstall = async () => {
+    await triggerInstall();
+  };
+
+  const handleCloseInstallPrompt = () => {
+    setShowInstallPrompt(false);
   };
 
   return (
@@ -105,14 +106,20 @@ const Landing = () => {
             {/* How Tasky Works Button */}
 
             {/* Install App Button */}
-            {showInstall && (
+            {!isInstalled && canInstall && (
               <Button
                 onClick={handleInstallClick}
-                variant="default"
-                size="lg"
-                className="w-full py-3 px-6 bg-[#CDA351] text-white font-semibold hover:bg-[#b8933e] transition-all duration-300 shadow-md text-sm sm:text-base"
+                variant="outline"
+                className="border-2 border-[#CDA351] text-[#CDA351] hover:bg-[#CDA351]/10 px-8 py-6 text-lg"
               >
+                <Download className="mr-2 h-5 w-5" />
                 Install App
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-[#CDA351]/10 text-[#CDA351] text-xs px-2 py-0.5 font-medium"
+                >
+                  PWA
+                </Badge>
               </Button>
             )}
 
@@ -122,6 +129,12 @@ const Landing = () => {
             </p>
           </div>
         </div>
+        {showInstallPrompt && (
+          <PWAInstallPrompt
+            onClose={handleCloseInstallPrompt}
+            onInstall={handleInstall}
+          />
+        )}
       </main>
 
       {/* Footer - Minimal */}

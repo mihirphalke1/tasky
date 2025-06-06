@@ -396,10 +396,32 @@ const Index = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Authenticating...</p>
+      <div className="min-h-screen bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8">
+          <div className="relative mx-auto w-16 h-16">
+            <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold tracking-wider text-[#1A1A1A] dark:text-white">
+              <span className="tracking-widest">T</span>
+              <span className="tracking-widest">A</span>
+              <span className="tracking-widest">S</span>
+              <span className="tracking-widest">K</span>
+              <span className="tracking-widest">Y</span>
+              <span className="text-[#CDA351] tracking-widest">.</span>
+              <span className="text-[#CDA351] tracking-widest">A</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+            </h2>
+            <div className="w-12 h-0.5 bg-[#CDA351] mx-auto"></div>
+            <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
+              Authenticating...
+            </p>
+            <p className="text-sm text-[#7E7E7E] dark:text-gray-400 font-medium">
+              Checking your session
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -407,8 +429,33 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[#CDA351]">Loading tasks...</div>
+      <div className="min-h-screen bg-gradient-to-b from-[#FAF8F6] to-[#EFE7DD] dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8">
+          <div className="relative mx-auto w-16 h-16">
+            <div className="w-16 h-16 border-4 border-[#CDA351]/20 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-[#CDA351] border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold tracking-wider text-[#1A1A1A] dark:text-white">
+              <span className="tracking-widest">T</span>
+              <span className="tracking-widest">A</span>
+              <span className="tracking-widest">S</span>
+              <span className="tracking-widest">K</span>
+              <span className="tracking-widest">Y</span>
+              <span className="text-[#CDA351] tracking-widest">.</span>
+              <span className="text-[#CDA351] tracking-widest">A</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+              <span className="text-[#CDA351] tracking-widest">P</span>
+            </h2>
+            <div className="w-12 h-0.5 bg-[#CDA351] mx-auto"></div>
+            <p className="text-lg font-medium text-[#1A1A1A] dark:text-white">
+              Loading tasks...
+            </p>
+            <p className="text-sm text-[#7E7E7E] dark:text-gray-400 font-medium">
+              Organizing your workspace
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

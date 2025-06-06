@@ -101,20 +101,62 @@ export const calculateDailyStats = async (
   const dayStart = startOfDay(dateObj);
   const dayEnd = endOfDay(dateObj);
 
-  // NEW: Filter tasks that are due today (dueDate within this day)
+  logger.log("Calculating stats for date:", date);
+  logger.log("Day start:", dayStart);
+  logger.log("Day end:", dayEnd);
+  logger.log("Total tasks before filtering:", tasks.length);
+
+  // Only include tasks that are due today
   const dayTasks = tasks.filter((task) => {
-    if (!task.dueDate) return false;
-    return task.dueDate >= dayStart && task.dueDate <= dayEnd && !task.hidden;
+    if (task.hidden) {
+      logger.log("Task excluded - hidden:", task.id, task.title);
+      return false;
+    }
+    // Must have a due date and it must be today
+    const isToday =
+      task.dueDate && task.dueDate >= dayStart && task.dueDate <= dayEnd;
+    if (isToday) {
+      logger.log(
+        "Task included - due today:",
+        task.id,
+        task.title,
+        "Due:",
+        task.dueDate
+      );
+    } else {
+      logger.log(
+        "Task excluded - not due today:",
+        task.id,
+        task.title,
+        "Due:",
+        task.dueDate
+      );
+    }
+    return isToday;
   });
 
-  // Only count tasks as completed if they were due today and completed today
-  const completedTasks = dayTasks.filter(
-    (task) =>
+  logger.log("Tasks due today:", dayTasks.length);
+
+  // Count tasks as completed only if they were completed today
+  const completedTasks = dayTasks.filter((task) => {
+    const isCompleted =
       task.completed &&
       task.completedAt &&
       task.completedAt >= dayStart &&
-      task.completedAt <= dayEnd
-  );
+      task.completedAt <= dayEnd;
+    if (isCompleted) {
+      logger.log(
+        "Task completed:",
+        task.id,
+        task.title,
+        "Completed at:",
+        task.completedAt
+      );
+    }
+    return isCompleted;
+  });
+
+  logger.log("Completed tasks:", completedTasks.length);
 
   // Filter focus sessions for this day
   const dayFocusSessions = focusSessions.filter((session) => {
@@ -158,9 +200,20 @@ export const calculateDailyStats = async (
   });
 
   const tasksAssigned = dayTasks.length;
-  const tasksCompleted = completedTasks.length;
+  const tasksCompletedCount = completedTasks.length;
   const completionPercentage =
-    tasksAssigned > 0 ? Math.round((tasksCompleted / tasksAssigned) * 100) : 0;
+    tasksAssigned > 0
+      ? Math.round((tasksCompletedCount / tasksAssigned) * 100)
+      : 0;
+
+  logger.log("Final calculation:", {
+    tasksAssigned,
+    tasksCompletedCount,
+    completionPercentage,
+    focusTimeMinutes,
+    pomodoroCount,
+  });
+
   const streakDay =
     completionPercentage >= STREAK_THRESHOLD ||
     (tasksAssigned === 0 && focusTimeMinutes > 0);
@@ -170,7 +223,7 @@ export const calculateDailyStats = async (
     userId,
     date,
     tasksAssigned,
-    tasksCompleted,
+    tasksCompleted: tasksCompletedCount,
     completionPercentage,
     focusTimeMinutes,
     focusSessions: dayFocusSessions.length,

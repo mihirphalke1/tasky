@@ -8,6 +8,7 @@ import {
   X,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,13 +29,17 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
   onInstall,
   className,
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
+  const [isInstallable, setIsInstallable] = useState(false);
   const [deviceType, setDeviceType] = useState<"mobile" | "desktop">("desktop");
+  const [installTimeout, setInstallTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [showNotification, setShowNotification] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>("");
 
   useEffect(() => {
@@ -45,6 +50,26 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
     const isIOSStandalone = (window.navigator as any).standalone === true;
     const isInstalled = isStandalone || isIOSStandalone;
     setIsInstalled(isInstalled);
+
+    // Set up periodic check for installation status
+    const checkInterval = setInterval(() => {
+      const currentIsStandalone = window.matchMedia(
+        "(display-mode: standalone)"
+      ).matches;
+      const currentIsIOSStandalone =
+        (window.navigator as any).standalone === true;
+      const currentIsInstalled = currentIsStandalone || currentIsIOSStandalone;
+
+      if (currentIsInstalled !== isInstalled) {
+        setIsInstalled(currentIsInstalled);
+        if (!currentIsInstalled) {
+          // App was uninstalled, show install prompt again
+          setIsInstallable(true);
+          localStorage.removeItem("pwa-installed");
+          localStorage.removeItem("pwa-install-prompted");
+        }
+      }
+    }, 5000); // Check every 5 seconds
 
     // Detect device type
     const isMobile =
@@ -103,7 +128,11 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
-      setShowNotification(false);
+      setShowInstallPrompt(false);
+      setIsLoading(false);
+      if (installTimeout) {
+        clearTimeout(installTimeout);
+      }
       localStorage.setItem("pwa-installed", "true");
       console.log("PWA: App successfully installed");
     };
@@ -117,72 +146,73 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
         handleBeforeInstallPrompt
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
+      clearInterval(checkInterval);
+      if (installTimeout) {
+        clearTimeout(installTimeout);
+      }
     };
   }, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       try {
-        deferredPrompt.prompt();
+        setIsLoading(true);
+        // Set a timeout to handle stuck states
+        const timeout = setTimeout(() => {
+          setIsLoading(false);
+          setShowInstallPrompt(false);
+          // Refresh the page if stuck
+          window.location.reload();
+        }, 10000); // 10 second timeout
+        setInstallTimeout(timeout);
+
+        // Show the browser's native install prompt
+        await deferredPrompt.prompt();
+
+        // Wait for user choice
         const choiceResult = await deferredPrompt.userChoice;
 
         if (choiceResult.outcome === "accepted") {
+          console.log("PWA: User accepted the install prompt");
           localStorage.setItem("pwa-install-prompted", "true");
           onInstall?.();
-          console.log("PWA: User accepted the install prompt");
         } else {
           console.log("PWA: User dismissed the install prompt");
+          localStorage.setItem("pwa-install-dismissed", Date.now().toString());
         }
 
+        // Clear the deferred prompt
         setDeferredPrompt(null);
         setIsInstallable(false);
+        setIsLoading(false);
+        clearTimeout(timeout);
       } catch (error) {
         console.error("PWA: Error during installation:", error);
+        setIsLoading(false);
+        if (installTimeout) {
+          clearTimeout(installTimeout);
+        }
+        // For iOS or other browsers, show instructions
+        setShowInstallPrompt(true);
       }
     } else {
-      // For iOS, localhost, or other browsers, show instructions
+      // For iOS or other browsers, show instructions
       setShowInstallPrompt(true);
       console.log("PWA: Showing manual installation instructions");
     }
   };
 
-  const dismissNotification = () => {
-    setShowNotification(false);
-    localStorage.setItem("pwa-install-prompted", "true");
+  const handleCancelInstall = () => {
+    setShowInstallPrompt(false);
+    setIsLoading(false);
+    if (installTimeout) {
+      clearTimeout(installTimeout);
+    }
   };
 
   const getInstallInstructions = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isLocalhost = window.location.hostname === "localhost";
-
-    if (isLocalhost && !isIOS) {
-      return (
-        <div className="space-y-3 text-sm">
-          <p className="font-medium">Install Tasky (Localhost Testing):</p>
-          <div className="space-y-2 text-xs">
-            <p>
-              🔍 <strong>Chrome/Edge:</strong> Look for install button (⬇️) in
-              address bar
-            </p>
-            <p>
-              🔧 <strong>Testing tip:</strong> Try opening in Chrome/Edge, then
-              check DevTools → Application → Manifest
-            </p>
-            <p>
-              ⚠️ <strong>Note:</strong> Some PWA features require HTTPS in
-              production
-            </p>
-          </div>
-          <details className="text-xs">
-            <summary className="cursor-pointer font-medium">Debug Info</summary>
-            <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto">
-              {debugInfo}
-            </pre>
-          </details>
-        </div>
-      );
-    }
 
     if (isIOS && isSafari) {
       return (
@@ -212,9 +242,15 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
 
   if (isInstalled) {
     return variant === "menu-item" ? (
-      <div className="flex items-center gap-3 px-4 py-3 text-sm text-green-600 dark:text-green-400">
+      <div className="flex items-center gap-3 px-4 py-3 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg">
         <CheckCircle className="h-4 w-4" />
         <span className="font-medium">App Installed</span>
+        <Badge
+          variant="secondary"
+          className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-xs px-2 py-0.5 font-medium"
+        >
+          PWA
+        </Badge>
       </div>
     ) : null;
   }
@@ -254,14 +290,6 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
                     Get the full app experience with offline access and quick
                     launch.
                   </p>
-                  {window.location.hostname === "localhost" && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <AlertCircle className="h-3 w-3 text-amber-500" />
-                      <span className="text-xs text-amber-600 dark:text-amber-400">
-                        Testing on localhost
-                      </span>
-                    </div>
-                  )}
                   <div className="flex gap-2 mt-3">
                     <Button
                       size="sm"
@@ -271,24 +299,8 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
                       <Download className="h-3 w-3 mr-1" />
                       Install
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={dismissNotification}
-                      className="text-xs px-2 py-1.5 h-auto"
-                    >
-                      Later
-                    </Button>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={dismissNotification}
-                  className="h-6 w-6 flex-shrink-0"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
               </div>
             </div>
           </motion.div>
@@ -302,14 +314,18 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
     return (
       <button
         onClick={handleInstallClick}
+        disabled={isLoading}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#CDA351]/10 transition-colors duration-200",
           "text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white",
+          isLoading && "opacity-50 cursor-not-allowed",
           className
         )}
       >
         <div className="flex-shrink-0">
-          {deviceType === "mobile" ? (
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : deviceType === "mobile" ? (
             <Smartphone className="h-4 w-4" />
           ) : (
             <Monitor className="h-4 w-4" />
@@ -317,21 +333,15 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">Install App</span>
+            <span className="font-medium text-sm">
+              {isLoading ? "Installing..." : "Install App"}
+            </span>
             <Badge
               variant="secondary"
               className="bg-[#CDA351]/10 text-[#CDA351] text-xs px-2 py-0.5 font-medium"
             >
               PWA
             </Badge>
-            {window.location.hostname === "localhost" && (
-              <Badge
-                variant="secondary"
-                className="bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 text-xs px-1 py-0.5"
-              >
-                TEST
-              </Badge>
-            )}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Quick access & offline support
@@ -346,14 +356,20 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
     <>
       <Button
         onClick={handleInstallClick}
+        disabled={isLoading}
         className={cn(
           "bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351]",
           "text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300",
+          isLoading && "opacity-50 cursor-not-allowed",
           className
         )}
       >
-        <Download className="h-4 w-4 mr-2" />
-        Install App
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4 mr-2" />
+        )}
+        {isLoading ? "Installing..." : "Install App"}
       </Button>
 
       {/* Installation Instructions Modal/Popup */}
@@ -364,7 +380,7 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            onClick={() => setShowInstallPrompt(false)}
+            onClick={handleCancelInstall}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -380,14 +396,6 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
                   <Monitor className="h-6 w-6 text-[#CDA351]" />
                 )}
                 <h3 className="text-lg font-semibold">Install Tasky</h3>
-                {window.location.hostname === "localhost" && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 text-xs"
-                  >
-                    Testing
-                  </Badge>
-                )}
               </div>
 
               {getInstallInstructions()}
@@ -395,10 +403,10 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
               <div className="flex gap-2 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => setShowInstallPrompt(false)}
+                  onClick={handleCancelInstall}
                   className="flex-1"
                 >
-                  Got it
+                  Later
                 </Button>
               </div>
             </motion.div>
