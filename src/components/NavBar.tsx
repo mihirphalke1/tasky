@@ -349,16 +349,16 @@ const NavBar = () => {
                 <DropdownMenuSeparator className="bg-[#CDA351]/10" />
 
                 <div className="flex-1 flex flex-col">
-                  <DropdownMenuItem
+                  {/* <DropdownMenuItem
                     onClick={() => {
                       setShowPrompt(true);
                       setIsMobileMenuOpen(false);
                     }}
                     className="flex items-center gap-2 cursor-pointer"
                   >
-                    <Download className="h-4 w-4" />
-                    <span>Install App</span>
-                  </DropdownMenuItem>
+                    <Download className="h-4 w-4" /> */}
+                  {/* <span>Install App</span> */}
+                  {/* </DropdownMenuItem> */}
                   <DropdownMenuItem
                     onClick={() => {
                       navigate("/how-it-works");
@@ -366,7 +366,6 @@ const NavBar = () => {
                     }}
                     className="flex items-center gap-2 cursor-pointer"
                   >
-                    <HelpCircle className="h-4 w-4" />
                     <span>How It Works</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem

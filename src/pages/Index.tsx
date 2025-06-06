@@ -17,7 +17,7 @@ import TaskOverview from "@/components/TaskOverview";
 import PendingTasksSection from "@/components/PendingTasksSection";
 import NavBar from "@/components/NavBar";
 import Search from "@/components/Search";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PWAInstallPrompt, { usePWAStatus } from "@/components/PWAInstallPrompt";
 import { QuickNoteButton } from "@/components/QuickNoteButton";
 import { Task, TaskSection as TaskSectionType } from "@/types";
 import {
@@ -71,6 +71,7 @@ const Index = () => {
   const [smartInputMode, setSmartInputMode] = useState(true); // Default to smart mode
   const taskInputRef = useRef<TaskInputRef>(null);
   const nlpTaskInputRef = useRef<NLPTaskInputRef>(null);
+  const { showPrompt, setShowPrompt, triggerInstall } = usePWAStatus();
 
   // Function to trigger quick note
   const openQuickNote = () => {
@@ -604,7 +605,12 @@ const Index = () => {
         />
       </div>
 
-      <PWAInstallPrompt />
+      {showPrompt && (
+        <PWAInstallPrompt
+          onClose={() => setShowPrompt(false)}
+          onInstall={triggerInstall}
+        />
+      )}
     </PageWrapper>
   );
 };
