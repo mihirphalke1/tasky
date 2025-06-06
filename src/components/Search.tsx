@@ -568,7 +568,7 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
-                        className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="p-4 rounded-lg border bg-card hover:bg-[#CDA351]/5 dark:hover:bg-[#CDA351]/10 hover:border-[#CDA351]/20 dark:hover:border-[#CDA351]/30 transition-colors cursor-pointer"
                         onClick={() => handleTaskClick(task)}
                       >
                         <div className="flex items-start justify-between gap-4">
@@ -598,31 +598,30 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
-                              {taskNotes[task.id] &&
-                                taskNotes[task.id].length > 0 && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Badge
-                                          variant="secondary"
-                                          className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
-                                          onClick={(e) =>
-                                            handleNotesClick(task, e)
-                                          }
-                                        >
-                                          <StickyNote className="h-3 w-3 mr-1" />
-                                          {taskNotes[task.id].length} note
-                                          {taskNotes[task.id].length !== 1
-                                            ? "s"
-                                            : ""}
-                                        </Badge>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Click to view notes for this task</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
+                              {taskNotes[task.id]?.length > 0 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge
+                                        variant="secondary"
+                                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                                        onClick={(e) =>
+                                          handleNotesClick(task, e)
+                                        }
+                                      >
+                                        <StickyNote className="h-3 w-3 mr-1" />
+                                        {taskNotes[task.id].length} note
+                                        {taskNotes[task.id].length !== 1
+                                          ? "s"
+                                          : ""}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Click to view notes for this task</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                             {task.description && (
                               <p
@@ -637,76 +636,37 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                             )}
 
                             {/* Show note preview if searched in notes */}
-                            {searchQuery &&
-                              taskNotes[task.id] &&
-                              taskNotes[task.id].length > 0 && (
-                                <div className="mt-2">
-                                  {taskNotes[task.id]
-                                    .filter((note) =>
-                                      note.content
-                                        .toLowerCase()
-                                        .includes(searchQuery.toLowerCase())
-                                    )
-                                    .slice(0, 1)
-                                    .map((note) => (
-                                      <div
-                                        key={note.id}
-                                        className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800"
-                                      >
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <FileText className="h-3 w-3 text-blue-600" />
-                                          <span className="text-xs font-medium text-blue-600">
-                                            Note match
-                                          </span>
-                                        </div>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                                          {note.content}
-                                        </p>
+                            {searchQuery && taskNotes[task.id]?.length > 0 && (
+                              <div className="mt-2">
+                                {taskNotes[task.id]
+                                  .filter((note) =>
+                                    note.content
+                                      .toLowerCase()
+                                      .includes(searchQuery.toLowerCase())
+                                  )
+                                  .slice(0, 1)
+                                  .map((note) => (
+                                    <div
+                                      key={note.id}
+                                      className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800"
+                                    >
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <FileText className="h-3 w-3 text-blue-600" />
+                                        <span className="text-xs font-medium text-blue-600">
+                                          Note match
+                                        </span>
                                       </div>
-                                    ))}
-                                </div>
-                              )}
-
-                            <div className="flex flex-wrap gap-2">
-                              <Badge
-                                className={getPriorityColor(task.priority)}
-                              >
-                                {task.priority}
-                              </Badge>
-                              <Badge className={getSectionColor(task.section)}>
-                                {task.section}
-                              </Badge>
-                              {task.tags?.map((tag) => (
-                                <Badge key={tag} variant="secondary">
-                                  <Tag className="h-3 w-3 mr-1" />
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
+                                      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                                        {note.content}
+                                      </p>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
                           </div>
                           <div className="text-right space-y-1 min-w-[180px]">
                             <div className="flex flex-col gap-1">
                               <div className="text-xs text-muted-foreground flex flex-col items-end gap-0.5">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  <span>
-                                    Created{" "}
-                                    {safeFormatDate(
-                                      task.createdAt,
-                                      "MMM d, h:mm a"
-                                    )}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  <span>
-                                    Modified{" "}
-                                    {safeFormatDate(
-                                      task.lastModified,
-                                      "MMM d, h:mm a"
-                                    )}
-                                  </span>
-                                </div>
                                 {task.completed && task.completedAt && (
                                   <div className="flex items-center gap-1">
                                     <CheckCircle2 className="h-3 w-3 text-green-500" />
@@ -719,6 +679,28 @@ const Search = ({ tasks, onClose }: SearchProps) => {
                                     </span>
                                   </div>
                                 )}
+                                <div className="flex flex-wrap gap-1.5 justify-end mt-2">
+                                  <Badge
+                                    className={getPriorityColor(task.priority)}
+                                  >
+                                    {task.priority}
+                                  </Badge>
+                                  <Badge
+                                    className={getSectionColor(task.section)}
+                                  >
+                                    {task.section}
+                                  </Badge>
+                                  {task.tags?.map((tag) => (
+                                    <Badge
+                                      key={tag}
+                                      variant="secondary"
+                                      className="text-xs bg-[#CDA351]/5 hover:bg-[#CDA351]/30 dark:bg-[#CDA351]/10 dark:hover:bg-[#CDA351]/40 text-[#CDA351] border-[#CDA351]/20 hover:border-[#CDA351]/40 transition-colors"
+                                    >
+                                      <Tag className="h-3 w-3 mr-1" />
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>

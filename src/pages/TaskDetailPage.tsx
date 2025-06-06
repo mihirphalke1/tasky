@@ -827,191 +827,129 @@ const TaskDetailPage = () => {
           </FlexContainer>
 
           {/* Task Information Card */}
-          <Card className="mb-6 sm:mb-8">
-            <CardHeader className="p-4 sm:p-6">
+          <Card className="mb-4">
+            <CardHeader className="p-4 pb-2">
               <FlexContainer align="start" justify="between" gap="md">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xl sm:text-2xl mb-2 break-words">
-                    {task.title}
-                  </CardTitle>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-lg break-words">
+                      {task.title}
+                    </CardTitle>
+                    {task.completed && (
+                      <Badge className="bg-green-500/10 text-green-600 border-green-200">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Done
+                      </Badge>
+                    )}
+                  </div>
                   {task.description && (
-                    <CardDescription className="text-sm sm:text-base break-words">
+                    <CardDescription className="text-sm break-words">
                       {task.description}
                     </CardDescription>
                   )}
                 </div>
-                {task.completed && (
-                  <Badge className="bg-green-500/10 text-green-600 border-green-200 flex-shrink-0">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Completed
-                  </Badge>
-                )}
               </FlexContainer>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                    Priority
-                  </p>
-                  <Badge className={getPriorityColor(task.priority)}>
-                    {task.priority}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                    Section
-                  </p>
-                  <Badge className={getSectionColor(task.section)}>
-                    {task.section}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                    Created
-                  </p>
-                  <p className="text-xs sm:text-sm">
-                    {format(task.createdAt, "MMM d, yyyy")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                    Last Modified
-                  </p>
-                  <p className="text-xs sm:text-sm">
-                    {formatDistanceToNow(task.lastModified, {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              {task.tags && task.tags.length > 0 && (
-                <div className="mb-3 sm:mb-4">
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-                    Tags
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {task.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        <Tag className="h-3 w-3 mr-1" />
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {task.dueDate && (
-                <FlexContainer
-                  align="center"
-                  gap="sm"
-                  className="text-xs sm:text-sm text-muted-foreground mb-2"
-                >
-                  <Calendar className="h-4 w-4 flex-shrink-0" />
-                  <span className="break-words">
-                    Due: {format(task.dueDate, "MMM d, yyyy 'at' h:mm a")}
-                  </span>
-                </FlexContainer>
-              )}
-
-              {task.completed && task.completedAt && (
-                <FlexContainer
-                  align="center"
-                  gap="sm"
-                  className="text-xs sm:text-sm text-green-600"
-                >
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                  <span className="break-words">
-                    Completed:{" "}
-                    {format(task.completedAt, "MMM d, yyyy 'at' h:mm a")}
-                  </span>
-                </FlexContainer>
-              )}
-
-              {!task.completed &&
-                task.snoozedUntil &&
-                isAfter(task.snoozedUntil, new Date()) && (
-                  <FlexContainer
-                    align="center"
-                    gap="sm"
-                    className="text-xs sm:text-sm text-purple-600"
+            <CardContent className="p-4 pt-2">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge className={getPriorityColor(task.priority)}>
+                  {task.priority}
+                </Badge>
+                <Badge className={getSectionColor(task.section)}>
+                  {task.section}
+                </Badge>
+                {task.tags?.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="text-xs hover:bg-[#CDA351]/20 dark:hover:bg-[#CDA351]/30 transition-colors"
                   >
-                    <Clock className="h-4 w-4 flex-shrink-0" />
-                    <span className="break-words">
-                      Snoozed until {format(task.snoozedUntil, "h:mm a")}
-                    </span>
-                  </FlexContainer>
+                    <Tag className="h-3 w-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+                {task.dueDate && (
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>{format(task.dueDate, "MMM d, h:mm a")}</span>
+                  </div>
                 )}
+                {task.completed && task.completedAt && (
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>{format(task.completedAt, "MMM d, h:mm a")}</span>
+                  </div>
+                )}
+                {!task.completed &&
+                  task.snoozedUntil &&
+                  isAfter(task.snoozedUntil, new Date()) && (
+                    <div className="flex items-center gap-1 text-purple-600">
+                      <Clock className="h-3 w-3" />
+                      <span>{format(task.snoozedUntil, "h:mm a")}</span>
+                    </div>
+                  )}
+              </div>
             </CardContent>
           </Card>
 
           {/* Focus Analytics Overview */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="grid grid-cols-4 gap-2 mb-4">
             <Card>
-              <CardContent className="p-4 sm:p-6">
-                <FlexContainer align="center" justify="between">
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Total Focus Time
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold text-[#CDA351] break-words">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Focus</p>
+                    <p className="text-base font-medium text-[#CDA351]">
                       {formatTime(focusAnalytics.totalFocusTime)}
                     </p>
                   </div>
-                  <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-[#CDA351] flex-shrink-0" />
-                </FlexContainer>
+                  <Clock className="h-4 w-4 text-[#CDA351]" />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-4 sm:p-6">
-                <FlexContainer align="center" justify="between">
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Pomodoros
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold text-red-500">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pomodoros</p>
+                    <p className="text-base font-medium text-red-500">
                       {focusAnalytics.totalPomodoros}
                     </p>
                   </div>
-                  <Coffee className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 flex-shrink-0" />
-                </FlexContainer>
+                  <Coffee className="h-4 w-4 text-red-500" />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-4 sm:p-6">
-                <FlexContainer align="center" justify="between">
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Focus Sessions
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold text-blue-500">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Sessions</p>
+                    <p className="text-base font-medium text-blue-500">
                       {focusAnalytics.totalSessions}
                     </p>
                   </div>
-                  <Target className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 flex-shrink-0" />
-                </FlexContainer>
+                  <Target className="h-4 w-4 text-blue-500" />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-4 sm:p-6">
-                <FlexContainer align="center" justify="between">
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Focus Score
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold text-green-500">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Score</p>
+                    <p className="text-base font-medium text-green-500">
                       {focusAnalytics.focusScore}%
                     </p>
                   </div>
-                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 flex-shrink-0" />
-                </FlexContainer>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </div>
                 <Progress
                   value={focusAnalytics.focusScore}
-                  className="mt-2 h-1.5 sm:h-2"
+                  className="mt-1 h-1"
                 />
               </CardContent>
             </Card>
@@ -1024,7 +962,7 @@ const TaskDetailPage = () => {
             defaultValue="focus-sessions"
             className="space-y-4 sm:space-y-6"
           >
-            <TabsList className="grid w-full grid-cols-4 p-1">
+            <TabsList className="grid w-full grid-cols-3 p-1">
               <TabsTrigger
                 value="focus-sessions"
                 className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
@@ -1049,16 +987,7 @@ const TaskDetailPage = () => {
                 <span className="hidden sm:inline">Notes</span>
                 <span className="sm:hidden">Notes</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="analytics"
-                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Analytics</span>
-                <span className="sm:hidden">Data</span>
-              </TabsTrigger>
             </TabsList>
-
             {/* Focus Sessions Tab */}
             <TabsContent value="focus-sessions" className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1180,7 +1109,6 @@ const TaskDetailPage = () => {
                 </div>
               )}
             </TabsContent>
-
             {/* Intentions Tab */}
             <TabsContent value="intentions" className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1226,7 +1154,6 @@ const TaskDetailPage = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-
             {/* Notes Tab */}
             <TabsContent value="notes" className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1362,185 +1289,6 @@ const TaskDetailPage = () => {
                   </AnimatePresence>
                 </div>
               )}
-            </TabsContent>
-
-            {/* Analytics Tab */}
-            <TabsContent value="analytics" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  Detailed Analytics
-                </h2>
-              </div>
-
-              <div className="grid gap-6">
-                {/* Performance Metrics */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Performance Metrics
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-[#CDA351]">
-                          {formatTime(focusAnalytics.avgSessionDuration)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Average Session Length
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-500">
-                          {focusAnalytics.totalSessions > 0
-                            ? Math.round(
-                                (focusAnalytics.totalPomodoros /
-                                  focusAnalytics.totalSessions) *
-                                  10
-                              ) / 10
-                            : 0}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Pomodoros per Session
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-500">
-                          {focusAnalytics.focusScore}%
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Focus Efficiency
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-500">
-                          {focusAnalytics.totalSessions}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Total Sessions
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Productivity Insights */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Brain className="h-5 w-5" />
-                      Productivity Insights
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {taskInsights.length === 0 ? (
-                        <p className="text-muted-foreground">
-                          Complete some focus sessions to see insights here.
-                        </p>
-                      ) : (
-                        <div className="space-y-3">
-                          {taskInsights.map((insight) => {
-                            // Function to get the appropriate icon component
-                            const getInsightIcon = (iconName: string) => {
-                              switch (iconName) {
-                                case "Zap":
-                                  return <Zap className="h-5 w-5" />;
-                                case "Coffee":
-                                  return <Coffee className="h-5 w-5" />;
-                                case "Clock":
-                                  return <Clock className="h-5 w-5" />;
-                                case "Target":
-                                  return <Target className="h-5 w-5" />;
-                                case "TrendingUp":
-                                  return <TrendingUp className="h-5 w-5" />;
-                                case "Flame":
-                                  return <Flame className="h-5 w-5" />;
-                                case "Battery":
-                                  return <Battery className="h-5 w-5" />;
-                                case "Timer":
-                                  return <Timer className="h-5 w-5" />;
-                                default:
-                                  return <Lightbulb className="h-5 w-5" />;
-                              }
-                            };
-
-                            // Function to get the appropriate color classes
-                            const getColorClasses = (color: string) => {
-                              switch (color) {
-                                case "green":
-                                  return {
-                                    bg: "bg-green-50 dark:bg-green-950/20",
-                                    text: "text-green-600",
-                                  };
-                                case "red":
-                                  return {
-                                    bg: "bg-red-50 dark:bg-red-950/20",
-                                    text: "text-red-600",
-                                  };
-                                case "blue":
-                                  return {
-                                    bg: "bg-blue-50 dark:bg-blue-950/20",
-                                    text: "text-blue-600",
-                                  };
-                                case "purple":
-                                  return {
-                                    bg: "bg-purple-50 dark:bg-purple-950/20",
-                                    text: "text-purple-600",
-                                  };
-                                case "yellow":
-                                  return {
-                                    bg: "bg-yellow-50 dark:bg-yellow-950/20",
-                                    text: "text-yellow-600",
-                                  };
-                                case "orange":
-                                  return {
-                                    bg: "bg-orange-50 dark:bg-orange-950/20",
-                                    text: "text-orange-600",
-                                  };
-                                default:
-                                  return {
-                                    bg: "bg-gray-50 dark:bg-gray-950/20",
-                                    text: "text-gray-600",
-                                  };
-                              }
-                            };
-
-                            const colorClasses = getColorClasses(insight.color);
-
-                            return (
-                              <motion.div
-                                key={insight.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center gap-3 p-3 ${colorClasses.bg} rounded-lg`}
-                              >
-                                <div className={colorClasses.text}>
-                                  {getInsightIcon(insight.icon)}
-                                </div>
-                                <div>
-                                  <p className="text-sm">
-                                    <strong>{insight.title}</strong>{" "}
-                                    {insight.description}
-                                  </p>
-                                  {insight.value !== undefined &&
-                                    insight.threshold !== undefined && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        Value: {insight.value} (threshold:{" "}
-                                        {insight.threshold})
-                                      </p>
-                                    )}
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
           </Tabs>
         </Section>

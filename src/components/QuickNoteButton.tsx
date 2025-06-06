@@ -136,7 +136,7 @@ export function QuickNoteButton({
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Write your quick note here... (Cmd/Ctrl + Enter to save)"
+              placeholder="Write your quick note here... "
               className="min-h-[120px] resize-none focus:ring-2 focus:ring-primary"
               autoFocus
             />

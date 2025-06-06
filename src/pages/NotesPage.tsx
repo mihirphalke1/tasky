@@ -307,28 +307,23 @@ const NotesPage = () => {
   const renderAllNotesContent = () => (
     <div className="space-y-8">
       {/* Enhanced Header */}
-      <div className="flex items-center justify-between mb-10">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/10 rounded-xl">
-              <Layers3 className="h-6 w-6 text-[#CDA351]" />
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-[#CDA351]/10 rounded-lg">
+              <Layers3 className="h-4 w-4 text-[#CDA351]" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 All Notes
               </h2>
-              <p className="text-muted-foreground dark:text-gray-400 flex items-center gap-2">
-                <span>
-                  {filteredNotes.length}{" "}
-                  {filteredNotes.length === 1 ? "note" : "notes"}
-                </span>
+              <p className="text-xs text-muted-foreground dark:text-gray-400">
+                {filteredNotes.length}{" "}
+                {filteredNotes.length === 1 ? "note" : "notes"}
                 {searchQuery && (
-                  <>
-                    <span>•</span>
-                    <span className="text-[#CDA351] font-medium">
-                      matching "{searchQuery}"
-                    </span>
-                  </>
+                  <span className="ml-2 text-[#CDA351]">
+                    matching "{searchQuery}"
+                  </span>
                 )}
               </p>
             </div>
@@ -337,33 +332,31 @@ const NotesPage = () => {
       </div>
 
       {filteredNotes.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-32 h-32 bg-gradient-to-br from-[#CDA351]/20 to-[#CDA351]/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
-            <Layers3 className="h-16 w-16 text-[#CDA351]" />
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-[#CDA351]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Layers3 className="h-8 w-8 text-[#CDA351]" />
           </div>
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             {searchQuery ? "No notes found" : "Your canvas awaits"}
           </h3>
-          <p className="text-muted-foreground dark:text-gray-400 mb-10 max-w-md mx-auto text-lg leading-relaxed">
+          <p className="text-sm text-muted-foreground dark:text-gray-400 mb-6">
             {searchQuery
               ? `No notes match "${searchQuery}". Try adjusting your search terms.`
               : "Start capturing your thoughts, ideas, and insights"}
           </p>
-          <div className="flex gap-4 justify-center">
-            {searchQuery && (
-              <Button
-                variant="outline"
-                onClick={() => setSearchQuery("")}
-                className="h-12 px-6 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Clear Search
-              </Button>
-            )}
-          </div>
+          {searchQuery && (
+            <Button
+              variant="outline"
+              onClick={() => setSearchQuery("")}
+              className="h-9 px-4"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear Search
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <AnimatePresence>
             {filteredNotes.map((note, index) => (
               <motion.div
@@ -371,117 +364,67 @@ const NotesPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
               >
-                <Card className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#CDA351]/30 dark:hover:border-[#CDA351]/40 transition-all duration-200 hover:shadow-lg">
-                  <CardHeader className="pb-3">
+                <Card className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#CDA351]/30 dark:hover:border-[#CDA351]/40 transition-all duration-200">
+                  <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         {note.isGeneral ? (
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#CDA351]/10 to-[#CDA351]/5 rounded-full border border-[#CDA351]/20">
-                            <StickyNote className="h-4 w-4 text-[#CDA351]" />
-                            <span className="text-sm font-semibold text-[#CDA351]">
-                              General Note
-                            </span>
-                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-[#CDA351]/10 text-[#CDA351]"
+                          >
+                            <StickyNote className="h-3 w-3 mr-1" />
+                            General
+                          </Badge>
                         ) : (
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500/10 to-blue-500/5 rounded-full border border-blue-200 dark:border-blue-700">
-                            <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                              Task Note
-                            </span>
-                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            Task
+                          </Badge>
                         )}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground dark:text-gray-400">
-                          <Clock className="h-3 w-3" />
+                        <span className="text-xs text-muted-foreground dark:text-gray-400">
                           {formatDistanceToNow(note.createdAt, {
                             addSuffix: true,
                           })}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        {note.task && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 hover:bg-blue-50 dark:hover:bg-blue-900/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                            onClick={() => handleTaskClick(note.task!)}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
-                          onClick={() => handleDeleteNote(note.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  {/* Enhanced task connection display */}
-                  {note.task && (
-                    <div className="mx-6 mb-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="p-1 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                          <LinkIcon className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                          Linked Task
                         </span>
                       </div>
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
-                        {note.task.title}
-                      </h4>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge
-                          className={`text-xs font-medium ${getPriorityColor(
-                            note.task.priority
-                          )} dark:bg-opacity-20`}
-                        >
-                          {note.task.priority} priority
-                        </Badge>
-                        <Badge
-                          className={`text-xs font-medium ${getSectionColor(
-                            note.task.section
-                          )} dark:bg-opacity-20`}
-                        >
-                          {note.task.section}
-                        </Badge>
-                        {note.task.completed && (
-                          <Badge className="text-xs font-medium bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Completed
-                          </Badge>
-                        )}
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 opacity-0 group-hover:opacity-100 transition-all"
+                        onClick={() => handleDeleteNote(note.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  )}
-
-                  <CardContent className="pt-0 pb-4">
+                  </CardHeader>
+                  <CardContent className="pt-0 pb-3">
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                       {note.content}
                     </p>
                   </CardContent>
-
-                  {/* Enhanced footer without Active indicator */}
-                  <CardFooter className="pt-3 pb-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                    <div className="flex items-center justify-between w-full text-xs">
-                      <div className="flex items-center gap-4 text-muted-foreground dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(note.createdAt, "MMM d, yyyy 'at' h:mm a")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" />
-                          {note.content.length} characters
-                        </span>
+                  {note.task && (
+                    <CardFooter className="pt-2 pb-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                            onClick={() => handleTaskClick(note.task!)}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View Task
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardFooter>
+                    </CardFooter>
+                  )}
                 </Card>
               </motion.div>
             ))}
@@ -543,7 +486,7 @@ const NotesPage = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-[#CDA351]/10 to-[#CDA351]/5 rounded-lg">
+                        <div className="p-1.5 bg-gradient-to-br from-[#CDA351]/10 to-[#CDA351]/5 rounded-lg">
                           <StickyNote className="h-4 w-4 text-[#CDA351]" />
                         </div>
                         <div className="flex-1">
@@ -795,50 +738,50 @@ const NotesPage = () => {
                   className="space-y-4"
                 >
                   {/* Enhanced task header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-6 border border-blue-200 dark:border-blue-700">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                          <LinkIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                          <LinkIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-2 truncate">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-1 truncate">
                             {task.title}
                           </h3>
-                          <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge
                               className={`${getPriorityColor(
                                 task.priority
-                              )} font-medium`}
+                              )} text-xs`}
                             >
-                              {task.priority} priority
+                              {task.priority}
                             </Badge>
                             <Badge
                               className={`${getSectionColor(
                                 task.section
-                              )} font-medium`}
+                              )} text-xs`}
                             >
                               {task.section}
                             </Badge>
                             {task.completed && (
-                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700">
+                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700 text-xs">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Completed
                               </Badge>
                             )}
-                            <span className="text-sm text-muted-foreground dark:text-gray-400">
+                            <span className="text-xs text-muted-foreground dark:text-gray-400">
                               {taskNotes.length}{" "}
                               {taskNotes.length === 1 ? "note" : "notes"}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleTaskClick(task)}
-                          className="h-9 w-9 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                          className="h-8 w-8 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -846,7 +789,7 @@ const NotesPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => toggleTaskExpansion(task.id)}
-                          className="h-9 w-9 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                          className="h-8 w-8 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400"
                         >
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4" />
@@ -865,7 +808,7 @@ const NotesPage = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4 pl-6"
+                        className="space-y-3 pl-4"
                       >
                         {taskNotes.map((note, index) => (
                           <motion.div
@@ -874,10 +817,10 @@ const NotesPage = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.1 }}
                           >
-                            <Card className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-lg">
-                              <CardHeader className="pb-3">
+                            <Card className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200">
+                              <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-400">
                                     <Clock className="h-3 w-3" />
                                     {formatDistanceToNow(note.createdAt, {
                                       addSuffix: true,
@@ -886,31 +829,28 @@ const NotesPage = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 opacity-0 group-hover:opacity-100 transition-all"
+                                    className="h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 opacity-0 group-hover:opacity-100 transition-all"
                                     onClick={() => handleDeleteNote(note.id)}
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
                                 </div>
                               </CardHeader>
-                              <CardContent className="pt-0 pb-4">
+                              <CardContent className="pt-0 pb-3">
                                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                                   {note.content}
                                 </p>
                               </CardContent>
-                              <CardFooter className="pt-3 pb-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                              <CardFooter className="pt-2 pb-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                                 <div className="flex items-center justify-between w-full text-xs">
-                                  <div className="flex items-center gap-4 text-muted-foreground dark:text-gray-400">
+                                  <div className="flex items-center gap-3 text-muted-foreground dark:text-gray-400">
                                     <span className="flex items-center gap-1">
                                       <Calendar className="h-3 w-3" />
-                                      {format(
-                                        note.createdAt,
-                                        "MMM d, yyyy 'at' h:mm a"
-                                      )}
+                                      {format(note.createdAt, "MMM d, h:mm a")}
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <Hash className="h-3 w-3" />
-                                      {note.content.length} characters
+                                      {note.content.length} chars
                                     </span>
                                   </div>
                                 </div>

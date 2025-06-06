@@ -172,7 +172,7 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                   {task.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2 py-0.5 rounded-full"
+                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2 py-0.5 rounded-full hover:bg-[#CDA351]/20 dark:hover:bg-[#CDA351]/30 transition-colors"
                     >
                       {tag}
                     </span>

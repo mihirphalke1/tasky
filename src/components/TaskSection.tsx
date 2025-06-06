@@ -4,6 +4,9 @@ import TaskItem from "./TaskItem";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { getSectionFromDate } from "@/utils/taskUtils";
 import { isAfter } from "date-fns";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Button } from "./ui/button";
 
 interface TaskSectionProps {
   title: string;
@@ -22,6 +25,8 @@ const TaskSection = ({
   onDeleteTask,
   onDragEnd,
 }: TaskSectionProps) => {
+  const [showCompleted, setShowCompleted] = useState(false);
+
   // Priority order for sorting (high first, then medium, then low)
   const priorityOrder = { high: 0, medium: 1, low: 2 };
 
@@ -101,33 +106,50 @@ const TaskSection = ({
       </DragDropContext>
 
       {completedTasks.length > 0 && (
-        <div className="mt-6">
-          <div className="flex items-center gap-2 mb-3">
-            <h3 className="text-sm font-medium text-[#7E7E7E] dark:text-gray-400">
-              Completed
-            </h3>
-            <span className="text-xs text-[#7E7E7E] dark:text-gray-400">
-              ({completedTasks.length})
-            </span>
-          </div>
-          <div className="space-y-2">
-            <AnimatePresence>
-              {completedTasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <TaskItem
-                    task={task}
-                    onUpdate={onUpdateTask}
-                    onDelete={onDeleteTask}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+        <div className="mt-4">
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between p-2 text-sm text-[#7E7E7E] dark:text-gray-400 hover:text-[#CDA351] dark:hover:text-[#CDA351] hover:bg-[#CDA351]/5 dark:hover:bg-[#CDA351]/10"
+            onClick={() => setShowCompleted(!showCompleted)}
+          >
+            <div className="flex items-center gap-2">
+              <span>Completed ({completedTasks.length})</span>
+            </div>
+            {showCompleted ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+
+          <AnimatePresence>
+            {showCompleted && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2 mt-2">
+                  {completedTasks.map((task) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                    >
+                      <TaskItem
+                        task={task}
+                        onUpdate={onUpdateTask}
+                        onDelete={onDeleteTask}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

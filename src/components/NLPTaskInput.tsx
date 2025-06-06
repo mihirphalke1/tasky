@@ -210,7 +210,7 @@ const NLPTaskInput = forwardRef<NLPTaskInputRef, NLPTaskInputProps>(
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Just type naturally - Tasky will understand what you mean
             </p>
-            <div className="flex flex-wrap gap-2 mt-2">
+            {/* <div className="flex flex-wrap gap-2 mt-2">
               <span className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded dark:bg-red-900/20 dark:text-red-400">
                 High: "urgent", "asap", "important"
               </span>
@@ -220,7 +220,7 @@ const NLPTaskInput = forwardRef<NLPTaskInputRef, NLPTaskInputProps>(
               <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded dark:bg-green-900/20 dark:text-green-400">
                 Low: "when possible", "no rush", "if I have time"
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
 

@@ -443,8 +443,8 @@ export const createGlobalShortcuts = (options: {
       description: "Toggle Smart/Traditional Input",
       category: "tasks",
       keys: {
-        mac: ["meta", "shift", "i"],
-        windows: ["ctrl", "shift", "i"],
+        mac: ["i"],
+        windows: ["i"],
       },
       action: options.toggleSmartInput,
       priority: 75,

@@ -148,7 +148,7 @@ interface ParsedTask {
 
 - **Smart Input Mode**: Natural language processing with live preview
 - **Traditional Mode**: Classic form-based input
-- **Keyboard Shortcut**: `Cmd/Ctrl + Shift + I` to toggle modes
+- **Keyboard Shortcut**: `I` to toggle modes
 
 ### Live Feedback
 
@@ -164,12 +164,12 @@ interface ParsedTask {
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut               | Action                                    |
-| ---------------------- | ----------------------------------------- |
-| `Cmd/Ctrl + J`         | Focus task input (adapts to current mode) |
-| `Cmd/Ctrl + Shift + I` | Toggle between Smart/Traditional input    |
-| `Enter`                | Submit task when in preview mode          |
-| `Escape`               | Clear current input                       |
+| Shortcut       | Action                                    |
+| -------------- | ----------------------------------------- |
+| `Cmd/Ctrl + J` | Focus task input (adapts to current mode) |
+| `I`            | Toggle between Smart/Traditional input    |
+| `Enter`        | Submit task when in preview mode          |
+| `Escape`       | Clear current input                       |
 
 ## 🔧 Configuration & Customization
 
