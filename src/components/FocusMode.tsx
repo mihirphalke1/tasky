@@ -312,19 +312,15 @@ export function FocusMode({
   const [autoExitTimer, setAutoExitTimer] = useState<NodeJS.Timeout | null>(
     null
   );
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  // New states for enhanced layout
   const [showSidePanel, setShowSidePanel] = useState(false);
   const [sidePanelContent, setSidePanelContent] = useState<
-    "pomodoro" | "shortcuts" | "notes" | null
-  >(null);
-
-  // States for controlling pomodoro timer and quick notes
+    "notes" | "pomodoro" | "shortcuts"
+  >("notes");
   const [pomodoroIsRunning, setPomodoroIsRunning] = useState(false);
-  const [showQuickNoteDialog, setShowQuickNoteDialog] = useState(false);
-  const [pomodoroToggleTrigger, setPomodoroToggleTrigger] = useState(false);
   const [pomodoroTimerActive, setPomodoroTimerActive] = useState(false);
   const [pomodoroSettingsOpen, setPomodoroSettingsOpen] = useState(false);
+  const [pomodoroToggleTrigger, setPomodoroToggleTrigger] = useState(false);
+  const [showQuickNoteDialog, setShowQuickNoteDialog] = useState(false);
 
   // Task detail modal state
   const [showTaskDetail, setShowTaskDetail] = useState(false);
@@ -706,23 +702,18 @@ export function FocusMode({
       if (!pomodoroTimerActive) {
         setPomodoroTimerActive(true);
       }
-      setShowShortcuts(false);
     }
   };
 
   const handleToggleShortcuts = () => {
     if (showSidePanel && sidePanelContent === "shortcuts") {
-      // Close side panel if shortcuts is already open
+      // Close shortcuts side panel
       setShowSidePanel(false);
-      setSidePanelContent(null);
-      setShowShortcuts(false);
+      setSidePanelContent("notes");
     } else {
       // Open shortcuts side panel
       setShowSidePanel(true);
       setSidePanelContent("shortcuts");
-      setShowShortcuts(true);
-      // Don't affect pomodoro mode when showing shortcuts
-      // Keep the timer active if it was running
     }
   };
 
@@ -1545,15 +1536,14 @@ export function FocusMode({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-[#FAF8F6] dark:bg-gray-900">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
           "fixed inset-0 z-50",
-          !backgroundImage &&
-            "bg-[linear-gradient(to_bottom,_#faf8f6_0%,_#efe7dd_100%)] dark:bg-[linear-gradient(to_bottom,_#18181b_0%,_#23272e_100%)]",
+          !backgroundImage && "bg-transparent",
           focusLockEnabled && "ring-4 ring-red-500/20"
         )}
         style={{
@@ -1684,19 +1674,6 @@ export function FocusMode({
                   isLocked={focusLockEnabled}
                   onToggle={handleFocusLockToggle}
                 />
-                {!isMobile && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleShortcuts}
-                    className={cn(
-                      "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200",
-                      styles["hidden-mobile-shortcut"]
-                    )}
-                  >
-                    <span className="text-lg">⌘</span>
-                  </Button>
-                )}
                 <QuickNoteButton
                   currentTaskId={selectedTask?.id}
                   currentTaskTitle={selectedTask?.title}
@@ -1739,14 +1716,6 @@ export function FocusMode({
                   isLocked={focusLockEnabled}
                   onToggle={handleFocusLockToggle}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToggleShortcuts}
-                  className="text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200"
-                >
-                  <span className="text-lg">⌘</span>
-                </Button>
                 <QuickNoteButton
                   currentTaskId={selectedTask?.id}
                   currentTaskTitle={selectedTask?.title}
@@ -2735,10 +2704,8 @@ export function FocusMode({
                   onClick={handleToggleShortcuts}
                   className="text-xs text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md px-2 sm:px-3 py-1.5"
                 >
-                  <span className="mr-1 text-sm">⌘</span>
                   <span className="hidden xs:inline">View Shortcuts</span>
                   <span className="xs:hidden">Shortcuts</span>
-                  <span className="hidden sm:inline ml-1">(Press ⌘+/)</span>
                 </Button>
               )}
               {focusLockEnabled ? (
@@ -2761,109 +2728,7 @@ export function FocusMode({
           isOpen={showTaskDetail}
           onClose={closeTaskDetail}
         />
-
-        {/* Keyboard Shortcuts Dialog - Only show on desktop */}
-        {!isMobile && (
-          <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gradient-to-br from-ivory to-sand dark:from-gray-900 dark:to-gray-800 border-gold/20">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent">
-                  Keyboard Shortcuts
-                </DialogTitle>
-                <DialogDescription className="text-charcoal/70 dark:text-gray-300">
-                  Master your productivity with these keyboard shortcuts
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                {/* Navigation Shortcuts */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
-                    Navigation
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {shortcuts
-                      .filter((s) => s.category === "navigation")
-                      .map((shortcut) => (
-                        <div
-                          key={shortcut.id}
-                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
-                        >
-                          <span className="text-sm text-charcoal dark:text-white">
-                            {shortcut.description}
-                          </span>
-                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
-                            {formatShortcutKeys(
-                              isMac()
-                                ? shortcut.keys.mac
-                                : shortcut.keys.windows
-                            )}
-                          </kbd>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Task Management Shortcuts */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
-                    Task Management
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {shortcuts
-                      .filter((s) => s.category === "tasks")
-                      .map((shortcut) => (
-                        <div
-                          key={shortcut.id}
-                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
-                        >
-                          <span className="text-sm text-charcoal dark:text-white">
-                            {shortcut.description}
-                          </span>
-                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
-                            {formatShortcutKeys(
-                              isMac()
-                                ? shortcut.keys.mac
-                                : shortcut.keys.windows
-                            )}
-                          </kbd>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* General Shortcuts */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
-                    General
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {shortcuts
-                      .filter((s) => s.category === "general")
-                      .map((shortcut) => (
-                        <div
-                          key={shortcut.id}
-                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
-                        >
-                          <span className="text-sm text-charcoal dark:text-white">
-                            {shortcut.description}
-                          </span>
-                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
-                            {formatShortcutKeys(
-                              isMac()
-                                ? shortcut.keys.mac
-                                : shortcut.keys.windows
-                            )}
-                          </kbd>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </motion.div>
-    </>
+    </div>
   );
 }

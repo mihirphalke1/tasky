@@ -12,6 +12,7 @@ import {
   Minus,
   X,
   RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -445,6 +446,10 @@ export function PomodoroTimer({
               (completedPomodoros % settings.pomodorosUntilLongBreak)}{" "}
             until long break
           </div>
+          <div className="mt-2 sm:mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <span>Stay on this page to keep timer running</span>
+          </div>
         </div>
 
         {/* Settings Panel - Made responsive */}
@@ -489,7 +494,7 @@ export function PomodoroTimer({
                     <Label className="text-xs sm:text-sm">
                       Focus Duration (minutes)
                     </Label>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -499,7 +504,7 @@ export function PomodoroTimer({
                             Math.max(1, settings.focusDuration - 1)
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -512,7 +517,7 @@ export function PomodoroTimer({
                             Math.max(1, parseInt(e.target.value) || 1)
                           )
                         }
-                        className="w-12 sm:w-16 text-center h-7 sm:h-8 text-xs sm:text-sm"
+                        className="w-20 sm:w-24 text-center h-8 sm:h-9 text-sm sm:text-base"
                         min="1"
                       />
                       <Button
@@ -524,7 +529,7 @@ export function PomodoroTimer({
                             settings.focusDuration + 1
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -535,7 +540,7 @@ export function PomodoroTimer({
                     <Label className="text-xs sm:text-sm">
                       Short Break (minutes)
                     </Label>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -545,7 +550,7 @@ export function PomodoroTimer({
                             Math.max(1, settings.shortBreakDuration - 1)
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -558,7 +563,7 @@ export function PomodoroTimer({
                             Math.max(1, parseInt(e.target.value) || 1)
                           )
                         }
-                        className="w-12 sm:w-16 text-center h-7 sm:h-8 text-xs sm:text-sm"
+                        className="w-20 sm:w-24 text-center h-8 sm:h-9 text-sm sm:text-base"
                         min="1"
                       />
                       <Button
@@ -570,7 +575,7 @@ export function PomodoroTimer({
                             settings.shortBreakDuration + 1
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -581,7 +586,7 @@ export function PomodoroTimer({
                     <Label className="text-xs sm:text-sm">
                       Long Break (minutes)
                     </Label>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -591,7 +596,7 @@ export function PomodoroTimer({
                             Math.max(1, settings.longBreakDuration - 1)
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -604,7 +609,7 @@ export function PomodoroTimer({
                             Math.max(1, parseInt(e.target.value) || 1)
                           )
                         }
-                        className="w-12 sm:w-16 text-center h-7 sm:h-8 text-xs sm:text-sm"
+                        className="w-20 sm:w-24 text-center h-8 sm:h-9 text-sm sm:text-base"
                         min="1"
                       />
                       <Button
@@ -616,7 +621,7 @@ export function PomodoroTimer({
                             settings.longBreakDuration + 1
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -627,7 +632,7 @@ export function PomodoroTimer({
                     <Label className="text-xs sm:text-sm">
                       Pomodoros until Long Break
                     </Label>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -637,7 +642,7 @@ export function PomodoroTimer({
                             Math.max(1, settings.pomodorosUntilLongBreak - 1)
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -650,7 +655,7 @@ export function PomodoroTimer({
                             Math.max(1, parseInt(e.target.value) || 1)
                           )
                         }
-                        className="w-12 sm:w-16 text-center h-7 sm:h-8 text-xs sm:text-sm"
+                        className="w-20 sm:w-24 text-center h-8 sm:h-9 text-sm sm:text-base"
                         min="1"
                       />
                       <Button
@@ -662,7 +667,7 @@ export function PomodoroTimer({
                             settings.pomodorosUntilLongBreak + 1
                           )
                         }
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                       >
                         <Plus className="h-3 w-3" />
                       </Button>

@@ -246,7 +246,7 @@ const TaskDetailPage = () => {
         setNotesLoading(false); // Even on error, stop loading state
         setNotesError("Failed to load notes. Please refresh the page.");
         // If there's an error, try to fetch notes manually as fallback
-        getNotesByTaskId(taskId)
+        getNotesByTaskId(user.uid, taskId)
           .then((fallbackNotes) => {
             setNotes(fallbackNotes);
             setNotesError(null); // Clear error if fallback succeeds
