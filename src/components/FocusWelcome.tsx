@@ -10,12 +10,14 @@ interface FocusWelcomeProps {
   tasks: Task[];
   backgroundImage?: string | null;
   onStartFocus: (task: Task, intention?: string) => void;
+  onExit?: () => void;
 }
 
 export function FocusWelcome({
   tasks,
   onStartFocus,
   backgroundImage,
+  onExit,
 }: FocusWelcomeProps) {
   const [intention, setIntention] = useState("");
   const [quote, setQuote] = useState(() => getRandomQuote());
@@ -42,6 +44,31 @@ export function FocusWelcome({
     >
       <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
       <Card className="w-full max-w-lg p-8 text-center relative backdrop-blur-sm bg-white/95 dark:bg-gray-900/95">
+        {/* Exit button in top-right if onExit is provided */}
+        {onExit && (
+          <Button
+            variant="ghost"
+            className="absolute top-4 right-4"
+            onClick={onExit}
+            aria-label="Exit Focus Mode"
+          >
+            <span className="sr-only">Exit</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </Button>
+        )}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
