@@ -341,7 +341,7 @@ export function FocusMode({
         return [];
       }
 
-      // Filter to show incomplete tasks that are NOT snoozed
+      // Filter to show incomplete tasks, including snoozed ones
       const validTasks = tasks.filter((task) => {
         if (!task || typeof task !== "object" || !task.id || !task.title) {
           console.warn("Invalid task found:", task);
@@ -349,11 +349,6 @@ export function FocusMode({
         }
 
         if (task.completed) {
-          return false;
-        }
-
-        // Filter out snoozed tasks that haven't reached their snooze time yet
-        if (task.snoozedUntil && isAfter(task.snoozedUntil, new Date())) {
           return false;
         }
 
@@ -627,26 +622,43 @@ export function FocusMode({
         return;
       }
 
-      const snoozeUntil = addHours(new Date(), hours);
+      const now = new Date();
+      let snoozeUntil: Date;
+
+      // If task is already snoozed, add hours to current snooze time
+      if (task.snoozedUntil && isAfter(task.snoozedUntil, now)) {
+        snoozeUntil = addHours(task.snoozedUntil, hours);
+      } else {
+        snoozeUntil = addHours(now, hours);
+      }
+
+      // Enforce 2-hour maximum snooze time
+      const maxSnoozeTime = addHours(now, 2);
+      if (isAfter(snoozeUntil, maxSnoozeTime)) {
+        snoozeUntil = maxSnoozeTime;
+        toast.info("Maximum snooze time is 2 hours", {
+          duration: 2000,
+        });
+      }
 
       const updatedTask = {
         ...task,
         snoozedUntil: snoozeUntil,
-        lastModified: new Date(),
+        lastModified: now,
       };
 
       onTaskUpdate(taskId, updatedTask);
-      toast.success(`Task snoozed for ${hours} hour${hours > 1 ? "s" : ""}`, {
-        description: `Will appear again at ${format(snoozeUntil, "h:mm a")}`,
+      toast.success(`Task snoozed until ${format(snoozeUntil, "h:mm a")}`, {
         duration: 2000,
       });
 
       // Set transition message and direction for moving to next task
       setAnimationDirection("right");
       setTransitionMessage(
-        `Task snoozed for ${hours} hour${
-          hours > 1 ? "s" : ""
-        }. Moving to next task...`
+        `Task snoozed until ${format(
+          snoozeUntil,
+          "h:mm a"
+        )}. Moving to next task...`
       );
       handleNextTask();
     } catch (error) {
