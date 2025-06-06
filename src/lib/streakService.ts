@@ -101,25 +101,13 @@ export const calculateDailyStats = async (
   const dayStart = startOfDay(dateObj);
   const dayEnd = endOfDay(dateObj);
 
-  // Filter tasks that were created or modified on this day, or are relevant to this day
+  // NEW: Filter tasks that are due today (dueDate within this day)
   const dayTasks = tasks.filter((task) => {
-    // Include tasks that were created on this day
-    const createdOnDay = task.createdAt >= dayStart && task.createdAt <= dayEnd;
-
-    // Include tasks that were completed on this day
-    const completedOnDay =
-      task.completedAt &&
-      task.completedAt >= dayStart &&
-      task.completedAt <= dayEnd;
-
-    // Include tasks that were modified on this day (e.g., status changed)
-    const modifiedOnDay =
-      task.lastModified >= dayStart && task.lastModified <= dayEnd;
-
-    return (createdOnDay || completedOnDay || modifiedOnDay) && !task.hidden;
+    if (!task.dueDate) return false;
+    return task.dueDate >= dayStart && task.dueDate <= dayEnd && !task.hidden;
   });
 
-  // Only count tasks as completed if they were actually completed on this specific day
+  // Only count tasks as completed if they were due today and completed today
   const completedTasks = dayTasks.filter(
     (task) =>
       task.completed &&

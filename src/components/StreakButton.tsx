@@ -24,6 +24,8 @@ import {
 import { StreakData } from "@/types";
 import StreakCalendar from "./StreakCalendar";
 import { cn } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 interface StreakButtonProps {
   className?: string;
@@ -137,7 +139,6 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
             const { updateDoc, doc, Timestamp } = await import(
               "firebase/firestore"
             );
-            const { db } = await import("@/lib/firebase");
 
             const streakRef = doc(db, "streakData", user.uid);
             await updateDoc(streakRef, {
@@ -187,6 +188,41 @@ const StreakButton = forwardRef<StreakButtonRef, StreakButtonProps>(
           }
         };
       }
+    }, [user?.uid]);
+
+    // Real-time Firestore subscription for instant streak updates
+    useEffect(() => {
+      if (!user?.uid) return;
+      const streakRef = doc(db, "streakData", user.uid);
+      setIsLoading(true);
+      const unsubscribe = onSnapshot(
+        streakRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            setStreakData({
+              id: snapshot.id,
+              userId: data.userId,
+              currentStreak: data.currentStreak || 0,
+              longestStreak: data.longestStreak || 0,
+              totalDaysActive: data.totalDaysActive || 0,
+              lastActiveDate: data.lastActiveDate || "",
+              streakThreshold: data.streakThreshold || 50,
+              lastUpdated: data.lastUpdated?.toDate() || new Date(),
+              streakHistory: data.streakHistory || [],
+            });
+            setIsLoading(false);
+          } else {
+            setStreakData(null);
+            setIsLoading(false);
+          }
+        },
+        (err) => {
+          setError(err.message || "Failed to load streak data");
+          setIsLoading(false);
+        }
+      );
+      return () => unsubscribe();
     }, [user?.uid]);
 
     const loadStreakData = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Task } from "../types";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -83,177 +83,182 @@ interface FocusModeProps {
 }
 
 // Task Detail Modal Component
-const TaskDetailModal = ({
-  task,
-  isOpen,
-  onClose,
-}: {
-  task: Task | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!task) return null;
+const TaskDetailModal = memo(
+  ({
+    task,
+    isOpen,
+    onClose,
+  }: {
+    task: Task | null;
+    isOpen: boolean;
+    onClose: () => void;
+  }) => {
+    if (!task) return null;
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gradient-to-br from-ivory to-sand dark:from-gray-900 dark:to-gray-800 border-gold/20">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent">
+              Task Details
+            </DialogTitle>
+            <DialogDescription className="text-charcoal/70 dark:text-gray-300">
+              Complete information about your task
+            </DialogDescription>
+          </DialogHeader>
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gradient-to-br from-ivory to-sand dark:from-gray-900 dark:to-gray-800 border-gold/20">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent">
-            Task Details
-          </DialogTitle>
-          <DialogDescription className="text-charcoal/70 dark:text-gray-300">
-            Complete information about your task
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Task Title & Status */}
-          <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-            <h3 className="text-xl font-semibold text-charcoal dark:text-white mb-2 break-words">
-              {task.title}
-            </h3>
-            {task.description && (
-              <p className="text-softgrey dark:text-gray-300 text-sm leading-relaxed break-words">
-                {task.description}
-              </p>
-            )}
-          </div>
-
-          {/* Task Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Priority */}
+          <div className="space-y-6">
+            {/* Task Title & Status */}
             <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Flag className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
+              <h3 className="text-xl font-semibold text-charcoal dark:text-white mb-2 break-words">
+                {task.title}
+              </h3>
+              {task.description && (
+                <p className="text-softgrey dark:text-gray-300 text-sm leading-relaxed break-words">
+                  {task.description}
+                </p>
+              )}
+            </div>
+
+            {/* Task Metadata */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Priority */}
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Flag className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Priority
+                  </span>
+                </div>
+                <Badge
+                  className={cn(
+                    "text-xs font-medium",
+                    task.priority === "high"
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-red-200"
+                      : task.priority === "medium"
+                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 border-yellow-200"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200"
+                  )}
+                >
+                  {task.priority.charAt(0).toUpperCase() +
+                    task.priority.slice(1)}{" "}
                   Priority
-                </span>
+                </Badge>
               </div>
-              <Badge
-                className={cn(
-                  "text-xs font-medium",
-                  task.priority === "high"
-                    ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-red-200"
-                    : task.priority === "medium"
-                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 border-yellow-200"
-                    : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200"
-                )}
-              >
-                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}{" "}
-                Priority
-              </Badge>
+
+              {/* Due Date */}
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Due Date
+                  </span>
+                </div>
+                <p className="text-sm text-softgrey dark:text-gray-300">
+                  {task.dueDate
+                    ? format(task.dueDate, "MMMM dd, yyyy 'at' h:mm a")
+                    : "No due date set"}
+                </p>
+              </div>
+
+              {/* Section */}
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Section
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="text-xs border-gold/30 text-gold"
+                >
+                  {task.section.charAt(0).toUpperCase() + task.section.slice(1)}
+                </Badge>
+              </div>
+
+              {/* Created Date */}
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Created
+                  </span>
+                </div>
+                <p className="text-sm text-softgrey dark:text-gray-300">
+                  {format(task.createdAt, "MMMM dd, yyyy 'at' h:mm a")}
+                </p>
+              </div>
             </div>
 
-            {/* Due Date */}
-            <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
-                  Due Date
-                </span>
-              </div>
-              <p className="text-sm text-softgrey dark:text-gray-300">
-                {task.dueDate
-                  ? format(task.dueDate, "MMMM dd, yyyy 'at' h:mm a")
-                  : "No due date set"}
-              </p>
-            </div>
-
-            {/* Section */}
-            <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
-                  Section
-                </span>
-              </div>
-              <Badge
-                variant="outline"
-                className="text-xs border-gold/30 text-gold"
-              >
-                {task.section.charAt(0).toUpperCase() + task.section.slice(1)}
-              </Badge>
-            </div>
-
-            {/* Created Date */}
-            <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
-                  Created
-                </span>
-              </div>
-              <p className="text-sm text-softgrey dark:text-gray-300">
-                {format(task.createdAt, "MMMM dd, yyyy 'at' h:mm a")}
-              </p>
-            </div>
-          </div>
-
-          {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
-                  Tags
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {task.tags.map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="text-xs bg-gold/10 text-gold border-gold/30 hover:bg-gold/20 transition-colors"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Status Information */}
-          {(task.completed || task.snoozedUntil) && (
-            <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-charcoal dark:text-white">
-                  Status
-                </span>
-              </div>
-              <div className="space-y-2">
-                {task.completed && (
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200">
-                      Completed
+            {/* Tags */}
+            {task.tags && task.tags.length > 0 && (
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <Tag className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Tags
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {task.tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="text-xs bg-gold/10 text-gold border-gold/30 hover:bg-gold/20 transition-colors"
+                    >
+                      {tag}
                     </Badge>
-                    {task.completedAt && (
-                      <span className="text-xs text-softgrey dark:text-gray-400">
-                        on {format(task.completedAt, "MMM dd, yyyy")}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {task.snoozedUntil &&
-                  isAfter(task.snoozedUntil, new Date()) && (
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Status Information */}
+            {(task.completed || task.snoozedUntil) && (
+              <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gold/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle className="h-4 w-4 text-gold" />
+                  <span className="text-sm font-medium text-charcoal dark:text-white">
+                    Status
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {task.completed && (
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200">
-                        Snoozed
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200">
+                        Completed
                       </Badge>
-                      <span className="text-xs text-softgrey dark:text-gray-400">
-                        until{" "}
-                        {format(task.snoozedUntil, "MMM dd, yyyy 'at' h:mm a")}
-                      </span>
+                      {task.completedAt && (
+                        <span className="text-xs text-softgrey dark:text-gray-400">
+                          on {format(task.completedAt, "MMM dd, yyyy")}
+                        </span>
+                      )}
                     </div>
                   )}
+                  {task.snoozedUntil &&
+                    isAfter(task.snoozedUntil, new Date()) && (
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200">
+                          Snoozed
+                        </Badge>
+                        <span className="text-xs text-softgrey dark:text-gray-400">
+                          until{" "}
+                          {format(
+                            task.snoozedUntil,
+                            "MMM dd, yyyy 'at' h:mm a"
+                          )}
+                        </span>
+                      </div>
+                    )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+);
 
 const POMODORO_DURATION = 25 * 60; // 25 minutes in seconds
 const BREAK_DURATION = 5 * 60; // 5 minutes in seconds
@@ -324,6 +329,7 @@ export function FocusMode({
 
   // Task detail modal state
   const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const closeTaskDetail = useCallback(() => setShowTaskDetail(false), []);
 
   // Notes states
   const [taskNotes, setTaskNotes] = useState<Note[]>([]);
@@ -1552,1163 +1558,1175 @@ export function FocusMode({
         {/* Overlay for better readability */}
         <div className="absolute inset-0 bg-black/10 dark:bg-black/30" />
 
-        {/* Exit button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleExit}
-          className={cn(
-            "fixed top-4 right-4 text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md rounded-full p-2 z-50",
-            focusLockEnabled && "opacity-50 cursor-not-allowed",
-            isExiting && "opacity-75 animate-pulse"
-          )}
-          disabled={focusLockEnabled || isExiting}
-          aria-label="Exit Focus Mode"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-
         <div className="h-full flex flex-col relative">
           {/* Mobile-Responsive Header with Progress */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b gap-3 sm:gap-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-gold/30 shadow-lg">
-            {/* Mobile: Show progress inline */}
-            <div className="flex items-center gap-2 sm:hidden">
-              <div className="flex items-center gap-1 px-2 py-1 bg-gold/10 border border-gold/30 rounded text-xs font-medium text-gold">
-                <span>
-                  Task {safeCurrentTaskIndex + 1}/{processedTasks.length}
+            {/* Mobile: Exit button and main controls */}
+            <div className="flex items-center justify-between w-full sm:w-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExit}
+                className={cn(
+                  "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 transition-all duration-200 text-sm sm:text-base border border-transparent hover:border-gold/30 hover:shadow-md",
+                  focusLockEnabled && "opacity-50 cursor-not-allowed",
+                  isExiting && "opacity-75 animate-pulse"
+                )}
+                disabled={focusLockEnabled || isExiting}
+              >
+                <X className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isExiting ? "Exiting..." : "Exit Focus Mode"}
+                </span>
+                <span className="sm:hidden">
+                  {isExiting ? "Exiting..." : "Exit"}
+                </span>
+              </Button>
+
+              {/* Mobile: Show progress inline */}
+              <div className="flex items-center gap-2 sm:hidden">
+                <div className="flex items-center gap-1 px-2 py-1 bg-gold/10 border border-gold/30 rounded text-xs font-medium text-gold">
+                  <span>
+                    Task {safeCurrentTaskIndex + 1}/{processedTasks.length}
+                  </span>
+                </div>
+                <div className="w-16">
+                  <Progress value={safeProgress} className="h-2" />
+                </div>
+                <span className="text-xs text-charcoal dark:text-white whitespace-nowrap">
+                  {completedTasks.length}/{sessionTasks.length}
                 </span>
               </div>
-              <div className="w-16">
+            </div>
+
+            {/* Desktop: Centered controls */}
+            <div className="hidden sm:flex items-center gap-4">
+              {/* Task Position Indicator */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-gold/10 border border-gold/30 rounded-lg hover:bg-gold/20 transition-colors">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePreviousTask}
+                  disabled={safeCurrentTaskIndex === 0}
+                  className="h-6 w-6 p-0 text-gold hover:bg-gold/20 disabled:opacity-30 transition-all duration-200"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                </Button>
+                <span className="text-sm font-semibold text-gold min-w-fit px-2">
+                  Task {safeCurrentTaskIndex + 1} of {processedTasks.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNextTask}
+                  disabled={safeCurrentTaskIndex === processedTasks.length - 1}
+                  className="h-6 w-6 p-0 text-gold hover:bg-gold/20 disabled:opacity-30 transition-all duration-200"
+                >
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <div className="w-32">
                 <Progress value={safeProgress} className="h-2" />
+                <p className="text-xs text-charcoal dark:text-white mt-1 text-center">
+                  {completedTasks.length} of {sessionTasks.length} completed
+                </p>
               </div>
-              <span className="text-xs text-charcoal dark:text-white whitespace-nowrap">
-                {completedTasks.length}/{sessionTasks.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop: Centered controls */}
-          <div className="hidden sm:flex items-center gap-4">
-            {/* Task Position Indicator */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-gold/10 border border-gold/30 rounded-lg hover:bg-gold/20 transition-colors">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePreviousTask}
-                disabled={safeCurrentTaskIndex === 0}
-                className="h-6 w-6 p-0 text-gold hover:bg-gold/20 disabled:opacity-30 transition-all duration-200"
-              >
-                <ArrowLeft className="h-3 w-3" />
-              </Button>
-              <span className="text-sm font-semibold text-gold min-w-fit px-2">
-                Task {safeCurrentTaskIndex + 1} of {processedTasks.length}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNextTask}
-                disabled={safeCurrentTaskIndex === processedTasks.length - 1}
-                className="h-6 w-6 p-0 text-gold hover:bg-gold/20 disabled:opacity-30 transition-all duration-200"
-              >
-                <ArrowRight className="h-3 w-3" />
-              </Button>
-            </div>
-
-            <div className="w-32">
-              <Progress value={safeProgress} className="h-2" />
-              <p className="text-xs text-charcoal dark:text-white mt-1 text-center">
-                {completedTasks.length} of {sessionTasks.length} completed
-              </p>
-            </div>
-            {/* Condensed Intention Reminder */}
-            {sessionIntention && (
-              <div className="max-w-xs">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20 hover:bg-gold/20 transition-colors">
-                  <span className="text-xs">✨</span>
-                  <p className="text-xs text-gold font-medium truncate">
-                    {sessionIntention}
-                  </p>
-                </div>
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleTogglePomodoro}
-              className={cn(
-                "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 hover:shadow-md transition-all duration-200",
-                isPomodoroMode && "text-gold bg-gold/10 border-gold/30"
-              )}
-            >
-              <Timer className="mr-2 h-4 w-4" />
-              Pomodoro
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleNotes}
-              className={cn(
-                "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 hover:shadow-md transition-all duration-200",
-                showSidePanel &&
-                  sidePanelContent === "notes" &&
-                  "text-gold bg-gold/10 border-gold/30"
-              )}
-            >
-              <StickyNote className="mr-2 h-4 w-4" />
-              Task Notes
-            </Button>
-            <div className="flex items-center gap-2">
-              <FocusLock
-                isLocked={focusLockEnabled}
-                onToggle={handleFocusLockToggle}
-              />
-              <QuickNoteButton
-                currentTaskId={selectedTask?.id}
-                currentTaskTitle={selectedTask?.title}
-                variant="ghost"
-                size="sm"
-              />
-            </div>
-          </div>
-
-          {/* Mobile: Secondary controls */}
-          <div className="flex sm:hidden items-center justify-between w-full">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleTogglePomodoro}
-              className={cn(
-                "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 text-sm border border-transparent hover:border-gold/30 transition-all duration-200",
-                isPomodoroMode && "text-gold bg-gold/10 border-gold/30"
-              )}
-            >
-              <Timer className="mr-2 h-4 w-4" />
-              Pomodoro
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleNotes}
-              className={cn(
-                "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 text-sm border border-transparent hover:border-gold/30 transition-all duration-200",
-                showSidePanel &&
-                  sidePanelContent === "notes" &&
-                  "text-gold bg-gold/10 border-gold/30"
-              )}
-            >
-              <StickyNote className="mr-2 h-4 w-4" />
-              Notes
-            </Button>
-            <div className="flex items-center gap-2">
-              <FocusLock
-                isLocked={focusLockEnabled}
-                onToggle={handleFocusLockToggle}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleToggleShortcuts}
-                className="text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200"
-              >
-                <span className="text-lg">⌘</span>
-              </Button>
-              <QuickNoteButton
-                currentTaskId={selectedTask?.id}
-                currentTaskTitle={selectedTask?.title}
-                variant="ghost"
-                size="sm"
-              />
-            </div>
-          </div>
-
-          {/* Mobile: Intention Reminder */}
-          {sessionIntention && (
-            <div className="flex sm:hidden justify-center w-full mt-2">
-              <div className="max-w-sm">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20">
-                  <span className="text-xs">✨</span>
-                  <p className="text-xs text-gold font-medium truncate">
-                    {sessionIntention}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Main Content Area - Now with proper 50:50 layout when pomodoro is active */}
-        <div className="flex-1 flex relative overflow-hidden">
-          {/* Main task content area */}
-          <motion.div
-            initial={false}
-            animate={{
-              width:
-                showSidePanel && sidePanelContent === "pomodoro"
-                  ? isMobile
-                    ? "0%"
-                    : "50%"
-                  : "100%",
-              x: 0,
-            }}
-            transition={{
-              duration: 0.3,
-              ease: [0.4, 0.0, 0.2, 1],
-            }}
-            className={cn(
-              "flex items-center justify-center p-3 sm:p-4 overflow-y-auto",
-              showSidePanel &&
-                sidePanelContent === "pomodoro" &&
-                !isMobile &&
-                "border-r border-gold/20",
-              isMobile &&
-                showSidePanel &&
-                sidePanelContent === "pomodoro" &&
-                "hidden"
-            )}
-          >
-            <AnimatePresence mode="wait">
-              {showTransition ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-full max-w-lg flex items-center justify-center"
-                >
-                  <Card className="p-6 text-center backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-gold/30 shadow-xl">
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.8, 1, 0.8],
-                        rotate: [0, 5, -5, 0],
-                      }}
-                      transition={{
-                        duration: 2.5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        scale: {
-                          duration: 2.5,
-                          ease: "easeInOut",
-                        },
-                      }}
-                      className="text-4xl mb-4"
-                    >
-                      ✨
-                    </motion.div>
-                    <h2 className="text-xl font-semibold mb-2 text-gold">
-                      {transitionMessage}
-                    </h2>
-                    <p className="text-sm text-charcoal/70 dark:text-gray-300">
-                      Take a deep breath and prepare for the next task
+              {/* Condensed Intention Reminder */}
+              {sessionIntention && (
+                <div className="max-w-xs">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20 hover:bg-gold/20 transition-colors">
+                    <span className="text-xs">✨</span>
+                    <p className="text-xs text-gold font-medium truncate">
+                      {sessionIntention}
                     </p>
-                  </Card>
-                </motion.div>
-              ) : selectedTask ? (
-                <motion.div
-                  key={selectedTask.id}
-                  initial={{
-                    opacity: 0,
-                    scale: 0.85,
-                    rotateY: animationDirection === "right" ? 90 : -90,
-                    x: animationDirection === "right" ? 100 : -100,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: [0.85, 1.05, 1],
-                    rotateY: 0,
-                    x: 0,
-                  }}
-                  exit={{
-                    opacity: [1, 0.8, 0],
-                    scale: [1, 1.05, 0.85],
-                    rotateY: animationDirection === "right" ? -90 : 90,
-                    x: animationDirection === "right" ? -100 : 100,
-                  }}
-                  transition={{
-                    duration: 0.6,
-                    ease: [0.215, 0.61, 0.355, 1],
-                    scale: {
-                      times: [0, 0.6, 1],
-                      duration: 0.6,
-                      ease: "easeOut",
-                    },
-                  }}
-                  className="w-full max-w-md"
+                  </div>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleTogglePomodoro}
+                className={cn(
+                  "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 hover:shadow-md transition-all duration-200",
+                  isPomodoroMode && "text-gold bg-gold/10 border-gold/30"
+                )}
+              >
+                <Timer className="mr-2 h-4 w-4" />
+                Pomodoro
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleNotes}
+                className={cn(
+                  "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 hover:shadow-md transition-all duration-200",
+                  showSidePanel &&
+                    sidePanelContent === "notes" &&
+                    "text-gold bg-gold/10 border-gold/30"
+                )}
+              >
+                <StickyNote className="mr-2 h-4 w-4" />
+                Task Notes
+              </Button>
+              <div className="flex items-center gap-2">
+                <FocusLock
+                  isLocked={focusLockEnabled}
+                  onToggle={handleFocusLockToggle}
+                />
+                <QuickNoteButton
+                  currentTaskId={selectedTask?.id}
+                  currentTaskTitle={selectedTask?.title}
+                  variant="ghost"
+                  size="sm"
+                />
+              </div>
+            </div>
+
+            {/* Mobile: Secondary controls */}
+            <div className="flex sm:hidden items-center justify-between w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleTogglePomodoro}
+                className={cn(
+                  "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 text-sm border border-transparent hover:border-gold/30 transition-all duration-200",
+                  isPomodoroMode && "text-gold bg-gold/10 border-gold/30"
+                )}
+              >
+                <Timer className="mr-2 h-4 w-4" />
+                Pomodoro
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleNotes}
+                className={cn(
+                  "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 text-sm border border-transparent hover:border-gold/30 transition-all duration-200",
+                  showSidePanel &&
+                    sidePanelContent === "notes" &&
+                    "text-gold bg-gold/10 border-gold/30"
+                )}
+              >
+                <StickyNote className="mr-2 h-4 w-4" />
+                Notes
+              </Button>
+              <div className="flex items-center gap-2">
+                <FocusLock
+                  isLocked={focusLockEnabled}
+                  onToggle={handleFocusLockToggle}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleShortcuts}
+                  className="text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200"
                 >
-                  <Card className="p-4 sm:p-5 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-gold/30 shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <div className="flex flex-col space-y-4">
-                      {/* Task Header - Compact */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2 text-sm text-charcoal/70 dark:text-gray-400">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            Due:{" "}
-                            {format(
-                              selectedTask.dueDate || selectedTask.createdAt,
-                              "MMM dd"
-                            )}
-                          </span>
-                        </div>
-                        {selectedTask.priority && (
-                          <Badge
-                            className={cn(
-                              "text-xs font-medium",
-                              selectedTask.priority === "high"
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-red-200"
-                                : selectedTask.priority === "medium"
-                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 border-yellow-200"
-                                : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200"
-                            )}
-                          >
-                            {selectedTask.priority.charAt(0).toUpperCase() +
-                              selectedTask.priority.slice(1)}
-                          </Badge>
-                        )}
-                      </div>
+                  <span className="text-lg">⌘</span>
+                </Button>
+                <QuickNoteButton
+                  currentTaskId={selectedTask?.id}
+                  currentTaskTitle={selectedTask?.title}
+                  variant="ghost"
+                  size="sm"
+                />
+              </div>
+            </div>
 
-                      {/* Task Title and Description - Compact */}
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-bold mb-2 leading-tight break-words text-charcoal dark:text-white">
-                          {selectedTask.title}
-                        </h2>
-                        {selectedTask.description && (
-                          <p className="text-sm text-charcoal/70 dark:text-gray-300 break-words line-clamp-2">
-                            {selectedTask.description}
-                          </p>
-                        )}
-                      </div>
+            {/* Mobile: Intention Reminder */}
+            {sessionIntention && (
+              <div className="flex sm:hidden justify-center w-full mt-2">
+                <div className="max-w-sm">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/20">
+                    <span className="text-xs">✨</span>
+                    <p className="text-xs text-gold font-medium truncate">
+                      {sessionIntention}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-                      {/* Tags - If any */}
-                      {selectedTask.tags && selectedTask.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {selectedTask.tags.slice(0, 3).map((tag, index) => (
+          {/* Main Content Area - Now with proper 50:50 layout when pomodoro is active */}
+          <div className="flex-1 flex relative overflow-hidden">
+            {/* Main task content area */}
+            <motion.div
+              initial={false}
+              animate={{
+                width:
+                  showSidePanel && sidePanelContent === "pomodoro"
+                    ? isMobile
+                      ? "0%"
+                      : "50%"
+                    : "100%",
+                x: 0,
+              }}
+              transition={{
+                duration: 0.3,
+                ease: [0.4, 0.0, 0.2, 1],
+              }}
+              className={cn(
+                "flex items-center justify-center p-3 sm:p-4 overflow-y-auto",
+                showSidePanel &&
+                  sidePanelContent === "pomodoro" &&
+                  !isMobile &&
+                  "border-r border-gold/20",
+                isMobile &&
+                  showSidePanel &&
+                  sidePanelContent === "pomodoro" &&
+                  "hidden"
+              )}
+            >
+              <AnimatePresence mode="wait">
+                {showTransition ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-lg flex items-center justify-center"
+                  >
+                    <Card className="p-6 text-center backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-gold/30 shadow-xl">
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.8, 1, 0.8],
+                          rotate: [0, 5, -5, 0],
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          scale: {
+                            duration: 2.5,
+                            ease: "easeInOut",
+                          },
+                        }}
+                        className="text-4xl mb-4"
+                      >
+                        ✨
+                      </motion.div>
+                      <h2 className="text-xl font-semibold mb-2 text-gold">
+                        {transitionMessage}
+                      </h2>
+                      <p className="text-sm text-charcoal/70 dark:text-gray-300">
+                        Take a deep breath and prepare for the next task
+                      </p>
+                    </Card>
+                  </motion.div>
+                ) : selectedTask ? (
+                  <motion.div
+                    key={selectedTask.id}
+                    initial={{
+                      opacity: 0,
+                      scale: 0.85,
+                      rotateY: animationDirection === "right" ? 90 : -90,
+                      x: animationDirection === "right" ? 100 : -100,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      scale: [0.85, 1.05, 1],
+                      rotateY: 0,
+                      x: 0,
+                    }}
+                    exit={{
+                      opacity: [1, 0.8, 0],
+                      scale: [1, 1.05, 0.85],
+                      rotateY: animationDirection === "right" ? -90 : 90,
+                      x: animationDirection === "right" ? -100 : 100,
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      ease: [0.215, 0.61, 0.355, 1],
+                      scale: {
+                        times: [0, 0.6, 1],
+                        duration: 0.6,
+                        ease: "easeOut",
+                      },
+                    }}
+                    className="w-full max-w-md"
+                  >
+                    <Card className="p-4 sm:p-5 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 border-gold/30 shadow-xl hover:shadow-2xl transition-all duration-300">
+                      <div className="flex flex-col space-y-4">
+                        {/* Task Header - Compact */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2 text-sm text-charcoal/70 dark:text-gray-400">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              Due:{" "}
+                              {format(
+                                selectedTask.dueDate || selectedTask.createdAt,
+                                "MMM dd"
+                              )}
+                            </span>
+                          </div>
+                          {selectedTask.priority && (
                             <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs bg-gold/10 text-gold border-gold/30"
+                              className={cn(
+                                "text-xs font-medium",
+                                selectedTask.priority === "high"
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-red-200"
+                                  : selectedTask.priority === "medium"
+                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 border-yellow-200"
+                                  : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300 border-green-200"
+                              )}
                             >
-                              {tag}
-                            </Badge>
-                          ))}
-                          {selectedTask.tags.length > 3 && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs bg-gray-100 text-gray-600 border-gray-300"
-                            >
-                              +{selectedTask.tags.length - 3}
+                              {selectedTask.priority.charAt(0).toUpperCase() +
+                                selectedTask.priority.slice(1)}
                             </Badge>
                           )}
                         </div>
-                      )}
 
-                      {/* View Details Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowTaskDetail(true)}
-                        className="w-full text-gold border-gold/30 hover:bg-gold/10 hover:border-gold/50 transition-all duration-200 hover:shadow-md"
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Task Details
-                      </Button>
-
-                      {/* Action Buttons - Compact */}
-                      <div className="space-y-3">
-                        {/* Primary Action */}
-                        <Button
-                          size="lg"
-                          onClick={() => handleMarkDone(selectedTask.id)}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white h-10 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
-                        >
-                          ✅ Mark Done
-                        </Button>
-
-                        {/* Secondary Actions */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePostpone(selectedTask.id)}
-                            className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 h-9 text-xs border-blue-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
-                          >
-                            💭 Tomorrow
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSnooze(selectedTask.id, 2)}
-                            className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20 h-9 text-xs border-purple-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md"
-                          >
-                            💤 Snooze 2h
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Mobile Navigation */}
-                      <div className="flex sm:hidden justify-between items-center pt-3 border-t border-gold/20">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handlePreviousTask}
-                          disabled={safeCurrentTaskIndex === 0}
-                          className="flex-1 text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 transition-all duration-200"
-                        >
-                          ← Previous
-                        </Button>
-                        <div className="px-4 text-sm text-charcoal/70 dark:text-gray-400">
-                          {safeCurrentTaskIndex + 1} of {processedTasks.length}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleNextTask}
-                          disabled={
-                            safeCurrentTaskIndex === processedTasks.length - 1
-                          }
-                          className="flex-1 text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 transition-all duration-200"
-                        >
-                          Next →
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ) : (
-                <div className="text-center text-charcoal/70 dark:text-gray-400">
-                  <p>No task selected</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Pomodoro Panel - Now integrated as proper 50% split */}
-          <AnimatePresence>
-            {showSidePanel && sidePanelContent === "pomodoro" && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{
-                  width: isMobile ? "100%" : "50%",
-                  opacity: 1,
-                }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{
-                  duration: 0.3,
-                  ease: [0.4, 0.0, 0.2, 1],
-                }}
-                className={cn(
-                  "bg-card flex flex-col overflow-hidden",
-                  isMobile && "absolute inset-0 z-50"
-                )}
-              >
-                {/* Pomodoro Panel Header */}
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 shrink-0">
-                  <h2 className="text-base sm:text-lg font-bold text-[#1A1A1A] dark:text-white">
-                    Pomodoro Timer
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleTogglePomodoro}
-                    className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Pomodoro Content */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: 0.1,
-                    ease: "easeOut",
-                  }}
-                  className="flex-1 overflow-y-auto p-3 sm:p-4"
-                >
-                  <div className="flex items-center justify-center h-full min-h-0">
-                    {/* Show the same timer instance but make it visible */}
-                    <div className="w-full max-w-sm">
-                      <PomodoroTimer
-                        isActive={pomodoroTimerActive}
-                        onComplete={handlePomodoroComplete}
-                        externalToggle={pomodoroToggleTrigger}
-                        onToggleChange={setPomodoroIsRunning}
-                        onSettingsToggle={setPomodoroSettingsOpen}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Shortcuts Panel - Keep as overlay for now */}
-          <AnimatePresence>
-            {showSidePanel && sidePanelContent === "shortcuts" && (
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed right-0 top-0 bottom-0 w-80 bg-card border-l shadow-xl z-50 flex flex-col"
-              >
-                {/* Side Panel Header */}
-                <div className="flex items-center justify-between p-4 border-b bg-muted/50">
-                  <h2 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
-                    Keyboard Shortcuts
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleShortcuts}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Side Panel Content */}
-                <div className="flex-1 overflow-y-auto">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="p-4 h-full"
-                  >
-                    {/* Shortcuts organized by category */}
-                    <div className="space-y-6">
-                      {/* Task Actions */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                          Task Actions
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Complete Task
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Enter
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Pomodoro Play/Pause
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Space
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Snooze Task (2h)
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                S
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Navigation */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                          Navigation
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Next Task
-                            </span>
-                            <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                              →
-                            </kbd>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Previous Task
-                            </span>
-                            <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                              ←
-                            </kbd>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Exit Focus Mode
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Esc
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Focus Tools */}
-                      <div>
-                        <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                          Focus Tools
-                        </h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Toggle Pomodoro
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                P
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Toggle Focus Lock
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                L
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Show/Hide Shortcuts
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                /
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Quick Note
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Ctrl
-                              </kbd>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                N
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              Task Notes
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                N
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer tip */}
-                    <div className="mt-8 p-3 bg-[#CDA351]/10 rounded-lg border border-[#CDA351]/20">
-                      <p className="text-xs text-[#CDA351] font-medium">
-                        💡 Tip: These shortcuts work even when Focus Lock is
-                        enabled (except exit shortcuts)
-                      </p>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Notes Panel - Slides from left as overlay */}
-          <AnimatePresence>
-            {showSidePanel && sidePanelContent === "notes" && (
-              <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed left-0 top-0 bottom-0 w-full sm:w-80 md:w-96 lg:w-80 bg-card border-r shadow-xl z-50 flex flex-col"
-              >
-                {/* Notes Panel Header */}
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 flex-shrink-0">
-                  <h2 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white flex items-center gap-2">
-                    <StickyNote className="h-4 w-4 sm:h-5 sm:w-5 text-gold" />
-                    <span className="text-sm sm:text-base">Task Notes</span>
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleNotes}
-                    className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Notes Panel Content */}
-                <div className="flex-1 overflow-y-auto min-h-0">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="p-3 sm:p-4 h-full flex flex-col"
-                  >
-                    {selectedTask ? (
-                      <div className="flex flex-col h-full space-y-3 sm:space-y-4">
-                        {/* Task Info Header */}
-                        <div className="p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700 flex-shrink-0">
-                          <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-xs sm:text-sm">
+                        {/* Task Title and Description - Compact */}
+                        <div>
+                          <h2 className="text-lg sm:text-xl font-bold mb-2 leading-tight break-words text-charcoal dark:text-white">
                             {selectedTask.title}
-                          </h3>
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                            Notes for this task
-                          </p>
+                          </h2>
+                          {selectedTask.description && (
+                            <p className="text-sm text-charcoal/70 dark:text-gray-300 break-words line-clamp-2">
+                              {selectedTask.description}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Add New Note */}
-                        <div className="space-y-2 sm:space-y-3 flex-shrink-0">
-                          <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Add a note:
-                          </label>
-                          <Textarea
-                            value={newNoteContent}
-                            onChange={(e) => setNewNoteContent(e.target.value)}
-                            placeholder="Write your note here..."
-                            className="min-h-[60px] sm:min-h-[80px] resize-none text-xs sm:text-sm"
-                            onKeyDown={(e) => {
-                              if (
-                                e.key === "Enter" &&
-                                (e.metaKey || e.ctrlKey)
-                              ) {
-                                e.preventDefault();
-                                handleSaveNote();
-                              }
-                            }}
-                          />
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                            <span className="text-xs text-gray-500">
-                              {newNoteContent.length}/500 chars • Cmd/Ctrl+Enter
-                              to save
-                            </span>
+                        {/* Tags - If any */}
+                        {selectedTask.tags && selectedTask.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedTask.tags.slice(0, 3).map((tag, index) => (
+                              <Badge
+                                key={index}
+                                variant="outline"
+                                className="text-xs bg-gold/10 text-gold border-gold/30"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {selectedTask.tags.length > 3 && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-gray-100 text-gray-600 border-gray-300"
+                              >
+                                +{selectedTask.tags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* View Details Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowTaskDetail(true)}
+                          className="w-full text-gold border-gold/30 hover:bg-gold/10 hover:border-gold/50 transition-all duration-200 hover:shadow-md"
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Task Details
+                        </Button>
+
+                        {/* Action Buttons - Compact */}
+                        <div className="space-y-3">
+                          {/* Primary Action */}
+                          <Button
+                            size="lg"
+                            onClick={() => handleMarkDone(selectedTask.id)}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white h-10 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                          >
+                            ✅ Mark Done
+                          </Button>
+
+                          {/* Secondary Actions */}
+                          <div className="grid grid-cols-2 gap-2">
                             <Button
+                              variant="outline"
                               size="sm"
-                              onClick={handleSaveNote}
-                              disabled={!newNoteContent.trim() || isSavingNote}
-                              className="bg-gold hover:bg-gold/90 text-white text-xs px-3 py-1.5 w-full sm:w-auto"
+                              onClick={() => handlePostpone(selectedTask.id)}
+                              className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 h-9 text-xs border-blue-200 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
                             >
-                              {isSavingNote ? "Saving..." : "Save Note"}
+                              💭 Tomorrow
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSnooze(selectedTask.id, 2)}
+                              className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20 h-9 text-xs border-purple-200 hover:border-purple-300 transition-all duration-200 hover:shadow-md"
+                            >
+                              💤 Snooze 2h
                             </Button>
                           </div>
                         </div>
 
-                        {/* Notes List */}
-                        <div className="flex flex-col flex-1 space-y-2 sm:space-y-3 min-h-0">
-                          <div className="flex items-center justify-between flex-shrink-0">
-                            <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Existing Notes
-                            </h4>
-                            <span className="text-xs text-gray-500">
-                              {taskNotes.length} note
-                              {taskNotes.length !== 1 ? "s" : ""}
-                            </span>
+                        {/* Mobile Navigation */}
+                        <div className="flex sm:hidden justify-between items-center pt-3 border-t border-gold/20">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handlePreviousTask}
+                            disabled={safeCurrentTaskIndex === 0}
+                            className="flex-1 text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 transition-all duration-200"
+                          >
+                            ← Previous
+                          </Button>
+                          <div className="px-4 text-sm text-charcoal/70 dark:text-gray-400">
+                            {safeCurrentTaskIndex + 1} of{" "}
+                            {processedTasks.length}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleNextTask}
+                            disabled={
+                              safeCurrentTaskIndex === processedTasks.length - 1
+                            }
+                            className="flex-1 text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 transition-all duration-200"
+                          >
+                            Next →
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ) : (
+                  <div className="text-center text-charcoal/70 dark:text-gray-400">
+                    <p>No task selected</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Pomodoro Panel - Now integrated as proper 50% split */}
+            <AnimatePresence>
+              {showSidePanel && sidePanelContent === "pomodoro" && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{
+                    width: isMobile ? "100%" : "50%",
+                    opacity: 1,
+                  }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.4, 0.0, 0.2, 1],
+                  }}
+                  className={cn(
+                    "bg-card flex flex-col overflow-hidden",
+                    isMobile && "absolute inset-0 z-50"
+                  )}
+                >
+                  {/* Pomodoro Panel Header */}
+                  <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 shrink-0">
+                    <h2 className="text-base sm:text-lg font-bold text-[#1A1A1A] dark:text-white">
+                      Pomodoro Timer
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleTogglePomodoro}
+                      className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Pomodoro Content */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: 0.1,
+                      ease: "easeOut",
+                    }}
+                    className="flex-1 overflow-y-auto p-3 sm:p-4"
+                  >
+                    <div className="flex items-center justify-center h-full min-h-0">
+                      {/* Show the same timer instance but make it visible */}
+                      <div className="w-full max-w-sm">
+                        <PomodoroTimer
+                          isActive={pomodoroTimerActive}
+                          onComplete={handlePomodoroComplete}
+                          externalToggle={pomodoroToggleTrigger}
+                          onToggleChange={setPomodoroIsRunning}
+                          onSettingsToggle={setPomodoroSettingsOpen}
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Shortcuts Panel - Keep as overlay for now */}
+            <AnimatePresence>
+              {showSidePanel && sidePanelContent === "shortcuts" && (
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed right-0 top-0 bottom-0 w-80 bg-card border-l shadow-xl z-50 flex flex-col"
+                >
+                  {/* Side Panel Header */}
+                  <div className="flex items-center justify-between p-4 border-b bg-muted/50">
+                    <h2 className="text-xl font-bold text-[#1A1A1A] dark:text-white">
+                      Keyboard Shortcuts
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleShortcuts}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Side Panel Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="p-4 h-full"
+                    >
+                      {/* Shortcuts organized by category */}
+                      <div className="space-y-6">
+                        {/* Task Actions */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Task Actions
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Complete Task
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Enter
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Pomodoro Play/Pause
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Space
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Snooze Task (2h)
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  S
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Navigation
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Next Task
+                              </span>
+                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                →
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Previous Task
+                              </span>
+                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                ←
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Exit Focus Mode
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Esc
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Focus Tools */}
+                        <div>
+                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
+                            Focus Tools
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Pomodoro
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  P
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Focus Lock
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  L
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Show/Hide Shortcuts
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  /
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Quick Note
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Ctrl
+                                </kbd>
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  N
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                Task Notes
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  N
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer tip */}
+                      <div className="mt-8 p-3 bg-[#CDA351]/10 rounded-lg border border-[#CDA351]/20">
+                        <p className="text-xs text-[#CDA351] font-medium">
+                          💡 Tip: These shortcuts work even when Focus Lock is
+                          enabled (except exit shortcuts)
+                        </p>
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Notes Panel - Slides from left as overlay */}
+            <AnimatePresence>
+              {showSidePanel && sidePanelContent === "notes" && (
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "-100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed left-0 top-0 bottom-0 w-full sm:w-80 md:w-96 lg:w-80 bg-card border-r shadow-xl z-50 flex flex-col"
+                >
+                  {/* Notes Panel Header */}
+                  <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 flex-shrink-0">
+                    <h2 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white flex items-center gap-2">
+                      <StickyNote className="h-4 w-4 sm:h-5 sm:w-5 text-gold" />
+                      <span className="text-sm sm:text-base">Task Notes</span>
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleNotes}
+                      className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Notes Panel Content */}
+                  <div className="flex-1 overflow-y-auto min-h-0">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="p-3 sm:p-4 h-full flex flex-col"
+                    >
+                      {selectedTask ? (
+                        <div className="flex flex-col h-full space-y-3 sm:space-y-4">
+                          {/* Task Info Header */}
+                          <div className="p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700 flex-shrink-0">
+                            <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-xs sm:text-sm">
+                              {selectedTask.title}
+                            </h3>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                              Notes for this task
+                            </p>
                           </div>
 
-                          {notesLoading ? (
-                            <div className="flex items-center justify-center py-6 sm:py-8">
-                              <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                          {/* Add New Note */}
+                          <div className="space-y-2 sm:space-y-3 flex-shrink-0">
+                            <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Add a note:
+                            </label>
+                            <Textarea
+                              value={newNoteContent}
+                              onChange={(e) =>
+                                setNewNoteContent(e.target.value)
+                              }
+                              placeholder="Write your note here..."
+                              className="min-h-[60px] sm:min-h-[80px] resize-none text-xs sm:text-sm"
+                              onKeyDown={(e) => {
+                                if (
+                                  e.key === "Enter" &&
+                                  (e.metaKey || e.ctrlKey)
+                                ) {
+                                  e.preventDefault();
+                                  handleSaveNote();
+                                }
+                              }}
+                            />
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                {newNoteContent.length}/500 chars •
+                                Cmd/Ctrl+Enter to save
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={handleSaveNote}
+                                disabled={
+                                  !newNoteContent.trim() || isSavingNote
+                                }
+                                className="bg-gold hover:bg-gold/90 text-white text-xs px-3 py-1.5 w-full sm:w-auto"
+                              >
+                                {isSavingNote ? "Saving..." : "Save Note"}
+                              </Button>
                             </div>
-                          ) : taskNotes.length === 0 ? (
-                            <div className="text-center py-6 sm:py-8">
-                              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-xs sm:text-sm text-gray-500">
-                                No notes yet
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                Add your first note above
-                              </p>
+                          </div>
+
+                          {/* Notes List */}
+                          <div className="flex flex-col flex-1 space-y-2 sm:space-y-3 min-h-0">
+                            <div className="flex items-center justify-between flex-shrink-0">
+                              <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Existing Notes
+                              </h4>
+                              <span className="text-xs text-gray-500">
+                                {taskNotes.length} note
+                                {taskNotes.length !== 1 ? "s" : ""}
+                              </span>
                             </div>
-                          ) : (
-                            <div className="flex-1 overflow-y-auto min-h-0">
-                              <div className="space-y-2 sm:space-y-3 pr-1 sm:pr-2">
-                                {taskNotes.map((note) => (
-                                  <div
-                                    key={note.id}
-                                    className="p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:shadow-md transition-shadow"
-                                  >
-                                    {editingNoteId === note.id ? (
-                                      <div className="space-y-2">
-                                        <Textarea
-                                          value={editNoteContent}
-                                          onChange={(e) =>
-                                            setEditNoteContent(e.target.value)
-                                          }
-                                          className="min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm"
-                                        />
-                                        <div className="flex gap-2">
-                                          <Button
-                                            size="sm"
-                                            onClick={saveEditedNote}
-                                            className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 flex-1 sm:flex-none"
-                                          >
-                                            Save
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={cancelEditingNote}
-                                            className="text-xs px-2 py-1 flex-1 sm:flex-none"
-                                          >
-                                            Cancel
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <div className="flex justify-between items-start mb-2">
-                                          <span className="text-xs text-gray-500">
-                                            {format(
-                                              note.createdAt,
-                                              "MMM d, h:mm a"
-                                            )}
-                                          </span>
-                                          <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+
+                            {notesLoading ? (
+                              <div className="flex items-center justify-center py-6 sm:py-8">
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            ) : taskNotes.length === 0 ? (
+                              <div className="text-center py-6 sm:py-8">
+                                <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mx-auto mb-2" />
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  No notes yet
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  Add your first note above
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="flex-1 overflow-y-auto min-h-0">
+                                <div className="space-y-2 sm:space-y-3 pr-1 sm:pr-2">
+                                  {taskNotes.map((note) => (
+                                    <div
+                                      key={note.id}
+                                      className="p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:shadow-md transition-shadow"
+                                    >
+                                      {editingNoteId === note.id ? (
+                                        <div className="space-y-2">
+                                          <Textarea
+                                            value={editNoteContent}
+                                            onChange={(e) =>
+                                              setEditNoteContent(e.target.value)
+                                            }
+                                            className="min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm"
+                                          />
+                                          <div className="flex gap-2">
                                             <Button
                                               size="sm"
-                                              variant="ghost"
-                                              onClick={() =>
-                                                startEditingNote(note)
-                                              }
-                                              className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-blue-100 text-blue-600"
+                                              onClick={saveEditedNote}
+                                              className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 flex-1 sm:flex-none"
                                             >
-                                              <Edit3 className="h-3 w-3" />
+                                              Save
                                             </Button>
                                             <Button
                                               size="sm"
-                                              variant="ghost"
-                                              onClick={() =>
-                                                handleDeleteNote(note.id)
-                                              }
-                                              className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-red-100 text-red-600"
+                                              variant="outline"
+                                              onClick={cancelEditingNote}
+                                              className="text-xs px-2 py-1 flex-1 sm:flex-none"
                                             >
-                                              <X className="h-3 w-3" />
+                                              Cancel
                                             </Button>
                                           </div>
                                         </div>
-                                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                                          {note.content}
-                                        </p>
-                                      </>
-                                    )}
-                                  </div>
-                                ))}
+                                      ) : (
+                                        <>
+                                          <div className="flex justify-between items-start mb-2">
+                                            <span className="text-xs text-gray-500">
+                                              {format(
+                                                note.createdAt,
+                                                "MMM d, h:mm a"
+                                              )}
+                                            </span>
+                                            <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  startEditingNote(note)
+                                                }
+                                                className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-blue-100 text-blue-600"
+                                              >
+                                                <Edit3 className="h-3 w-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                  handleDeleteNote(note.id)
+                                                }
+                                                className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-red-100 text-red-600"
+                                              >
+                                                <X className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                            {note.content}
+                                          </p>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-center">
+                            <StickyNote className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
+                            <p className="text-xs sm:text-sm text-gray-500">
+                              No task selected
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Select a task to view its notes
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Shortcuts Panel - Mobile responsive overlay */}
+            <AnimatePresence>
+              {showSidePanel && sidePanelContent === "shortcuts" && (
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 lg:w-80 bg-card border-l shadow-xl z-50 flex flex-col"
+                >
+                  {/* Side Panel Header */}
+                  <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 flex-shrink-0">
+                    <h2 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white">
+                      <span className="text-sm sm:text-base">
+                        Keyboard Shortcuts
+                      </span>
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleShortcuts}
+                      className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Side Panel Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="p-3 sm:p-4 h-full"
+                    >
+                      {/* Shortcuts organized by category */}
+                      <div className="space-y-4 sm:space-y-6">
+                        {/* Task Actions */}
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                            Task Actions
+                          </h3>
+                          <div className="space-y-1 sm:space-y-2">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Complete Task
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Enter
+                                </kbd>
                               </div>
                             </div>
-                          )}
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Pomodoro Play/Pause
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Space
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Snooze Task (2h)
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  S
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <StickyNote className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
-                          <p className="text-xs sm:text-sm text-gray-500">
-                            No task selected
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Select a task to view its notes
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
-          {/* Shortcuts Panel - Mobile responsive overlay */}
-          <AnimatePresence>
-            {showSidePanel && sidePanelContent === "shortcuts" && (
+                        {/* Navigation */}
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                            Navigation
+                          </h3>
+                          <div className="space-y-1 sm:space-y-2">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Next Task
+                              </span>
+                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                →
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Previous Task
+                              </span>
+                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                ←
+                              </kbd>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Exit Focus Mode
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Esc
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Focus Tools */}
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                            Focus Tools
+                          </h3>
+                          <div className="space-y-1 sm:space-y-2">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Pomodoro
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  P
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Toggle Focus Lock
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  L
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Show/Hide Shortcuts
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  /
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Quick Note
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  ⌘
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  Ctrl
+                                </kbd>
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  N
+                                </kbd>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                Task Notes
+                              </span>
+                              <div className="flex gap-1">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                  N
+                                </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer tip */}
+                      <div className="mt-6 sm:mt-8 p-2 sm:p-3 bg-[#CDA351]/10 rounded-lg border border-[#CDA351]/20">
+                        <p className="text-xs text-[#CDA351] font-medium">
+                          💡 Tip: These shortcuts work even when Focus Lock is
+                          enabled (except exit shortcuts)
+                        </p>
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Floating Pomodoro Indicator - Shows when timer is running in background */}
+          {pomodoroTimerActive &&
+            (!showSidePanel || sidePanelContent !== "pomodoro") && (
               <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed right-0 top-0 bottom-0 w-full sm:w-80 md:w-96 lg:w-80 bg-card border-l shadow-xl z-50 flex flex-col"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="fixed bottom-4 right-4 z-40"
               >
-                {/* Side Panel Header */}
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 flex-shrink-0">
-                  <h2 className="text-lg sm:text-xl font-bold text-[#1A1A1A] dark:text-white">
-                    <span className="text-sm sm:text-base">
-                      Keyboard Shortcuts
-                    </span>
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleShortcuts}
-                    className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-9 sm:w-9 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Side Panel Content */}
-                <div className="flex-1 overflow-y-auto">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="p-3 sm:p-4 h-full"
-                  >
-                    {/* Shortcuts organized by category */}
-                    <div className="space-y-4 sm:space-y-6">
-                      {/* Task Actions */}
-                      <div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                          Task Actions
-                        </h3>
-                        <div className="space-y-1 sm:space-y-2">
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Complete Task
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Enter
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Pomodoro Play/Pause
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Space
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Snooze Task (2h)
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                S
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Navigation */}
-                      <div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                          Navigation
-                        </h3>
-                        <div className="space-y-1 sm:space-y-2">
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Next Task
-                            </span>
-                            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                              →
-                            </kbd>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Previous Task
-                            </span>
-                            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                              ←
-                            </kbd>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Exit Focus Mode
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Esc
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Focus Tools */}
-                      <div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                          Focus Tools
-                        </h3>
-                        <div className="space-y-1 sm:space-y-2">
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Toggle Pomodoro
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                P
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Toggle Focus Lock
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                L
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Show/Hide Shortcuts
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                /
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Quick Note
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ⌘
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                Ctrl
-                              </kbd>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                N
-                              </kbd>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                              Task Notes
-                            </span>
-                            <div className="flex gap-1">
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                N
-                              </kbd>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer tip */}
-                    <div className="mt-6 sm:mt-8 p-2 sm:p-3 bg-[#CDA351]/10 rounded-lg border border-[#CDA351]/20">
-                      <p className="text-xs text-[#CDA351] font-medium">
-                        💡 Tip: These shortcuts work even when Focus Lock is
-                        enabled (except exit shortcuts)
-                      </p>
-                    </div>
-                  </motion.div>
-                </div>
+                <Button
+                  variant="outline"
+                  size={isMobile ? "sm" : "default"}
+                  onClick={handleTogglePomodoro}
+                  className="flex items-center gap-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gold/30 hover:bg-gold/10 hover:border-gold/50 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.05]"
+                >
+                  <Timer className="h-3 w-3 sm:h-4 sm:w-4 text-gold" />
+                  <span className="text-xs sm:text-sm font-medium text-gold">
+                    {pomodoroIsRunning ? "Running" : "Paused"}
+                  </span>
+                  {pomodoroIsRunning && (
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gold rounded-full animate-pulse" />
+                  )}
+                </Button>
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
 
-        {/* Floating Pomodoro Indicator - Shows when timer is running in background */}
-        {pomodoroTimerActive &&
-          (!showSidePanel || sidePanelContent !== "pomodoro") && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="fixed bottom-4 right-4 z-40"
-            >
+          {/* Enhanced Mobile-Responsive Navigation Hints - Simplified */}
+          <div className="p-3 sm:p-4 text-center text-xs sm:text-sm border-t border-gold/30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
               <Button
-                variant="outline"
-                size={isMobile ? "sm" : "default"}
-                onClick={handleTogglePomodoro}
-                className="flex items-center gap-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gold/30 hover:bg-gold/10 hover:border-gold/50 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.05]"
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleShortcuts}
+                className="text-xs text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md px-2 sm:px-3 py-1.5"
               >
-                <Timer className="h-3 w-3 sm:h-4 sm:w-4 text-gold" />
-                <span className="text-xs sm:text-sm font-medium text-gold">
-                  {pomodoroIsRunning ? "Running" : "Paused"}
-                </span>
-                {pomodoroIsRunning && (
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gold rounded-full animate-pulse" />
-                )}
+                <span className="mr-1 text-sm">⌘</span>
+                <span className="hidden xs:inline">View Shortcuts</span>
+                <span className="xs:hidden">Shortcuts</span>
+                <span className="hidden sm:inline ml-1">(Press ⌘+/)</span>
               </Button>
-            </motion.div>
-          )}
-
-        {/* Enhanced Mobile-Responsive Navigation Hints - Simplified */}
-        <div className="p-3 sm:p-4 text-center text-xs sm:text-sm border-t border-gold/30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleShortcuts}
-              className="text-xs text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md px-2 sm:px-3 py-1.5"
-            >
-              <span className="mr-1 text-sm">⌘</span>
-              <span className="hidden xs:inline">View Shortcuts</span>
-              <span className="xs:hidden">Shortcuts</span>
-              <span className="hidden sm:inline ml-1">(Press ⌘+/)</span>
-            </Button>
-            {focusLockEnabled ? (
-              <span className="text-red-500 font-medium text-xs bg-red-50 dark:bg-red-950/20 px-2 py-1 rounded-full border border-red-200 dark:border-red-800">
-                🔒 <span className="hidden xs:inline">Focus Lock Active</span>
-                <span className="xs:hidden">Locked</span>
-              </span>
-            ) : (
-              <span className="hidden sm:block text-charcoal/50 dark:text-gray-500 text-xs">
-                Press keyboard shortcuts to navigate
-              </span>
-            )}
+              {focusLockEnabled ? (
+                <span className="text-red-500 font-medium text-xs bg-red-50 dark:bg-red-950/20 px-2 py-1 rounded-full border border-red-200 dark:border-red-800">
+                  🔒 <span className="hidden xs:inline">Focus Lock Active</span>
+                  <span className="xs:hidden">Locked</span>
+                </span>
+              ) : (
+                <span className="hidden sm:block text-charcoal/50 dark:text-gray-500 text-xs">
+                  Press keyboard shortcuts to navigate
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -2716,7 +2734,7 @@ export function FocusMode({
         <TaskDetailModal
           task={selectedTask}
           isOpen={showTaskDetail}
-          onClose={() => setShowTaskDetail(false)}
+          onClose={closeTaskDetail}
         />
       </motion.div>
     </>
