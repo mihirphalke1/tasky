@@ -109,7 +109,7 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
+      // Don't prevent default to allow Chrome's native prompt
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
       setIsInstallable(true);

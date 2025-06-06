@@ -239,14 +239,14 @@ export const updateTask = async (
       // Ensure all fields are properly formatted for Firestore
       const taskData = {
         ...task,
-        lastModified: Timestamp.fromDate(now),
+        lastModified: serverTimestamp(),
         dueDate: task.dueDate
           ? Timestamp.fromDate(new Date(task.dueDate))
           : null,
         snoozedUntil: task.snoozedUntil
           ? Timestamp.fromDate(new Date(task.snoozedUntil))
           : null,
-        completedAt: task.completed ? Timestamp.fromDate(now) : null,
+        completedAt: task.completed ? serverTimestamp() : null,
       };
 
       // Log the exact data being written to Firestore

@@ -73,12 +73,9 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
   const [tagInput, setTagInput] = useState("");
 
   const handleToggleComplete = () => {
-    const now = new Date();
     const updatedTask = {
       ...task,
       completed: !task.completed,
-      lastModified: now,
-      completedAt: !task.completed ? now : null,
     };
     onUpdate(updatedTask);
   };
@@ -158,7 +155,7 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
               {isTaskSnoozed && (
                 <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 text-xs font-medium px-2 py-0.5 rounded-full">
                   <Clock className="w-3 h-3" />
-                  Until {format(task.snoozedUntil!, "h:mm a")}
+                  {format(task.snoozedUntil!, "h:mm a")}
                 </span>
               )}
             </div>
@@ -192,7 +189,7 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
                   }`}
                 >
                   <Calendar size={10} className="sm:w-3 sm:h-3" />
-                  {formatDate(task.dueDate)}
+                  {format(task.dueDate, "MMM d, h:mm a")}
                 </span>
               )}
             </div>
@@ -222,114 +219,90 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
 
       {/* Edit Task Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium">
-                Title
-              </label>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Title</label>
               <Input
-                id="title"
                 value={editedTask.title}
                 onChange={(e) =>
                   setEditedTask({ ...editedTask, title: e.target.value })
                 }
-                className="border-[#CDA351]/20 focus-visible:ring-[#CDA351]/20"
+                className="mt-1.5"
               />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">
-                Description (optional)
-              </label>
+            <div>
+              <label className="text-sm font-medium">Description</label>
               <Textarea
-                id="description"
                 value={editedTask.description || ""}
                 onChange={(e) =>
-                  setEditedTask({ ...editedTask, description: e.target.value })
+                  setEditedTask({
+                    ...editedTask,
+                    description: e.target.value || null,
+                  })
                 }
-                className="min-h-[100px] border-[#CDA351]/20 focus-visible:ring-[#CDA351]/20"
+                className="mt-1.5"
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">
-                  Priority
-                </label>
-                <Select
-                  value={editedTask.priority}
-                  onValueChange={(value: TaskPriority) =>
-                    setEditedTask({ ...editedTask, priority: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <div className="flex items-center gap-2">
-                      <Flag
-                        className={`w-4 h-4 ${
-                          priorityColors[editedTask.priority]
-                        }`}
-                      />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <label className="text-sm font-medium">Priority</label>
+              <Select
+                value={editedTask.priority}
+                onValueChange={(value: TaskPriority) =>
+                  setEditedTask({ ...editedTask, priority: value })
+                }
+              >
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium">Tags</label>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-[#CDA351]/5 dark:bg-[#CDA351]/10 px-3 py-2 rounded-lg flex-grow">
-                  <Tag size={16} className="text-[#CDA351]" />
-                  <Input
-                    type="text"
-                    placeholder="Add tags..."
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
-                    className="border-none shadow-none bg-transparent focus-visible:ring-0 p-0 h-auto text-sm"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-auto p-0 text-[#CDA351]"
-                    onClick={handleAddTag}
-                  >
-                    Add
-                  </Button>
-                </div>
+              <div className="flex gap-2 mt-1.5">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="Add tag and press Enter"
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="bg-[#CDA351] hover:bg-[#CDA351]/90 text-white"
+                >
+                  Add
+                </Button>
               </div>
-
               {editedTask.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-1 mt-2">
                   {editedTask.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2.5 py-0.5 rounded-full"
+                      className="inline-flex items-center gap-1 bg-[#CDA351]/10 text-[#CDA351] text-xs font-medium px-2 py-1 rounded-full"
                     >
                       {tag}
                       <button
-                        type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="text-[#CDA351] hover:text-[#CDA351]/80"
+                        className="hover:text-red-500"
                       >
-                        <X size={14} />
+                        <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))}

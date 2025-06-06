@@ -268,12 +268,8 @@ const Index = () => {
 
   const handleUpdateTask = async (updatedTask: Task) => {
     try {
-      const now = new Date();
       const taskWithTimestamp = {
         ...updatedTask,
-        lastModified: now,
-        // Set completedAt when task is completed
-        completedAt: updatedTask.completed ? now : null,
         // Ensure section is always derived from due date
         section: getSectionFromDate(updatedTask.dueDate),
       };

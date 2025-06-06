@@ -48,11 +48,11 @@ export function getEmojiForTimeOfDay(timeOfDay: TimeOfDay): string {
 
 export function formatDate(date: Date): string {
   if (isToday(date)) {
-    return `Today at ${format(date, "h:mm a")}`;
+    return format(date, "h:mm a");
   } else if (isTomorrow(date)) {
-    return `Tomorrow at ${format(date, "h:mm a")}`;
+    return `Tomorrow ${format(date, "h:mm a")}`;
   }
-  return format(date, "MMM d, yyyy 'at' h:mm a");
+  return format(date, "MMM d, h:mm a");
 }
 
 export function formatRelativeTime(date: Date): string {

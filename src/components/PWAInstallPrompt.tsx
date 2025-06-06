@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
-import { isIOS, isStandalone } from "../lib/pwa-utils";
+import { isIOS } from "@/lib/pwa-utils";
 
 interface PWAInstallPromptProps {
   onClose: () => void;
@@ -135,9 +135,10 @@ export const usePWAStatus = () => {
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
+      // Don't prevent default anymore to allow Chrome's native prompt
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
+      setShowPrompt(true); // Show our prompt when Chrome's prompt is available
     };
 
     const handleAppInstalled = () => {
@@ -163,6 +164,7 @@ export const usePWAStatus = () => {
     if (!deferredPrompt) return;
 
     try {
+      // Trigger Chrome's native install prompt
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
 
@@ -172,6 +174,9 @@ export const usePWAStatus = () => {
         setShowPrompt(false);
         localStorage.setItem("pwaInstalled", "true");
       }
+
+      // Clear the deferred prompt after use
+      setDeferredPrompt(null);
     } catch (error) {
       console.error("Error triggering install:", error);
     }

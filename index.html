@@ -151,7 +151,7 @@
               console.log("Message from service worker:", event.data);
             });
           } catch (err) {
-            console.log("ServiceWorker registration failed: ", err);
+            console.error("ServiceWorker registration failed: ", err);
           }
         });
       }
@@ -175,7 +175,9 @@
             .then((registration) => {
               return registration.sync.register("task-sync");
             })
-            .catch((err) => console.log("Background sync registration failed"));
+            .catch((err) =>
+              console.log("Background sync registration failed:", err)
+            );
         }
       });
 
