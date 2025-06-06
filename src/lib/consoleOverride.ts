@@ -1,70 +1,43 @@
 import { logger } from "./logger";
 
-// Store original console methods
-const originalConsole = {
-  log: console.log,
-  error: console.error,
-  warn: console.warn,
-  info: console.info,
-  debug: console.debug,
-};
+// Store original console for development purposes
+export const originalConsole = { ...console };
 
 // Check if we're in production
 const isProduction = process.env.NODE_ENV === "production";
 
 // Override console methods in production
 if (isProduction) {
-  // Override all console methods
-  console.log = (...args: any[]) => {
-    // Only allow logs from our logger
-    if (args[0]?.includes("[Tasky]")) {
-      originalConsole.log(...args);
-    }
-  };
+  // Suppress all console output in production
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
 
-  console.error = (...args: any[]) => {
-    // Only allow errors from our logger
-    if (args[0]?.includes("[Tasky]")) {
+  // Keep error logging for critical issues
+  console.error = (...args) => {
+    // Only log critical errors that need attention
+    const errorString = args.join(" ");
+    if (!shouldSuppressError(errorString)) {
       originalConsole.error(...args);
     }
   };
 
-  console.warn = (...args: any[]) => {
-    // Only allow warnings from our logger
-    if (args[0]?.includes("[Tasky]")) {
-      originalConsole.warn(...args);
-    }
-  };
+  // Suppress specific errors
+  const suppressPatterns = [
+    /WebSocket connection/i,
+    /Background sync supported/i,
+    /Service Worker:/i,
+    /Failed to load resource:/i,
+    /ws:\/\//i,
+  ];
 
-  console.info = (...args: any[]) => {
-    // Only allow info from our logger
-    if (args[0]?.includes("[Tasky]")) {
-      originalConsole.info(...args);
-    }
-  };
-
-  console.debug = (...args: any[]) => {
-    // Only allow debug from our logger
-    if (args[0]?.includes("[Tasky]")) {
-      originalConsole.debug(...args);
-    }
-  };
+  function shouldSuppressError(errorString: string): boolean {
+    return suppressPatterns.some((pattern) => pattern.test(errorString));
+  }
 
   // Suppress common browser warnings
   const suppressWarnings = () => {
-    // Suppress X-Frame-Options warnings
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      try {
-        return await originalFetch(...args);
-      } catch (error: any) {
-        if (error.message?.includes("X-Frame-Options")) {
-          return new Response(null, { status: 200 });
-        }
-        throw error;
-      }
-    };
-
     // Suppress WebSocket connection warnings
     const originalWebSocket = window.WebSocket;
     window.WebSocket = class extends originalWebSocket {
@@ -75,10 +48,24 @@ if (isProduction) {
         });
       }
     };
+
+    // Suppress fetch errors for specific cases
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        return await originalFetch(...args);
+      } catch (error: any) {
+        if (
+          error.message?.includes("X-Frame-Options") ||
+          error.message?.includes("Failed to fetch")
+        ) {
+          return new Response(null, { status: 200 });
+        }
+        throw error;
+      }
+    };
   };
 
-  // Call suppressWarnings after a short delay to ensure it runs after other scripts
+  // Call suppressWarnings after a short delay
   setTimeout(suppressWarnings, 0);
 }
-
-export { originalConsole };

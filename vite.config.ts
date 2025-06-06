@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    headers: {
+      "Cross-Origin-Embedder-Policy": "unsafe-none",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "Access-Control-Allow-Origin": "*",
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean

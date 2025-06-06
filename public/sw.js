@@ -2,6 +2,16 @@ const CACHE_NAME = "tasky-v1.1.0";
 const STATIC_CACHE_NAME = "tasky-static-v1.1.0";
 const DYNAMIC_CACHE_NAME = "tasky-dynamic-v1.1.0";
 
+// Debug mode flag
+const isDebugMode = false; // Set to false for production
+
+// Logger utility
+const logger = {
+  log: (...args) => isDebugMode && console.log(...args),
+  error: (...args) => isDebugMode && console.error(...args),
+  warn: (...args) => isDebugMode && console.warn(...args),
+};
+
 // Resources to cache immediately
 const STATIC_ASSETS = [
   "/",
@@ -38,20 +48,20 @@ const CACHE_FIRST_PATTERNS = [
 
 // Install event - cache static assets
 self.addEventListener("install", (event) => {
-  console.log("Service Worker: Installing...");
+  logger.log("Service Worker: Installing...");
 
   event.waitUntil(
     (async () => {
       try {
         const staticCache = await caches.open(STATIC_CACHE_NAME);
-        console.log("Service Worker: Caching static assets...");
+        logger.log("Service Worker: Caching static assets...");
         await staticCache.addAll(STATIC_ASSETS);
-        console.log("Service Worker: Static assets cached successfully");
+        logger.log("Service Worker: Static assets cached successfully");
 
         // Skip waiting to activate immediately
         self.skipWaiting();
       } catch (error) {
-        console.error("Service Worker: Error during install:", error);
+        logger.error("Service Worker: Error during install:", error);
       }
     })()
   );
@@ -59,7 +69,7 @@ self.addEventListener("install", (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
-  console.log("Service Worker: Activating...");
+  logger.log("Service Worker: Activating...");
 
   event.waitUntil(
     (async () => {
@@ -74,16 +84,16 @@ self.addEventListener("activate", (event) => {
 
         await Promise.all(
           oldCaches.map((cacheName) => {
-            console.log("Service Worker: Deleting old cache:", cacheName);
+            logger.log("Service Worker: Deleting old cache:", cacheName);
             return caches.delete(cacheName);
           })
         );
 
         // Take control of all clients immediately
         await self.clients.claim();
-        console.log("Service Worker: Activated successfully");
+        logger.log("Service Worker: Activated successfully");
       } catch (error) {
-        console.error("Service Worker: Error during activation:", error);
+        logger.error("Service Worker: Error during activation:", error);
       }
     })()
   );
@@ -129,7 +139,7 @@ async function handleFetch(request) {
     // Default to network-first
     return await networkFirst(request);
   } catch (error) {
-    console.error("Service Worker: Fetch error:", error);
+    logger.error("Service Worker: Fetch error:", error);
 
     // Return offline fallback if available
     if (request.mode === "navigate") {
@@ -158,13 +168,13 @@ async function networkFirst(request) {
     if (networkResponse.ok && shouldCacheRequest(new URL(request.url))) {
       const cache = await caches.open(DYNAMIC_CACHE_NAME);
       cache.put(request, networkResponse.clone()).catch((err) => {
-        console.warn("Service Worker: Failed to cache response:", err);
+        logger.warn("Service Worker: Failed to cache response:", err);
       });
     }
 
     return networkResponse;
   } catch (error) {
-    console.log("Service Worker: Network failed, trying cache...");
+    logger.log("Service Worker: Network failed, trying cache...");
     const cacheResponse = await caches.match(request);
     if (cacheResponse) {
       return cacheResponse;
@@ -185,12 +195,12 @@ async function cacheFirst(request) {
     if (networkResponse.ok) {
       const cache = await caches.open(DYNAMIC_CACHE_NAME);
       cache.put(request, networkResponse.clone()).catch((err) => {
-        console.warn("Service Worker: Failed to cache response:", err);
+        logger.warn("Service Worker: Failed to cache response:", err);
       });
     }
     return networkResponse;
   } catch (error) {
-    console.error("Service Worker: Cache-first failed:", error);
+    logger.error("Service Worker: Cache-first failed:", error);
     throw error;
   }
 }
@@ -205,13 +215,13 @@ async function staleWhileRevalidate(request) {
     .then((response) => {
       if (response.ok) {
         cache.put(request, response.clone()).catch((err) => {
-          console.warn("Service Worker: Failed to update cache:", err);
+          logger.warn("Service Worker: Failed to update cache:", err);
         });
       }
       return response;
     })
     .catch((err) => {
-      console.warn("Service Worker: Background fetch failed:", err);
+      logger.warn("Service Worker: Background fetch failed:", err);
       return cacheResponse;
     });
 
@@ -237,7 +247,7 @@ function shouldCacheRequest(url) {
 
 // Handle background sync for offline actions
 self.addEventListener("sync", (event) => {
-  console.log("Service Worker: Background sync triggered:", event.tag);
+  logger.log("Service Worker: Background sync triggered:", event.tag);
 
   if (event.tag === "task-sync") {
     event.waitUntil(syncOfflineTasks());
@@ -256,13 +266,13 @@ async function syncOfflineTasks() {
         await syncTask(task);
         await removePendingTask(task.id);
       } catch (error) {
-        console.error("Service Worker: Failed to sync task:", error);
+        logger.error("Service Worker: Failed to sync task:", error);
       }
     }
 
-    console.log("Service Worker: Offline tasks synced successfully");
+    logger.log("Service Worker: Offline tasks synced successfully");
   } catch (error) {
-    console.error("Service Worker: Background sync failed:", error);
+    logger.error("Service Worker: Background sync failed:", error);
   }
 }
 
@@ -274,17 +284,17 @@ async function getPendingOfflineTasks() {
 
 async function syncTask(task) {
   // Implement task sync logic
-  console.log("Syncing task:", task);
+  logger.log("Syncing task:", task);
 }
 
 async function removePendingTask(taskId) {
   // Implement pending task removal
-  console.log("Removing pending task:", taskId);
+  logger.log("Removing pending task:", taskId);
 }
 
 // Handle push notifications (future feature)
 self.addEventListener("push", (event) => {
-  console.log("Service Worker: Push event received");
+  logger.log("Service Worker: Push event received");
 
   const options = {
     body: event.data ? event.data.text() : "You have pending tasks!",
@@ -316,7 +326,7 @@ self.addEventListener("push", (event) => {
 
 // Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
-  console.log("Service Worker: Notification click received");
+  logger.log("Service Worker: Notification click received");
 
   event.notification.close();
 
@@ -327,7 +337,7 @@ self.addEventListener("notificationclick", (event) => {
 
 // Handle messages from main thread
 self.addEventListener("message", (event) => {
-  console.log("Service Worker: Message received:", event.data);
+  logger.log("Service Worker: Message received:", event.data);
 
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
@@ -338,4 +348,4 @@ self.addEventListener("message", (event) => {
   }
 });
 
-console.log("Service Worker: Script loaded successfully");
+logger.log("Service Worker: Script loaded successfully");
