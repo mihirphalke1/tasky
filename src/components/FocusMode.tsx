@@ -79,6 +79,7 @@ import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "./ui/scroll-area";
 import { Note } from "@/types";
 import styles from "./FocusMode.module.css";
+import { analytics } from "../services/analytics";
 
 interface FocusModeProps {
   tasks: Task[];

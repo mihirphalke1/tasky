@@ -20,6 +20,7 @@ import React from "react";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ScrollToTop from "./components/ScrollToTop";
+import { analytics } from "./services/analytics";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,24 @@ const AppContent = () => {
 
   useEffect(() => {
     testFirebaseConnection();
+
+    // Track app open
+    analytics.trackAppOpen();
+
+    // Track page load performance
+    const pageLoadTime = performance.now();
+    analytics.trackPageLoad(pageLoadTime);
+
+    // Track app close
+    const handleBeforeUnload = () => {
+      analytics.trackAppClose();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, []);
 
   return (

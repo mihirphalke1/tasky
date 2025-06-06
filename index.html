@@ -14,16 +14,19 @@
     <meta name="orientation" content="portrait-primary" />
 
     <!-- App Information -->
-    <title>Tasky</title>
+    <title>Tasky - Smart Task Management & Focus Mode App</title>
     <meta
       name="description"
-      content="A powerful task management app with focus mode, priority sorting, and productivity features. Works offline and installs on any device."
+      content="Tasky is a powerful task management app that helps you stay focused and productive. Features include focus mode, priority sorting, offline support, and cross-device sync. Perfect for professionals, students, and anyone looking to boost their productivity."
     />
     <meta name="author" content="Mihir Phalke" />
     <meta
       name="keywords"
-      content="task management, productivity, focus mode, todo, GTD, offline, PWA"
+      content="tasky, task management, productivity app, focus mode, todo list, GTD, offline task manager, PWA, time management, project management, task organization, productivity tools, focus timer, priority tasks, cross-platform"
     />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://tasky.app" />
 
     <!-- Icons and Manifest -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -67,24 +70,64 @@
     <meta name="application-name" content="Tasky" />
 
     <!-- Social Media / Open Graph -->
-    <meta property="og:title" content="Tasky - Focus Mode Task Manager" />
+    <meta
+      property="og:title"
+      content="Tasky - Smart Task Management & Focus Mode App"
+    />
     <meta
       property="og:description"
-      content="A powerful task management app with focus mode, priority sorting, and productivity features"
+      content="Boost your productivity with Tasky - the smart task management app featuring focus mode, priority sorting, and seamless cross-device sync. Perfect for professionals and students."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tasky.app" />
-    <meta property="og:image" content="/icons/android-chrome-512x512.png" />
+    <meta
+      property="og:image"
+      content="https://tasky.app/icons/android-chrome-512x512.png"
+    />
     <meta property="og:site_name" content="Tasky" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Tasky - Focus Mode Task Manager" />
+    <meta
+      name="twitter:title"
+      content="Tasky - Smart Task Management & Focus Mode App"
+    />
     <meta
       name="twitter:description"
-      content="A powerful task management app with focus mode, priority sorting, and productivity features"
+      content="Boost your productivity with Tasky - the smart task management app featuring focus mode, priority sorting, and seamless cross-device sync. Perfect for professionals and students."
     />
-    <meta name="twitter:image" content="/icons/android-chrome-512x512.png" />
+    <meta
+      name="twitter:image"
+      content="https://tasky.app/icons/android-chrome-512x512.png"
+    />
+    <meta name="twitter:creator" content="@taskyapp" />
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="rating" content="general" />
+    <meta name="distribution" content="global" />
+
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_ID%"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "%VITE_GA_ID%", {
+        app_name: "Tasky",
+        app_version: "1.0.0",
+        send_page_view: true,
+        cookie_flags: "SameSite=None;Secure",
+      });
+    </script>
 
     <!-- Preload Critical Resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
