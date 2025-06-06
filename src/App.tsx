@@ -10,12 +10,17 @@ import NotFound from "./pages/NotFound";
 import Shortcuts from "./pages/Shortcuts";
 import NotesPage from "./pages/NotesPage";
 import TaskDetailPage from "./pages/TaskDetailPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { useEffect } from "react";
 import { testFirebaseConnection } from "./lib/firebaseTest";
 import FocusMode from "./pages/FocusMode";
 import { useStreakTracking } from "./hooks/useStreakTracking";
 import PWAInstall from "./components/PWAInstall";
+import React from "react";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +56,7 @@ const AppContent = () => {
 
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route
           path="/"
@@ -92,6 +98,9 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route
           path="/task/:taskId"
           element={

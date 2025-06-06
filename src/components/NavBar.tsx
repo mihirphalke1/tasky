@@ -12,6 +12,8 @@ import {
   Clock,
   RefreshCw,
   Menu,
+  HelpCircle,
+  Download,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -39,14 +41,18 @@ import {
 } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import PWAInstall from "./PWAInstall";
+import ContactModal from "./ContactModal";
 
 const NavBar = () => {
-  const { theme, setTheme } = useTheme();
   const { user, logout, sessionDaysRemaining, extendUserSession } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [showShortcuts, setShowShortcuts] = useState(isDesktop());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const streakButtonRef = useRef<StreakButtonRef>(null);
+  const [contactOpen, setContactOpen] = useState(false);
 
   // Check if session is near expiry (1 day or less)
   const isSessionNearExpiry = sessionDaysRemaining <= 1;
@@ -220,7 +226,7 @@ const NavBar = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-64 shadow-xl border border-[#CDA351]/10"
+              className="w-64 shadow-xl border border-[#CDA351]/10 flex flex-col h-full justify-between p-0"
             >
               <div className="flex items-center justify-start gap-2 p-3 bg-gradient-to-r from-[#CDA351]/5 to-transparent">
                 <div className="flex flex-col space-y-1 leading-none w-full">
@@ -296,19 +302,61 @@ const NavBar = () => {
               </div>
               <DropdownMenuSeparator className="bg-[#CDA351]/10" />
 
-              {/* PWA Install Option in Profile Dropdown */}
-              <div className="p-1">
-                <PWAInstall variant="menu-item" />
+              <div className="flex-1 flex flex-col">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setShowInstallPrompt(true);
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Install App</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/how-it-works");
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span>How It Works</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/terms");
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <span className="font-medium">Terms & Conditions</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/privacy");
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <span className="font-medium">Privacy Policy</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setContactOpen(true)}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <span className="font-medium">Report Bug / Contact</span>
+                </DropdownMenuItem>
               </div>
-
-              <DropdownMenuSeparator className="bg-[#CDA351]/10" />
-              <DropdownMenuItem
-                className="cursor-pointer text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 focus:bg-[#CDA351]/10 transition-all duration-200 font-medium"
-                onClick={logout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
+              <div className="border-t border-[#CDA351]/10 bg-transparent px-4 py-2">
+                <DropdownMenuItem
+                  className="cursor-pointer text-[#CDA351] hover:text-[#CDA351] hover:bg-[#CDA351]/10 focus:bg-[#CDA351]/10 transition-all duration-200 font-medium flex justify-center text-center gap-2"
+                  onClick={logout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -406,6 +454,30 @@ const NavBar = () => {
 
                 <Button
                   variant="ghost"
+                  onClick={() => {
+                    setShowInstallPrompt(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                >
+                  <Download className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Install App</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    handleNavigation("/how-it-works");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                >
+                  <HelpCircle className="mr-3 h-5 w-5" />
+                  <span className="font-medium">How It Works</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
                   onClick={() => handleNavigation("/shortcuts")}
                   className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
                 >
@@ -413,18 +485,38 @@ const NavBar = () => {
                   <span className="font-medium">Shortcuts</span>
                 </Button>
 
-                {/* PWA Install Option in Hamburger Menu */}
-                <div className="border border-[#CDA351]/20 rounded-lg overflow-hidden">
-                  <PWAInstall variant="menu-item" />
-                </div>
+                {/* Legal and Support Links */}
+                <div className="pt-2 border-t border-[#CDA351]/10">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigation("/terms")}
+                    className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                  >
+                    <Shield className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Terms & Conditions</span>
+                  </Button>
 
-                <Button
-                  onClick={() => handleNavigation("/focus")}
-                  className="w-full bg-gradient-to-r from-[#CDA351] to-[#B8935A] hover:from-[#B8935A] hover:to-[#CDA351] text-white font-semibold h-12 mt-6 px-4 py-3 shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <Timer className="mr-3 h-5 w-5" />
-                  <span>Focus Mode</span>
-                </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigation("/privacy")}
+                    className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                  >
+                    <Shield className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Privacy Policy</span>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setContactOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full justify-start text-[#7E7E7E] hover:text-[#1A1A1A] dark:text-gray-400 dark:hover:text-white hover:bg-[#CDA351]/10 h-12 px-4 py-3"
+                  >
+                    <HelpCircle className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Report Bug / Contact</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Session Status & Logout */}
@@ -491,6 +583,12 @@ const NavBar = () => {
           </SheetContent>
         </Sheet>
       </div>
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        context="profile"
+      />
     </nav>
   );
 };

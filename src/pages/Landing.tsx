@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Chrome } from "lucide-react";
+import { Chrome, HelpCircle } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import TypewriterText from "@/components/TypewriterText";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Landing = () => {
   const { signInWithGoogle, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
 
   const taglines = [
     "A focused space for your tasks.",
@@ -100,6 +102,8 @@ const Landing = () => {
               Continue with Google
             </Button>
 
+            {/* How Tasky Works Button */}
+
             {/* Install App Button */}
             {showInstall && (
               <Button
@@ -121,8 +125,21 @@ const Landing = () => {
       </main>
 
       {/* Footer - Minimal */}
-      <footer className="p-4 sm:p-8 text-center text-[#7E7E7E] dark:text-gray-400 text-xs">
-        <p>© 2025 Tasky — Built for minimal distractions.</p>
+      <footer className="mt-auto border-t border-[#CDA351]/10 dark:border-gray-700/30">
+        <div className="max-w-md mx-auto p-6 sm:p-8 space-y-4 text-center">
+          <Button
+            onClick={() => navigate("/how-it-works")}
+            variant="ghost"
+            size="lg"
+            className="w-full py-3 px-6 text-[#7E7E7E] hover:text-[#CDA351] hover:bg-[#CDA351]/5 transition-all duration-300 dark:text-gray-400 dark:hover:text-[#CDA351] dark:hover:bg-[#CDA351]/10 text-sm sm:text-base"
+          >
+            <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            How Tasky Works
+          </Button>
+          <p className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400">
+            © 2025 Tasky — Built for minimal distractions.
+          </p>
+        </div>
       </footer>
     </div>
   );

@@ -34,6 +34,7 @@ import {
   FileText,
   Plus,
   Edit3,
+  Keyboard,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,6 +64,8 @@ import {
   useKeyboardShortcuts,
   type ShortcutAction,
   type KeyboardShortcut,
+  formatShortcutKeys,
+  isMac,
 } from "@/hooks/useKeyboardShortcuts";
 import {
   Dialog,
@@ -75,6 +78,7 @@ import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "./ui/scroll-area";
 import { Note } from "@/types";
+import styles from "./FocusMode.module.css";
 
 interface FocusModeProps {
   tasks: Task[];
@@ -1299,12 +1303,11 @@ export function FocusMode({
   // Check for mobile viewport on mount and resize
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768 || "ontouchstart" in window);
     };
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -1680,6 +1683,19 @@ export function FocusMode({
                   isLocked={focusLockEnabled}
                   onToggle={handleFocusLockToggle}
                 />
+                {!isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleShortcuts}
+                    className={cn(
+                      "text-charcoal dark:text-white hover:text-gold dark:hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200",
+                      styles["hidden-mobile-shortcut"]
+                    )}
+                  >
+                    <span className="text-lg">⌘</span>
+                  </Button>
+                )}
                 <QuickNoteButton
                   currentTaskId={selectedTask?.id}
                   currentTaskTitle={selectedTask?.title}
@@ -2711,17 +2727,19 @@ export function FocusMode({
           {/* Enhanced Mobile-Responsive Navigation Hints - Simplified */}
           <div className="p-3 sm:p-4 text-center text-xs sm:text-sm border-t border-gold/30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleToggleShortcuts}
-                className="text-xs text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md px-2 sm:px-3 py-1.5"
-              >
-                <span className="mr-1 text-sm">⌘</span>
-                <span className="hidden xs:inline">View Shortcuts</span>
-                <span className="xs:hidden">Shortcuts</span>
-                <span className="hidden sm:inline ml-1">(Press ⌘+/)</span>
-              </Button>
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleShortcuts}
+                  className="text-xs text-charcoal/70 dark:text-gray-400 hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/30 transition-all duration-200 hover:shadow-md px-2 sm:px-3 py-1.5"
+                >
+                  <span className="mr-1 text-sm">⌘</span>
+                  <span className="hidden xs:inline">View Shortcuts</span>
+                  <span className="xs:hidden">Shortcuts</span>
+                  <span className="hidden sm:inline ml-1">(Press ⌘+/)</span>
+                </Button>
+              )}
               {focusLockEnabled ? (
                 <span className="text-red-500 font-medium text-xs bg-red-50 dark:bg-red-950/20 px-2 py-1 rounded-full border border-red-200 dark:border-red-800">
                   🔒 <span className="hidden xs:inline">Focus Lock Active</span>
@@ -2742,6 +2760,108 @@ export function FocusMode({
           isOpen={showTaskDetail}
           onClose={closeTaskDetail}
         />
+
+        {/* Keyboard Shortcuts Dialog - Only show on desktop */}
+        {!isMobile && (
+          <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gradient-to-br from-ivory to-sand dark:from-gray-900 dark:to-gray-800 border-gold/20">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gold to-yellow-600 bg-clip-text text-transparent">
+                  Keyboard Shortcuts
+                </DialogTitle>
+                <DialogDescription className="text-charcoal/70 dark:text-gray-300">
+                  Master your productivity with these keyboard shortcuts
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Navigation Shortcuts */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
+                    Navigation
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {shortcuts
+                      .filter((s) => s.category === "navigation")
+                      .map((shortcut) => (
+                        <div
+                          key={shortcut.id}
+                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
+                        >
+                          <span className="text-sm text-charcoal dark:text-white">
+                            {shortcut.description}
+                          </span>
+                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
+                            {formatShortcutKeys(
+                              isMac()
+                                ? shortcut.keys.mac
+                                : shortcut.keys.windows
+                            )}
+                          </kbd>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Task Management Shortcuts */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
+                    Task Management
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {shortcuts
+                      .filter((s) => s.category === "tasks")
+                      .map((shortcut) => (
+                        <div
+                          key={shortcut.id}
+                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
+                        >
+                          <span className="text-sm text-charcoal dark:text-white">
+                            {shortcut.description}
+                          </span>
+                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
+                            {formatShortcutKeys(
+                              isMac()
+                                ? shortcut.keys.mac
+                                : shortcut.keys.windows
+                            )}
+                          </kbd>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* General Shortcuts */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-charcoal dark:text-white">
+                    General
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {shortcuts
+                      .filter((s) => s.category === "general")
+                      .map((shortcut) => (
+                        <div
+                          key={shortcut.id}
+                          className="flex items-center justify-between p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gold/20"
+                        >
+                          <span className="text-sm text-charcoal dark:text-white">
+                            {shortcut.description}
+                          </span>
+                          <kbd className="px-2 py-1 text-xs font-semibold text-gold bg-gold/10 rounded border border-gold/20">
+                            {formatShortcutKeys(
+                              isMac()
+                                ? shortcut.keys.mac
+                                : shortcut.keys.windows
+                            )}
+                          </kbd>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </motion.div>
     </>
   );
