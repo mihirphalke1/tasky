@@ -709,7 +709,7 @@ export function FocusMode({
     if (showSidePanel && sidePanelContent === "shortcuts") {
       // Close shortcuts side panel
       setShowSidePanel(false);
-      setSidePanelContent("notes");
+      setSidePanelContent(null);
     } else {
       // Open shortcuts side panel
       setShowSidePanel(true);
@@ -2083,156 +2083,158 @@ export function FocusMode({
                       className="p-4 h-full"
                     >
                       {/* Shortcuts organized by category */}
-                      <div className="space-y-6">
-                        {/* Task Actions */}
+                      <div className="space-y-4 sm:space-y-6">
+                        {/* General Shortcuts - Full Width */}
                         <div>
-                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                            Task Actions
+                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                            General
                           </h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Complete Task
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Enter
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Pomodoro Play/Pause
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Space
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Snooze Task (2h)
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  S
-                                </kbd>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Navigation */}
-                        <div>
-                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                            Navigation
-                          </h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Next Task
-                              </span>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                →
-                              </kbd>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Previous Task
-                              </span>
-                              <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ←
-                              </kbd>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Exit Focus Mode
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Esc
-                                </kbd>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Focus Tools */}
-                        <div>
-                          <h3 className="text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-3">
-                            Focus Tools
-                          </h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Toggle Pomodoro
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  P
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                Toggle Focus Lock
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  L
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <div className="space-y-1 sm:space-y-2">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                 Show/Hide Shortcuts
                               </span>
                               <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   ⌘
                                 </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   /
                                 </kbd>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                 Quick Note
                               </span>
                               <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   ⌘
                                 </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   Ctrl
                                 </kbd>
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   N
                                 </kbd>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                 Task Notes
                               </span>
                               <div className="flex gap-1">
-                                <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   N
                                 </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2x2 Grid Layout */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Left Column - Navigation and Tasks */}
+                          <div className="space-y-4">
+                            {/* Navigation */}
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                                Navigation
+                              </h3>
+                              <div className="space-y-1 sm:space-y-2">
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Next Task
+                                  </span>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    →
+                                  </kbd>
+                                </div>
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Previous Task
+                                  </span>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    ←
+                                  </kbd>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Tasks */}
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                                Tasks
+                              </h3>
+                              <div className="space-y-1 sm:space-y-2">
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Complete Task
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      ⌘
+                                    </kbd>
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      Enter
+                                    </kbd>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Snooze Task (2h)
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      ⌘
+                                    </kbd>
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      S
+                                    </kbd>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Column - Focus */}
+                          <div>
+                            <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                              Focus
+                            </h3>
+                            <div className="space-y-1 sm:space-y-2">
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Pomodoro Play/Pause
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    Space
+                                  </kbd>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Toggle Pomodoro
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    P
+                                  </kbd>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Toggle Focus Lock
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    ⌘
+                                  </kbd>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    L
+                                  </kbd>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -2499,118 +2501,12 @@ export function FocusMode({
                     >
                       {/* Shortcuts organized by category */}
                       <div className="space-y-4 sm:space-y-6">
-                        {/* Task Actions */}
+                        {/* General Shortcuts - Full Width */}
                         <div>
                           <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                            Task Actions
+                            General
                           </h3>
                           <div className="space-y-1 sm:space-y-2">
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Complete Task
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Enter
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Pomodoro Play/Pause
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Space
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Snooze Task (2h)
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  S
-                                </kbd>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Navigation */}
-                        <div>
-                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                            Navigation
-                          </h3>
-                          <div className="space-y-1 sm:space-y-2">
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Next Task
-                              </span>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                →
-                              </kbd>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Previous Task
-                              </span>
-                              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                ←
-                              </kbd>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Exit Focus Mode
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  Esc
-                                </kbd>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Focus Tools */}
-                        <div>
-                          <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
-                            Focus Tools
-                          </h3>
-                          <div className="space-y-1 sm:space-y-2">
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Toggle Pomodoro
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  P
-                                </kbd>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
-                              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                Toggle Focus Lock
-                              </span>
-                              <div className="flex gap-1">
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  ⌘
-                                </kbd>
-                                <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
-                                  L
-                                </kbd>
-                              </div>
-                            </div>
                             <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
                               <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                 Show/Hide Shortcuts
@@ -2648,6 +2544,114 @@ export function FocusMode({
                                 <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
                                   N
                                 </kbd>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2x2 Grid Layout */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Left Column - Navigation and Tasks */}
+                          <div className="space-y-4">
+                            {/* Navigation */}
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                                Navigation
+                              </h3>
+                              <div className="space-y-1 sm:space-y-2">
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Next Task
+                                  </span>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    →
+                                  </kbd>
+                                </div>
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Previous Task
+                                  </span>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    ←
+                                  </kbd>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Tasks */}
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                                Tasks
+                              </h3>
+                              <div className="space-y-1 sm:space-y-2">
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Complete Task
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      ⌘
+                                    </kbd>
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      Enter
+                                    </kbd>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                    Snooze Task (2h)
+                                  </span>
+                                  <div className="flex gap-1">
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      ⌘
+                                    </kbd>
+                                    <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                      S
+                                    </kbd>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Column - Focus */}
+                          <div>
+                            <h3 className="text-xs sm:text-sm font-semibold text-[#CDA351] uppercase tracking-wide mb-2 sm:mb-3">
+                              Focus
+                            </h3>
+                            <div className="space-y-1 sm:space-y-2">
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Pomodoro Play/Pause
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    Space
+                                  </kbd>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Toggle Pomodoro
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    P
+                                  </kbd>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between py-1.5 sm:py-2 border-b border-gray-100 dark:border-gray-800">
+                                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                  Toggle Focus Lock
+                                </span>
+                                <div className="flex gap-1">
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    ⌘
+                                  </kbd>
+                                  <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                                    L
+                                  </kbd>
+                                </div>
                               </div>
                             </div>
                           </div>

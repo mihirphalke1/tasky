@@ -261,8 +261,6 @@ const steps = [
       "Daily streak tracking",
       "Visual progress charts",
       "Productivity insights",
-      "Achievement badges",
-      "Weekly and monthly reports",
     ],
     image: (
       <motion.div
@@ -295,8 +293,6 @@ const steps = [
       "Light and dark mode",
       "Custom background images",
       "Keyboard shortcuts for power users",
-      "Customizable task views",
-      "Personalized organization",
     ],
     image: (
       <motion.div
