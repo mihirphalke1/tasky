@@ -41,8 +41,6 @@ Tasky combines AI-powered task management with powerful focus tools to help you 
 
 ## 📸 Product Snapshots
 
-### Desktop Experience
-
 ![Product Snapshots](./public/screenshots/Tasky-Preview.png)
 _Feature snapshots like streak, smart input and task analytics_
 
@@ -50,11 +48,7 @@ _Feature snapshots like streak, smart input and task analytics_
 _Distraction-free focus mode with integrated pomodoro timer_
 
 ![Tasky Dashboard](./public/screenshots/desktop-dashboard.png)
-_Smart task management with natural language input and priority organization_
-
-### Mobile Experience
-
-> **Coming Soon**: Mobile screenshots will be added in the next update. The app is fully responsive and optimized for mobile devices.
+_Works with Keyboard Shortcuts on Desktop_
 
 ## 🚀 Quick Start
 
