@@ -160,11 +160,12 @@ const TaskItem = ({ task, onUpdate, onDelete }: TaskItemProps) => {
               )}
             </div>
 
-            {task.description && (
-              <p className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400 mt-1 line-clamp-2">
-                {task.description}
-              </p>
-            )}
+            {task.description &&
+              !task.description.startsWith("Original input:") && (
+                <p className="text-xs sm:text-sm text-[#7E7E7E] dark:text-gray-400 mt-1 line-clamp-2">
+                  {task.description}
+                </p>
+              )}
 
             <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2 items-center">
               {task.tags.length > 0 && (

@@ -1,10 +1,8 @@
-# ✨ Tasky - Smart Task Management and Focus Mode App
+# ✨ Tasky
 
 > **Your intelligent productivity companion for focused work and smart task management.**
 
 Tasky combines AI-powered task management with powerful focus tools to help you achieve deep work and build lasting productivity habits.
-
-[![Try Tasky](https://img.shields.io/badge/Try-Tasky-2EA44F?style=for-the-badge)](https://taskyapp.xyz)
 
 ## 🌟 Core Features
 
@@ -135,11 +133,9 @@ npm run dev
 
 <div align="center">
 
-## **[Try Tasky](https://taskyapp.xyz)**
-
+**[🌐 Live Demo](https://tasky.app)**
 **You can request features or report bugs using contact developer form after logging into Tasky!**
-<br>
-Made with ❤️ for productivity enthusiasts everywhere!
+Made with ❤️ for productivity enthusiasts everywhere
 
 _Stay focused. Stay productive. Stay awesome._
 
